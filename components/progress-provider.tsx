@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { ProgressData, UserProfile, AppStorage, ParentProfile, AdminAccount, getOverallRank } from '@/lib/mastery';
+import { ProgressData, UserProfile, AppStorage, ParentProfile, AdminAccount, InventoryItem, getOverallRank } from '@/lib/mastery';
 import { getSubjectScore } from '@/lib/scoring';
 import { useAuth } from '@/hooks/use-auth';
 import { useProfile } from '@/hooks/use-profile';
@@ -514,7 +514,7 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
         let newBalance = childProfile.progress.balance;
         const newTransactions = [...(childProfile.progress.transactions || [])];
 
-        const updatedInventory = childProfile.progress.inventory.map(item => {
+        const updatedInventory: InventoryItem[] = childProfile.progress.inventory.map(item => {
             if (item.id === itemId && item.status === 'pending') {
                 if (action === 'reject') {
                     newBalance += item.cost;
@@ -534,7 +534,7 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
             return item;
         });
 
-        const filteredInventory = updatedInventory.filter(item => item.status !== 'rejected');
+        const filteredInventory: InventoryItem[] = updatedInventory.filter(item => item.status !== 'rejected');
 
         const updatedProgress = {
             ...childProfile.progress,
@@ -543,7 +543,7 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
             transactions: newTransactions
         };
 
-        const updatedProfile = { ...childProfile, progress: updatedProgress };
+        const updatedProfile: UserProfile = { ...childProfile, progress: updatedProgress };
 
         // 2. Cập nhật UI ngay lập tức
         setAllProfiles(prev => prev.map(p =>
@@ -682,3 +682,4 @@ export const useProgress = () => {
     if (!context) throw new Error('useProgress must be used within a ProgressProvider');
     return context;
 };
+

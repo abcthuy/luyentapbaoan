@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Question } from '@/lib/content/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Volume2, VolumeX, Pencil, Play, RotateCcw, Eye, EyeOff } from 'lucide-react';
@@ -575,3 +575,4 @@ export function QuestionCard({
         </AnimatePresence >
     );
 }
+

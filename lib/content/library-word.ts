@@ -297,7 +297,8 @@ async function inflateRaw(data: Uint8Array) {
     if (typeof DecompressionStream === 'undefined') {
         throw new Error('Trình duyệt này chưa hỗ trợ đọc file .docx nén.');
     }
-    const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+    const stream = new Blob([arrayBuffer]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
     return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
@@ -555,9 +556,7 @@ export function buildLibraryWordDocument(payload: LibraryExportPayload) {
     );
 
     const questionRows = flattenQuestions(payload).map(({ level, question }) => {
-        const extraContent = { ...question.content };
-        delete extraContent.text;
-        delete extraContent.options;
+        const { text: _text, options: _options, ...extraContent } = question.content;
 
         return [
             encodeCell(question.skillId),

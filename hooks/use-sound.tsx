@@ -25,7 +25,7 @@ interface SoundContextType {
 const SoundContext = createContext<SoundContextType | undefined>(undefined);
 
 export function SoundProvider({ children }: { children: React.ReactNode }) {
-    const [isMuted, setIsMuted] = useState(() => {
+    const [isMuted, setIsMuted] = useState<boolean>(() => {
         if (typeof window === 'undefined') return false;
         const stored = localStorage.getItem('math_mastery_muted');
         return stored ? JSON.parse(stored) : false;
@@ -84,3 +84,4 @@ export function useSound() {
 }
 
 export default useSound;
+

@@ -55,13 +55,17 @@ async function cleanup() {
                     isEmpty = true;
                 } else {
                     try {
-                        let appData = row.data;
+                        let appData: unknown = row.data;
                         if (typeof appData === 'string') {
                             appData = JSON.parse(appData);
                         }
 
+                        const parsedData = (typeof appData === 'object' && appData !== null
+                            ? appData
+                            : {}) as { profiles?: unknown[] };
+
                         // Rule: If profiles is empty or undefined, it's garbage
-                        if (!appData.profiles || !Array.isArray(appData.profiles) || appData.profiles.length === 0) {
+                        if (!parsedData.profiles || !Array.isArray(parsedData.profiles) || parsedData.profiles.length === 0) {
                             isEmpty = true;
                         }
                     } catch (e) {

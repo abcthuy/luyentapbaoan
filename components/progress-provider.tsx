@@ -1,66 +1,45 @@
-"use client";
+﻿"use client";
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { ProgressData, UserProfile, AppStorage, ParentProfile, AdminAccount, InventoryItem, getOverallRank } from '@/lib/mastery';
-import { getSubjectScore } from '@/lib/scoring';
+import { ProgressData, UserProfile, AppStorage, ParentAccount, ParentChildLink, AdminAccount, InventoryItem } from '@/lib/mastery';
 import { useAuth } from '@/hooks/use-auth';
 import { useProfile } from '@/hooks/use-profile';
 import { normalizeContentLibrary, setRuntimeContentLibrary } from '@/lib/content/library';
 import { syncSkillMap } from '@/lib/skills';
 
-const AVATARS = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🦗', '🕷', '🦂', '🐢', '🐍', '🦎', '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀', '🐡', '🐠', '🐟', '🐬', '🐳', '🐋', '🦈', '🐊', '🐅', '🐆', '🦓', '🦍', '🦧', '🦣', '🐘', '🦛', '🦏', '🐪', '🐫', '🦒', '🦘', '🦬', '🐃', '🐂', '🐄', '🐎', '🐖', '🐏', '🐑', '🦙', '🐐', '🦌', '🐕', '🐩', '🦮', '🐕‍🦺', '🐈', '🐈‍⬛', '🐓', '🦃', '🦚', '🦜', '🦢', '🦩', '🕊', '🐇', '🦝', '🦨', '🦡', '🦫', '🦦', '🦥', '🐁', '🐀', '🐿', '🦔', '🐾', '🐉', '🐲', '🌵', '🎄', '🌲', '🌳', '🌴', '🌱', '🌿', '☘', '🍀', '🎍', '🎋', '🍃', '🍂', '🍁', '🍄', '🌾', '💐', '🌷', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻', '🌞', '🌝', '🌛', '🌜', '🌚', '🌕', '🌖', '🌗', '🌘', '🌑', '🌒', '🌓', '🌔', '🌙'];
+const AVATARS = ['\u{1F436}', '\u{1F431}', '\u{1F42D}', '\u{1F439}', '\u{1F430}', '\u{1F98A}', '\u{1F43B}', '\u{1F43C}', '\u{1F428}', '\u{1F42F}', '\u{1F981}', '\u{1F42E}', '\u{1F437}', '\u{1F438}', '\u{1F435}', '\u{1F427}', '\u{1F426}', '\u{1F986}', '\u{1F42C}', '\u{1F433}', '\u{1F984}', '\u{1F98B}', '\u{1F98D}', '\u{1F43B}'];
 const getRandomAvatar = () => AVATARS[Math.floor(Math.random() * AVATARS.length)];
-
-const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes (Standard Session)
-
-const getDeviceId = (): string => {
-    let deviceId = localStorage.getItem('math_device_id');
-    if (!deviceId) {
-        deviceId = `DEV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        localStorage.setItem('math_device_id', deviceId);
-    }
-    return deviceId;
+const EMPTY_STORAGE: AppStorage = {
+    profiles: [],
+    activeProfileId: null,
+    lastActive: Date.now()
 };
 
-const normalizeStorage = (input: AppStorage): AppStorage => {
-    const profiles = (input.profiles || []).map(profile => ({
-        ...profile,
-        grade: profile.grade || 2,
-        avatar: profile.avatar || getRandomAvatar()
-    }));
-
-    let adminAccount = input.adminAccount;
-    if (!adminAccount?.pin && input.familyCredentials?.pin) {
-        adminAccount = {
-            username: 'admin',
-            displayName: 'Quan tri vien',
-            pin: String(input.familyCredentials.pin),
-            updatedAt: new Date().toISOString()
-        };
-    }
-
-    return {
-        ...input,
-        profiles,
-        adminAccount,
-        customContentLibrary: normalizeContentLibrary(input.customContentLibrary)
-    };
+type LegacyParentRecord = {
+    id?: string;
+    name?: string;
+    pin?: string;
+    childrenIds?: string[];
 };
 
-interface ProgressContextType {
+type ParsedStorage = Partial<AppStorage> & {
+    parents?: LegacyParentRecord[];
+};
+
+type ParentDirectoryEntry = {
+    parent: ParentAccount;
+    childRefs: { childId: string; childSyncId: string }[];
+    sourceSyncIds: string[];
+    matchKey: string;
+};
+
+type ProgressContextType = {
     storage: AppStorage | null;
-    progress: ProgressData | null; // active profile progress
-    activeProfile: UserProfile | null;
-    activeProfileId: string | null;
-    adminAccount?: AdminAccount;
-    parents?: ParentProfile[];
-    familyCredentials?: {
-        username: string;
-        pin: string;
-    };
+    familyCredentials?: { username: string; pin: string };
     profiles: UserProfile[];
     fullStorage: AppStorage | null;
+    activeProfile: UserProfile | null;
+    progress: ProgressData | null;
     addProfile: (name: string, pin?: string, avatar?: string, skipAutoLogin?: boolean) => void;
     addParent: (name: string, pin: string) => void;
     assignChildToParent: (parentId: string, childId: string) => void;
@@ -86,123 +65,167 @@ interface ProgressContextType {
     register: (username: string, pin: string, name: string) => Promise<{ success: boolean; error?: string }>;
     currentUser: string | null;
     deleteGhostProfile: (sourceSyncId: string, profileId: string) => Promise<void>;
-    allParents: { parent: ParentProfile, sourceSyncId: string }[];
-}
+    allParents: ParentDirectoryEntry[];
+};
 
 const ProgressContext = createContext<ProgressContextType | undefined>(undefined);
+
+const getDeviceId = (): string => {
+    let deviceId = localStorage.getItem('math_device_id');
+    if (!deviceId) {
+        deviceId = `DEV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        localStorage.setItem('math_device_id', deviceId);
+    }
+    return deviceId;
+};
+
+const parseRawStorage = (input: unknown): ParsedStorage => {
+    if (!input) return {};
+    if (typeof input === 'string') {
+        try {
+            const parsed = JSON.parse(input);
+            return typeof parsed === 'object' && parsed !== null ? parsed as ParsedStorage : {};
+        } catch {
+            return {};
+        }
+    }
+    return typeof input === 'object' && input !== null ? input as ParsedStorage : {};
+};
+
+const buildParentMatchKey = (parent: Pick<ParentAccount, 'name' | 'pin'>) => `${parent.name.trim().toLowerCase()}::${parent.pin.trim()}`;
+
+const buildParentSummaries = (storage: AppStorage, sourceSyncId: string): ParentDirectoryEntry[] => {
+    const links = storage.parentChildLinks || [];
+
+    return (storage.parentAccounts || []).map((parent) => ({
+        parent,
+        childRefs: links
+            .filter((link) => link.parentId === parent.id)
+            .map((link) => ({ childId: link.childId, childSyncId: link.childSyncId || sourceSyncId })),
+        sourceSyncIds: [sourceSyncId],
+        matchKey: buildParentMatchKey(parent),
+    }));
+};
+
+const normalizeStorage = (input: unknown): AppStorage => {
+    const parsed = parseRawStorage(input);
+    const profiles = (Array.isArray(parsed.profiles) ? parsed.profiles : []).filter(Boolean).map(profile => ({
+        ...profile,
+        grade: profile.grade || 2,
+        avatar: profile.avatar || getRandomAvatar()
+    }));
+
+    const profileIds = new Set(profiles.map(profile => profile.id));
+    const legacyParents = (Array.isArray(parsed.parents) ? parsed.parents : []).filter(Boolean).map(parent => ({
+        id: String(parent.id || '').trim(),
+        name: String(parent.name || '').trim(),
+        pin: String(parent.pin || '').trim(),
+        childrenIds: Array.isArray(parent.childrenIds)
+            ? parent.childrenIds.map((childId) => String(childId || '').trim()).filter((childId) => profileIds.has(childId))
+            : []
+    })).filter((parent) => parent.id && parent.name && parent.pin);
+
+    const parentAccounts = ((Array.isArray(parsed.parentAccounts) ? parsed.parentAccounts : []).filter(Boolean).map(parent => ({
+        ...parent,
+        id: String(parent.id || '').trim(),
+        name: String(parent.name || '').trim(),
+        pin: String(parent.pin || '').trim(),
+        displayOrder: typeof parent.displayOrder === 'number' ? parent.displayOrder : undefined,
+        status: parent.status === 'disabled' ? 'disabled' : 'active',
+        createdAt: parent.createdAt || undefined,
+        updatedAt: parent.updatedAt || undefined,
+    })) as ParentAccount[]).filter((parent) => parent.id && parent.name && parent.pin);
+
+    const normalizedParentAccounts = parentAccounts.length > 0
+        ? parentAccounts
+        : legacyParents.map((parent) => ({
+            id: parent.id,
+            name: parent.name,
+            pin: parent.pin,
+            status: 'active' as const,
+        }));
+
+    const validParentIds = new Set(normalizedParentAccounts.map((parent) => parent.id));
+    const parentChildLinks = ((Array.isArray(parsed.parentChildLinks) ? parsed.parentChildLinks : []).filter(Boolean).map((link) => ({
+        ...link,
+        id: String(link.id || '').trim(),
+        parentId: String(link.parentId || '').trim(),
+        childId: String(link.childId || '').trim(),
+        childSyncId: link.childSyncId ? String(link.childSyncId).trim() : undefined,
+        assignedAt: link.assignedAt || undefined,
+    })) as ParentChildLink[]).filter((link) => link.id && validParentIds.has(link.parentId) && link.childId);
+
+    const normalizedParentChildLinks = parentChildLinks.length > 0
+        ? parentChildLinks
+        : legacyParents.flatMap((parent) => parent.childrenIds.map((childId) => ({
+            id: `${parent.id}:${childId}`,
+            parentId: parent.id,
+            childId,
+        })));
+
+    const { parents: _legacyParents, ...rest } = parsed;
+
+    let adminAccount = parsed.adminAccount;
+    if (!adminAccount?.pin && parsed.familyCredentials?.pin) {
+        adminAccount = {
+            username: 'admin',
+            displayName: 'Quan tri vien',
+            pin: String(parsed.familyCredentials.pin),
+            updatedAt: new Date().toISOString()
+        } as AdminAccount;
+    }
+
+    return {
+        ...EMPTY_STORAGE,
+        ...rest,
+        profiles,
+        parentAccounts: normalizedParentAccounts,
+        parentChildLinks: normalizedParentChildLinks,
+        adminAccount,
+        activeProfileId: profiles.some(profile => profile.id === parsed.activeProfileId) ? parsed.activeProfileId || null : null,
+        customContentLibrary: normalizeContentLibrary(parsed.customContentLibrary)
+    };
+};
 
 export function ProgressProvider({ children }: { children: React.ReactNode }) {
     const [storage, setStorage] = useState<AppStorage | null>(null);
     const [allProfiles, setAllProfiles] = useState<{ profile: UserProfile, sourceSyncId: string }[]>([]);
-    const [allParents, setAllParents] = useState<{ parent: ParentProfile, sourceSyncId: string }[]>([]);
+    const [allParents, setAllParents] = useState<ParentDirectoryEntry[]>([]);
     const [isSyncing, setIsSyncing] = useState(false);
     const [isInitialized, setIsInitialized] = useState(false);
-
     const syncTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
-        setRuntimeContentLibrary(storage?.customContentLibrary);
-        syncSkillMap();
-    }, [storage?.customContentLibrary]);
+        const initialize = async () => {
+            try {
+                let initialStorage: AppStorage;
+                const local = localStorage.getItem('math_progress_multi');
 
-
-    // SESSION_TIMEOUT_MS moved outside (implicitly used by hooks now)
-
-    useEffect(() => {
-        try {
-            // MIGRATION: Force specific corrupted ghost accounts to the correct one
-            const currentSyncId = localStorage.getItem('math_sync_id');
-            if (currentSyncId === 'MATH-DCJD5PRS' || currentSyncId === 'MATH-F8K2V9A') { // Add any other known ghost IDs here
-                console.log("Migrating away from corrupted ghost account...");
-                localStorage.setItem('math_sync_id', 'MATH-LQKAR7MF');
-                localStorage.removeItem('math_progress_multi');
-                window.location.reload();
-                return;
-            }
-
-            const local = localStorage.getItem('math_progress_multi');
-            // currentUser handled by useAuth
-
-            let initialStorage: AppStorage;
-
-            const isSessionActive = sessionStorage.getItem('math_session') === 'active';
-
-            if (local) {
-                try {
-                    const parsed = JSON.parse(local) as AppStorage;
-                    const now = Date.now();
-                    let activeId = parsed.activeProfileId;
-                    let profiles = parsed.profiles || [];
-
-                    if (parsed.lastActive && (now - parsed.lastActive > SESSION_TIMEOUT_MS)) {
-                        console.log("Session expired due to inactivity.");
-                        activeId = null;
+                if (local) {
+                    try {
+                        initialStorage = normalizeStorage(JSON.parse(local) as AppStorage);
+                    } catch (e) {
+                        console.error('Failed to parse local storage', e);
+                        initialStorage = normalizeStorage(EMPTY_STORAGE);
                     }
-
-                    if (!isSessionActive) {
-                        activeId = null;
-                    }
-
-                    // MIGRATION: Fix duplicate IDs if they are just 'p1' (one-time fix)
-                    profiles = profiles.map(p => {
-                        if (p.id === 'p1' || p.id === 'p1-1') {
-                            const newId = `p-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-                            // Mark as migrated so we don't re-run
-                            return { ...p, id: newId, _migrated: true, grade: p.grade || 2, avatar: p.avatar || getRandomAvatar() };
-                        }
-                        return { ...p, grade: p.grade || 2, avatar: p.avatar || getRandomAvatar() };
-                    });
-
-                    initialStorage = normalizeStorage({ ...parsed, profiles, activeProfileId: activeId, lastActive: now });
-                } catch (e) {
-                    console.error("Failed to parse local storage", e);
-                    // Fallback to empty if corrupted
-                    initialStorage = normalizeStorage({
-                        profiles: [],
-                        activeProfileId: null,
-                        lastActive: Date.now()
-                    });
+                } else {
+                    initialStorage = normalizeStorage(EMPTY_STORAGE);
                 }
-            } else {
-                // New User / No Data
-                // We start empty and let UI prompt Login/Register
-                initialStorage = normalizeStorage({
-                    profiles: [],
-                    activeProfileId: null,
-                    lastActive: Date.now()
-                });
+
+                setStorage(initialStorage);
+                setRuntimeContentLibrary(initialStorage.customContentLibrary);
+                syncSkillMap();
+                await Promise.all([syncProgress(), fetchAllProfiles()]);
+            } catch (err) {
+                console.error('Critical error during initialization:', err);
+                setStorage(normalizeStorage(EMPTY_STORAGE));
+            } finally {
+                setIsInitialized(true);
             }
+        };
 
-            setStorage(initialStorage);
-            save(initialStorage);
-
-            if (initialStorage.profiles) {
-                setAllProfiles(initialStorage.profiles.map(p => ({
-                    profile: p,
-                    sourceSyncId: localStorage.getItem('math_sync_id') || 'local'
-                })));
-            }
-
-            if (initialStorage.parents) {
-                setAllParents(initialStorage.parents.map(p => ({
-                    parent: p,
-                    sourceSyncId: localStorage.getItem('math_sync_id') || 'local'
-                })));
-            }
-
-            refreshData();
-        } catch (err) {
-            console.error("Critical error during initialization:", err);
-            // Ensure we at least have empty storage so app doesn't crash
-            setStorage(normalizeStorage({
-                profiles: [],
-                activeProfileId: null,
-                lastActive: Date.now()
-            }));
-        } finally {
-            setIsInitialized(true);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        initialize();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchAllProfiles = async () => {
@@ -213,109 +236,89 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
             try { localData = normalizeStorage(JSON.parse(localDataStr) as AppStorage); } catch { }
         }
 
-        // Fetch ALL accounts to show all available profiles for login
-        const { data } = await supabase
-            .from('math_progress')
-            .select('id, data');
+        const response = await fetch('/api/account/list');
+        if (!response.ok) {
+            if (!syncId && storage) {
+                setAllProfiles(storage.profiles.map(profile => ({ profile, sourceSyncId: 'local' })));
+                setAllParents(buildParentSummaries(storage, 'local'));
+            }
+            return;
+        }
 
-        if (data) {
-            const all: { profile: UserProfile, sourceSyncId: string }[] = [];
-            const allP: { parent: ParentProfile, sourceSyncId: string }[] = [];
-            // Track seen profile IDs to prevent duplicates
-            const seenIds = new Set<string>();
-            const seenParentIds = new Set<string>();
+        const payload = await response.json().catch(() => ({ rows: [] })) as {
+            rows?: { id: string; data: unknown }[];
+        };
 
-            interface SyncRow {
-                id: string;
-                data: AppStorage | string;
+        const rows = Array.isArray(payload.rows) ? payload.rows : [];
+        const all: { profile: UserProfile, sourceSyncId: string }[] = [];
+        const parentMap = new Map<string, ParentDirectoryEntry>();
+        const seenIds = new Set<string>();
+
+        rows.forEach((row) => {
+            let appData = normalizeStorage(row.data);
+
+            if (syncId && row.id === syncId && localData) {
+                const localTime = localData.lastActive || 0;
+                const remoteTime = appData.lastActive || 0;
+                const localScore = localData.profiles.reduce((acc, p) => acc + (p.progress?.totalScore || 0), 0);
+                const remoteScore = appData.profiles.reduce((acc, p) => acc + (p.progress?.totalScore || 0), 0);
+
+                if (localScore > remoteScore || (localScore === remoteScore && localTime >= remoteTime)) {
+                    appData = localData;
+                }
             }
 
-            (data as unknown as SyncRow[]).forEach((row) => {
-                let appData = row.data as AppStorage;
-                if (typeof appData === 'string') {
-                    try { appData = JSON.parse(appData); } catch { }
-                }
-                appData = normalizeStorage(appData);
-
-                // CRITICAL FIX: If this row is our current syncId, override it with localData if localData is better
-                if (syncId && row.id === syncId && localData) {
-                    const localTime = localData.lastActive || 0;
-                    const remoteTime = appData?.lastActive || 0;
-                    const localScore = localData.profiles?.reduce((acc, p) => acc + (p.progress?.totalScore || 0), 0) || 0;
-                    const remoteScore = appData.profiles?.reduce((acc, p) => acc + (p.progress?.totalScore || 0), 0) || 0;
-
-                    if (localScore > remoteScore) {
-                        appData = localData;
-                    } else if (remoteScore > localScore) {
-                        // keep remote appData
-                    } else if (localTime >= remoteTime) {
-                        appData = localData;
-                    }
-                }
-
-                if (appData && appData.profiles) {
-                    appData.profiles.forEach(p => {
-                        // Skip if we already have this exact profile ID
-                        if (seenIds.has(p.id)) return;
-                        seenIds.add(p.id);
-                        all.push({
-                            profile: p,
-                            sourceSyncId: row.id
-                        });
-                    });
-                }
-
-                if (appData && appData.parents) {
-                    appData.parents.forEach(p => {
-                        if (seenParentIds.has(p.id)) return;
-                        seenParentIds.add(p.id);
-                        allP.push({
-                            parent: p,
-                            sourceSyncId: row.id
-                        });
-                    });
-                }
+            appData.profiles.forEach((profile) => {
+                if (seenIds.has(profile.id)) return;
+                seenIds.add(profile.id);
+                all.push({ profile, sourceSyncId: row.id });
             });
 
-            // Also deduplicate by name (keep the one with higher total score)
-            const byName = new Map<string, { profile: UserProfile, sourceSyncId: string }>();
-            for (const item of all) {
-                const nameKey = item.profile.name.toLowerCase().trim();
-                const existing = byName.get(nameKey);
-                if (!existing || (item.profile.progress?.totalScore || 0) > (existing.profile.progress?.totalScore || 0)) {
-                    byName.set(nameKey, item);
+            buildParentSummaries(appData, row.id).forEach((entry) => {
+                const existing = parentMap.get(entry.matchKey);
+                if (!existing) {
+                    parentMap.set(entry.matchKey, {
+                        ...entry,
+                        childRefs: [...entry.childRefs],
+                        sourceSyncIds: [...entry.sourceSyncIds],
+                    });
+                    return;
                 }
+
+                const seenChildRefs = new Set(existing.childRefs.map((child) => `${child.childSyncId}:${child.childId}`));
+                entry.childRefs.forEach((child) => {
+                    const refKey = `${child.childSyncId}:${child.childId}`;
+                    if (!seenChildRefs.has(refKey)) {
+                        existing.childRefs.push(child);
+                        seenChildRefs.add(refKey);
+                    }
+                });
+
+                entry.sourceSyncIds.forEach((id) => {
+                    if (!existing.sourceSyncIds.includes(id)) existing.sourceSyncIds.push(id);
+                });
+            });
+        });
+
+        const byName = new Map<string, { profile: UserProfile, sourceSyncId: string }>();
+        for (const item of all) {
+            const nameKey = item.profile.name.toLowerCase().trim();
+            const existing = byName.get(nameKey);
+            if (!existing || (item.profile.progress?.totalScore || 0) > (existing.profile.progress?.totalScore || 0)) {
+                byName.set(nameKey, item);
             }
-
-            setAllProfiles(Array.from(byName.values()));
-            setAllParents(allP);
-        } else if (!syncId && storage) {
-            // Fallback: show local profiles only
-            setAllProfiles(storage.profiles.map(p => ({
-                profile: p,
-                sourceSyncId: 'local'
-            })));
-            setAllParents(storage.parents?.map(p => ({
-                parent: p,
-                sourceSyncId: 'local'
-            })) || []);
         }
-    };
 
+        setAllProfiles(Array.from(byName.values()));
+        setAllParents(Array.from(parentMap.values()));
+    };
     const refreshData = async () => {
-        // Parallel fetch for speed
         await Promise.all([syncProgress(), fetchAllProfiles()]);
     };
 
     const save = (newStorage: AppStorage) => {
-        // Always update lastActive on save (user interaction)
         const storageToSave = normalizeStorage({ ...newStorage, lastActive: Date.now() });
         localStorage.setItem('math_progress_multi', JSON.stringify(storageToSave));
-        // Update state if needed, but usually setStorage is called before save so we might want to ensure state also has it?
-        // Actually setStorage callers passed newStorage. 
-        // Ideally we should do setStorage(storageToSave) inside here or make sure callers include it?
-        // To be safe and simple: We just modify what goes to disk. 
-        // Next load/refresh will pick it up, or next save will overwrite it with new now().
     };
 
     const syncToCloud = async (newStorage: AppStorage) => {
@@ -324,42 +327,21 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
 
         setIsSyncing(true);
         try {
-            newStorage = normalizeStorage(newStorage);
+            let normalized = normalizeStorage(newStorage);
             const myDeviceId = getDeviceId();
-            if (newStorage.activeSession && newStorage.activeSession.deviceId === myDeviceId) {
-                newStorage = { ...newStorage, activeSession: { ...newStorage.activeSession, lastSeen: Date.now() } };
+            if (normalized.activeSession && normalized.activeSession.deviceId === myDeviceId) {
+                normalized = { ...normalized, activeSession: { ...normalized.activeSession, lastSeen: Date.now() } };
             }
 
-            await supabase
-                .from('math_progress')
-                .upsert({
-                    id: syncId,
-                    data: newStorage,
-                    updated_at: new Date().toISOString()
-                });
+            const response = await fetch('/api/account/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ syncId, storage: normalized })
+            });
 
-            const publicProfiles = newStorage.profiles.filter(p => p.isPublic !== false);
-
-            if (publicProfiles.length > 0) {
-                const leaderboardUpdates = publicProfiles.map(profile => {
-                    const rank = getOverallRank(profile.progress);
-                    return {
-                        id: profile.id,
-                        name: profile.name,
-                        total_score: profile.progress.totalScore || 0,
-                        last_score: profile.progress.lastSessionScore || 0,
-                        best_time: profile.progress.bestTimeSeconds || 999999,
-                        tier: rank.label,
-                        is_public: true,
-                        math_score: getSubjectScore(profile.progress, 'math'),
-                        vietnamese_score: getSubjectScore(profile.progress, 'vietnamese'),
-                        english_score: getSubjectScore(profile.progress, 'english'),
-                        finance_score: getSubjectScore(profile.progress, 'finance'),
-                        updated_at: new Date().toISOString()
-                    };
-                });
-
-                await supabase.from('leaderboard').upsert(leaderboardUpdates);
+            if (!response.ok) {
+                const payload = await response.json().catch(() => ({}));
+                throw new Error(typeof payload?.error === 'string' ? payload.error : 'Cloud sync failed');
             }
         } catch (e) {
             console.error('Cloud sync failed:', e);
@@ -377,57 +359,45 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
 
         setIsSyncing(true);
         try {
-            const { data, error } = await supabase
-                .from('math_progress')
-                .select('data, updated_at')
-                .eq('id', syncId)
-                .single();
+            const response = await fetch(`/api/account/storage?syncId=${encodeURIComponent(syncId)}`);
+            const payload = await response.json().catch(() => ({})) as {
+                row?: { data: unknown; updated_at?: string };
+            };
 
-            if (data && !error) {
-                const remoteStorage = normalizeStorage(data.data as AppStorage);
-
-                // Smart Merge Logic: Check if Remote is actually newer
+            if (response.ok && payload.row) {
+                const remoteStorage = normalizeStorage(payload.row.data);
+                const remoteUpdatedAt = payload.row.updated_at ? new Date(payload.row.updated_at).getTime() : 0;
                 const local = localStorage.getItem('math_progress_multi');
                 let localIsNewerOrEqual = false;
                 if (local) {
                     try {
                         const parsedLocal = normalizeStorage(JSON.parse(local) as AppStorage);
                         const localTime = parsedLocal.lastActive || 0;
-                        const remoteTime = remoteStorage.lastActive || 0;
-
-                        const localScore = parsedLocal.profiles?.reduce((acc, p) => acc + (p.progress?.totalScore || 0), 0) || 0;
-                        const remoteScore = remoteStorage.profiles?.reduce((acc, p) => acc + (p.progress?.totalScore || 0), 0) || 0;
+                        const remoteTime = Math.max(remoteStorage.lastActive || 0, remoteUpdatedAt);
+                        const localScore = parsedLocal.profiles.reduce((acc, p) => acc + (p.progress?.totalScore || 0), 0);
+                        const remoteScore = remoteStorage.profiles.reduce((acc, p) => acc + (p.progress?.totalScore || 0), 0);
 
                         if (localScore > remoteScore) {
-                            // Local has more points! Must push to cloud
                             localIsNewerOrEqual = true;
-                            console.log("Local has higher score, pushing to cloud...");
                             syncToCloud(parsedLocal);
                         } else if (remoteScore > localScore) {
-                            // Remote has more points!
                             localIsNewerOrEqual = false;
                         } else {
-                            // Scores equal, trust timestamps
                             if (localTime >= remoteTime) {
                                 localIsNewerOrEqual = true;
                             }
-
-                            // Only push to cloud if local is STRICTLY newer, to avoid infinite sync loops
                             if (localTime > remoteTime) {
-                                console.log("Local is newer (equal score), pushing to cloud in background...");
-                                syncToCloud(parsedLocal); // Don't await here to avoid blocking initialization
+                                syncToCloud(parsedLocal);
                             }
                         }
                     } catch { }
                 }
 
                 if (!localIsNewerOrEqual) {
-                    console.log("Applying remote storage (remote is newer)...");
                     setStorage(remoteStorage);
                     localStorage.setItem('math_progress_multi', JSON.stringify(remoteStorage));
                 }
             } else {
-                // If there's no remote data but we have local data, we should push it
                 const local = localStorage.getItem('math_progress_multi');
                 if (local) {
                     try {
@@ -472,39 +442,38 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
     const addParent = (name: string, pin: string) => {
         if (!storage) return;
         const newParentId = `pr-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-        const updatedParents = [...(storage.parents || []), {
-            id: newParentId,
-            name,
-            pin,
-            childrenIds: []
-        }];
-        const updated = { ...storage, parents: updatedParents };
+        const updated = normalizeStorage({
+            ...storage,
+            parentAccounts: [...(storage.parentAccounts || []), {
+                id: newParentId,
+                name,
+                pin,
+                status: "active",
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            }],
+        });
         updateFullStorage(updated);
     };
 
     const assignChildToParent = (parentId: string, childId: string) => {
-        if (!storage || !storage.parents) return;
+        if (!storage) return;
 
-        const updatedParents = storage.parents.map(p => {
-            if (p.id === parentId) {
-                // Add if not already there
-                if (!p.childrenIds.includes(childId)) {
-                    return { ...p, childrenIds: [...p.childrenIds, childId] };
-                }
-            } else {
-                // Remove from other parents if needed (Optional: 1 child can only have 1 parent in this simple system)
-                return { ...p, childrenIds: p.childrenIds.filter(id => id !== childId) };
-            }
-            return p;
+        const nextLinks = (storage.parentChildLinks || []).filter((link) => link.childId !== childId);
+        nextLinks.push({
+            id: `pcl-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+            parentId,
+            childId,
+            childSyncId: localStorage.getItem("math_sync_id") || undefined,
+            assignedAt: new Date().toISOString(),
         });
 
-        updateFullStorage({ ...storage, parents: updatedParents });
+        updateFullStorage(normalizeStorage({ ...storage, parentChildLinks: nextLinks }));
     };
 
     const processRewardApproval = async (childId: string, itemId: string, action: 'approve' | 'reject') => {
         if (!storage) return;
 
-        // 1. Tìm profile trong allProfiles thay vì chỉ storage để xử lý cả cloud profiles
         const targetProfileWrapper = allProfiles.find(p => p.profile.id === childId);
         if (!targetProfileWrapper) return;
 
@@ -518,12 +487,11 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
             if (item.id === itemId && item.status === 'pending') {
                 if (action === 'reject') {
                     newBalance += item.cost;
-                    // Add refund transaction
                     newTransactions.unshift({
                         id: `tx-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
                         amount: item.cost,
                         type: 'earn',
-                        description: `Hoàn tiền quà: ${item.name}`,
+                        description: `Hoan tien qua: ${item.name}`,
                         date: new Date().toISOString()
                     });
                     return { ...item, status: 'rejected' };
@@ -545,40 +513,39 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
 
         const updatedProfile: UserProfile = { ...childProfile, progress: updatedProgress };
 
-        // 2. Cập nhật UI ngay lập tức
         setAllProfiles(prev => prev.map(p =>
             p.profile.id === childId ? { ...p, profile: updatedProfile } : p
         ));
 
-        // 3. Cập nhật DB (Local hoặc Cloud)
         const sourceSyncId = targetProfileWrapper.sourceSyncId;
         const currentSyncId = localStorage.getItem('math_sync_id');
 
         if (sourceSyncId === 'local' || sourceSyncId === currentSyncId) {
-            // Profile này lưu ở máy hiện tại
             const updatedProfiles = storage.profiles.map(p =>
                 p.id === childId ? updatedProfile : p
             );
             updateFullStorage({ ...storage, profiles: updatedProfiles });
         } else {
-            // Profile này lưu ở Cloud (do trẻ học ở máy khác)
             try {
                 setIsSyncing(true);
-                const { data } = await supabase.from('math_progress').select('data').eq('id', sourceSyncId).single();
-                if (data && data.data) {
-                    const remoteStorage = data.data as AppStorage;
-                    const updatedRemoteProfiles = remoteStorage.profiles.map(p =>
-                        p.id === childId ? updatedProfile : p
-                    );
-                    const newRemoteStorage = { ...remoteStorage, profiles: updatedRemoteProfiles };
-                    await supabase.from('math_progress').update({
-                        data: newRemoteStorage,
-                        updated_at: new Date().toISOString()
-                    }).eq('id', sourceSyncId);
+                const response = await fetch('/api/account/reward', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sourceSyncId,
+                        childId,
+                        itemId,
+                        action
+                    })
+                });
+
+                if (!response.ok) {
+                    const payload = await response.json().catch(() => ({}));
+                    throw new Error(typeof payload?.error === 'string' ? payload.error : 'Reward sync failed');
                 }
             } catch (e) {
-                console.error("Failed to approve remote profile reward:", e);
-                alert("Đã xảy ra lỗi khi đồng bộ lên máy chủ, vui lòng thử lại!");
+                console.error('Failed to approve remote profile reward:', e);
+                alert('Da xay ra loi khi dong bo len may chu, vui long thu lai!');
             } finally {
                 setIsSyncing(false);
             }
@@ -588,14 +555,13 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
     const selectCloudProfile = async (sourceSyncId: string, profileId: string) => {
         setIsSyncing(true);
         try {
-            const { data } = await supabase
-                .from('math_progress')
-                .select('data')
-                .eq('id', sourceSyncId)
-                .single();
+            const response = await fetch(`/api/account/storage?syncId=${encodeURIComponent(sourceSyncId)}`);
+            const payload = await response.json().catch(() => ({})) as {
+                row?: { data: unknown };
+            };
 
-            if (data) {
-                const remoteStorage = normalizeStorage(data.data as AppStorage);
+            if (response.ok && payload.row) {
+                const remoteStorage = normalizeStorage(payload.row.data);
                 localStorage.setItem('math_sync_id', sourceSyncId);
                 const updated = { ...remoteStorage, activeProfileId: profileId };
                 setStorage(updated);
@@ -609,15 +575,7 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    // --- HOOK INTEGRATION ---
-
-    const {
-        currentUser,
-        login,
-        register,
-        logout
-    } = useAuth(storage, setStorage, save, syncToCloud, setIsSyncing);
-
+    const { currentUser, login, register, logout } = useAuth(storage, setStorage, save, syncToCloud, setIsSyncing);
     const {
         addProfile,
         switchProfile,
@@ -637,13 +595,10 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
     return (
         <ProgressContext.Provider value={{
             storage,
-            progress,
-            activeProfile,
-            activeProfileId: storage?.activeProfileId || null,
-            adminAccount: storage?.adminAccount,
-            parents: storage?.parents || [],
             familyCredentials: storage?.familyCredentials,
             profiles: storage?.profiles || [],
+            activeProfile,
+            progress,
             fullStorage: storage,
             addProfile,
             addParent,
@@ -679,7 +634,17 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
 
 export const useProgress = () => {
     const context = useContext(ProgressContext);
-    if (!context) throw new Error('useProgress must be used within a ProgressProvider');
+    if (!context) throw new Error('useProgress must be used within ProgressProvider');
     return context;
 };
+
+
+
+
+
+
+
+
+
+
 

@@ -11,7 +11,7 @@ export function generateNumberStructureComparison(skillId: string, level: number
         while (b === a) b = Math.floor(Math.random() * range);
 
         return {
-            id: `local-math-${Date.now()}`,
+            id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
             subjectId: 'math',
             skillId,
             type: 'mcq',
@@ -57,7 +57,7 @@ export function generateNumberStructureComparison(skillId: string, level: number
         }
 
         return {
-            id: `local-math-${Date.now()}`,
+            id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
             subjectId: 'math',
             skillId,
             type: 'input',
@@ -86,7 +86,7 @@ export function generateAdditionSubtraction(skillId: string, level: number = 1):
     const result = isAddition ? a + b : a - b;
 
     return {
-        id: `local-math-${Date.now()}`,
+        id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
         subjectId: 'math',
         skillId,
         type: 'input',
@@ -116,7 +116,7 @@ export function generateMissingNumber(skillId: string, level: number = 1): Quest
     sequence[missingIndex] = '...';
 
     return {
-        id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+        id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
         instruction: 'Điền số còn thiếu vào dãy số:',
         content: { text: sequence.join(', ') },
         answer: answer.toString(),
@@ -135,14 +135,14 @@ export function generateMultiplicationDivision(skillId: string, level: number = 
         const result = table * factor;
         const options = [result, result + table, result - 1, result + 2].map(String).sort(() => Math.random() - 0.5);
         return {
-            id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: level >= 4 ? 'input' : 'mcq',
+            id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: level >= 4 ? 'input' : 'mcq',
             instruction: 'Tính:', content: { text: `${table} × ${factor} = ?`, ...(level < 4 ? { options } : {}) },
             answer: result.toString(), explanation: `${table} × ${factor} = ${result}`
         };
     } else {
         const dividend = table * factor;
         return {
-            id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+            id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
             instruction: 'Tính:', content: { text: `${dividend} : ${table} = ?` },
             answer: factor.toString(), explanation: `${dividend} : ${table} = ${factor}`
         };
@@ -168,9 +168,16 @@ export function generateWordProblem(skillId: string, level: number = 1): Questio
     const text = problem.template.replace("{a}", valA.toString()).replace("{b}", b.toString());
     const result = problem.calc(valA, b);
     const useInput = level >= 4;
-    const options = [result, result + 1, result - 1, result + 2].map(String).sort(() => Math.random() - 0.5);
+    const wrongAns1 = Math.abs(valA - b);
+    const wrongAns2 = result + 10;
+    const wrongAns3 = result > 5 ? result - 2 : result + 5;
+    const baseSet = new Set([result, wrongAns1, wrongAns2, wrongAns3]);
+    while (baseSet.size < 4) {
+        baseSet.add(result + Math.floor(Math.random() * 10) + 1);
+    }
+    const options = Array.from(baseSet).map(String).sort(() => Math.random() - 0.5);
     return {
-        id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: useInput ? 'input' : 'mcq',
+        id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: useInput ? 'input' : 'mcq',
         instruction: 'Giải bài toán:', content: { text, ...(useInput ? {} : { options }) },
         answer: result.toString(), explanation: `Kết quả: ${result} ${problem.unit}`
     };
@@ -193,9 +200,14 @@ export function generateWordProblem2Steps(skillId: string, level: number = 1): Q
     const c = Math.floor(Math.random() * maxC) + 1;
     const result = t.calc(a, b, c);
     const useInput = level >= 3;
-    const options = [result, result + 1, result - 2, result + 3].map(String).sort(() => Math.random() - 0.5);
+    const w1 = a + b + c;
+    const w2 = Math.abs(a - b) + c;
+    const w3 = result + 10;
+    const set2 = new Set([result, w1, w2, w3]);
+    while(set2.size < 4) set2.add(result + Math.floor(Math.random() * 10) + 1);
+    const options = Array.from(set2).map(String).sort(() => Math.random() - 0.5);
     return {
-        id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: useInput ? 'input' : 'mcq',
+        id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: useInput ? 'input' : 'mcq',
         instruction: 'Giải bài toán có lời văn:', content: { text: t.text(a, b, c), ...(useInput ? {} : { options }) },
         answer: result.toString(), explanation: t.explain(a, b, c)
     };
@@ -208,7 +220,7 @@ export function generateLargeNumbers(skillId: string, level: number = 1): Questi
     let b = Math.floor(Math.random() * max) + 100;
     while (b === a) b = Math.floor(Math.random() * max) + 100;
     return {
-        id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'mcq',
+        id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'mcq',
         instruction: 'So sánh hai số:', content: { text: `${a.toLocaleString('vi-VN')} ... ${b.toLocaleString('vi-VN')}`, options: ['>', '<', '='] },
         answer: a > b ? '>' : a < b ? '<' : '=',
         explanation: `${a.toLocaleString('vi-VN')} ${a > b ? 'lớn hơn' : 'nhỏ hơn'} ${b.toLocaleString('vi-VN')}`
@@ -224,7 +236,7 @@ export function generateAddSub100k(skillId: string, level: number = 1): Question
     if (!isAdd && a < b) [a, b] = [b, a];
     const result = isAdd ? a + b : a - b;
     return {
-        id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+        id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
         instruction: 'Tính:', content: { text: `${a.toLocaleString('vi-VN')} ${isAdd ? '+' : '-'} ${b.toLocaleString('vi-VN')} = ?` },
         answer: result.toString(),
         explanation: `${a.toLocaleString('vi-VN')} ${isAdd ? '+' : '-'} ${b.toLocaleString('vi-VN')} = ${result.toLocaleString('vi-VN')}`,
@@ -243,14 +255,14 @@ export function generateMultDivLarge(skillId: string, level: number = 1): Questi
     if (isMult) {
         const result = a * b;
         return {
-            id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+            id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
             instruction: 'Tính:', content: { text: `${a} × ${b} = ?` },
             answer: result.toString(), explanation: `${a} × ${b} = ${result}`
         };
     } else {
         const dividend = a * b;
         return {
-            id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+            id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
             instruction: 'Tính:', content: { text: `${dividend} : ${b} = ?` },
             answer: a.toString(), explanation: `${dividend} : ${b} = ${a}`
         };
@@ -269,14 +281,14 @@ export function generateMultTable(skillId: string, level: number = 1): Question 
         const result = table * factor;
         const options = [result, result + table, result - 1, result + 2].map(String).sort(() => Math.random() - 0.5);
         return {
-            id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: level >= 4 ? 'input' : 'mcq',
+            id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: level >= 4 ? 'input' : 'mcq',
             instruction: 'Tính nhẩm:', content: { text: `${table} × ${factor} = ?`, ...(level < 4 ? { options } : {}) },
             answer: result.toString(), explanation: `${table} × ${factor} = ${result}`
         };
     } else {
         const dividend = table * factor;
         return {
-            id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+            id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
             instruction: 'Tính nhẩm:', content: { text: `${dividend} : ${table} = ?` },
             answer: factor.toString(), explanation: `${dividend} : ${table} = ${factor}`
         };
@@ -291,7 +303,7 @@ export function generateLength(skillId: string, level: number = 1): Question {
     const total = lengths.reduce((s, v) => s + v, 0);
     const unit = level >= 4 ? 'm' : 'cm';
     return {
-        id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+        id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
         instruction: `Tính tổng độ dài đường gấp khúc gồm ${segments} đoạn:`,
         content: { text: lengths.join(` ${unit}, `) + ` ${unit}` },
         answer: total.toString(), explanation: `${lengths.join(' + ')} = ${total} ${unit}`,
@@ -313,7 +325,7 @@ export function generateTime(skillId: string, level: number = 1): Question {
             `${h === 12 ? 1 : h + 1} giờ đúng`
         ].sort(() => Math.random() - 0.5);
         return {
-            id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'mcq',
+            id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'mcq',
             instruction: `Kim ngắn chỉ số ${h}, kim dài chỉ số ${m / 5}. Đồng hồ chỉ mấy giờ?`,
             content: { text: `Kim ngắn: ${h}, Kim dài: ${m / 5}`, options: opts },
             answer: correct, explanation: `Kim ngắn chỉ ${h}, kim dài chỉ ${m / 5} → ${correct}.`
@@ -327,14 +339,14 @@ export function generateTime(skillId: string, level: number = 1): Question {
             const endH = start + Math.floor(totalMin / 60);
             const endM = totalMin % 60;
             return {
-                id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+                id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
                 instruction: `Bé đi học lúc ${start} giờ, học ${dur} giờ ${durMin} phút. Hỏi tan học lúc mấy giờ? (trả lời số giờ)`,
                 content: { text: `${start} giờ + ${dur} giờ ${durMin} phút = ?` },
                 answer: endH.toString(), explanation: `${start}:00 + ${dur}h${durMin}m = ${endH}:${endM.toString().padStart(2, '0')}`
             };
         }
         return {
-            id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+            id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
             instruction: `Bé đi học lúc ${start} giờ, sau ${dur} giờ thì tan học. Hỏi bé tan học lúc mấy giờ?`,
             content: { text: `${start} giờ + ${dur} giờ = ? giờ` },
             answer: (start + dur).toString(), explanation: `${start} + ${dur} = ${start + dur} giờ`
@@ -357,7 +369,7 @@ export function generateGeometry(skillId: string, level: number = 1): Question {
         const b = shape.name === 'Hình vuông' ? a : Math.floor(Math.random() * 8) + 2;
         const perimeter = shape.name === 'Hình vuông' ? a * 4 : (a + b) * 2;
         return {
-            id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+            id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
             instruction: `Tính chu vi ${shape.name}:`,
             content: { text: shape.name === 'Hình vuông' ? `Cạnh ${a} cm. Chu vi = ?` : `Dài ${a} cm, rộng ${b} cm. Chu vi = ?` },
             answer: perimeter.toString(), explanation: shape.name === 'Hình vuông' ? `${a} × 4 = ${perimeter} cm` : `(${a} + ${b}) × 2 = ${perimeter} cm`
@@ -365,7 +377,7 @@ export function generateGeometry(skillId: string, level: number = 1): Question {
     }
     const opts = [shape.sides, shape.sides + 1, shape.sides - 1, shape.sides + 2].map(String).sort(() => Math.random() - 0.5);
     return {
-        id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'mcq',
+        id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'mcq',
         instruction: `${shape.name} có bao nhiêu cạnh?`,
         content: { text: `Số cạnh của ${shape.name}?`, options: opts },
         answer: shape.sides.toString(), explanation: `${shape.name} có ${shape.sides} cạnh.`
@@ -381,14 +393,14 @@ export function generatePerimeterArea(skillId: string, level: number = 1): Quest
         if (isPerimeter) {
             const result = a * 4;
             return {
-                id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+                id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
                 instruction: 'Tính chu vi hình vuông:', content: { text: `Hình vuông có cạnh ${a} cm. Chu vi = ? cm` },
                 answer: result.toString(), explanation: `Chu vi = ${a} × 4 = ${result} cm`, hint: 'Chu vi hình vuông = cạnh × 4'
             };
         } else {
             const result = a * a;
             return {
-                id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+                id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
                 instruction: 'Tính diện tích hình vuông:', content: { text: `Hình vuông có cạnh ${a} cm. Diện tích = ? cm²` },
                 answer: result.toString(), explanation: `Diện tích = ${a} × ${a} = ${result} cm²`, hint: 'Diện tích hình vuông = cạnh × cạnh'
             };
@@ -399,7 +411,7 @@ export function generatePerimeterArea(skillId: string, level: number = 1): Quest
         if (isPerimeter) {
             const result = (a + b) * 2;
             return {
-                id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+                id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
                 instruction: 'Tính chu vi hình chữ nhật:',
                 content: { text: `Chiều dài ${a} cm, chiều rộng ${b} cm. Chu vi = ? cm` },
                 answer: result.toString(), explanation: `Chu vi = (${a} + ${b}) × 2 = ${result} cm`, hint: 'Chu vi HCN = (dài + rộng) × 2'
@@ -407,7 +419,7 @@ export function generatePerimeterArea(skillId: string, level: number = 1): Quest
         } else {
             const result = a * b;
             return {
-                id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+                id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
                 instruction: 'Tính diện tích hình chữ nhật:',
                 content: { text: `Chiều dài ${a} cm, chiều rộng ${b} cm. Diện tích = ? cm²` },
                 answer: result.toString(), explanation: `Diện tích = ${a} × ${b} = ${result} cm²`, hint: 'Diện tích HCN = dài × rộng'
@@ -439,7 +451,7 @@ export function generateAngle(skillId: string, level: number = 1): Question {
     const item = items[Math.floor(Math.random() * items.length)];
     const options = level >= 4 ? ['Góc vuông', 'Góc nhọn', 'Góc tù', 'Góc bẹt'] : ['Góc vuông', 'Góc không vuông'];
     return {
-        id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'mcq',
+        id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'mcq',
         instruction: `${item.name.charAt(0).toUpperCase() + item.name.slice(1)} là góc gì?`,
         content: { text: `Xác định: ${item.name}`, options },
         answer: item.isRight ? 'Góc vuông' : (level >= 4 ? (item.name.includes('tù') ? 'Góc tù' : item.name.includes('bẹt') ? 'Góc bẹt' : 'Góc nhọn') : 'Góc không vuông'),
@@ -470,7 +482,7 @@ export function generateUnit(skillId: string, level: number = 1): Question {
     const pool = level <= 2 ? basic : level <= 3 ? [...basic, ...medium] : [...basic, ...medium, ...hard];
     const c = pool[Math.floor(Math.random() * pool.length)];
     return {
-        id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+        id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
         instruction: 'Đổi đơn vị:', content: { text: c.q },
         answer: c.a, explanation: c.e, hint: 'Nhớ: 1 m = 100 cm, 1 km = 1000 m, 1 kg = 1000 g'
     };
@@ -486,7 +498,7 @@ export function generateChart(skillId: string, level: number = 1): Question {
     const type = Math.random();
     if (type < 0.33) {
         return {
-            id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+            id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
             instruction: 'Nhìn bảng sau, trả lời câu hỏi:',
             content: { text: `${tableRows}.\nHỏi: Có bao nhiêu quả ${fruits[askIndex]}?` },
             answer: counts[askIndex].toString(), explanation: `Theo bảng, có ${counts[askIndex]} quả ${fruits[askIndex]}.`
@@ -494,7 +506,7 @@ export function generateChart(skillId: string, level: number = 1): Question {
     } else if (type < 0.66) {
         const total = counts.reduce((s, v) => s + v, 0);
         return {
-            id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+            id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
             instruction: 'Nhìn bảng sau, tính tổng:',
             content: { text: `${tableRows}.\nHỏi: Tổng cộng có bao nhiêu quả?` },
             answer: total.toString(), explanation: `Tổng = ${counts.join(' + ')} = ${total} quả`
@@ -504,7 +516,7 @@ export function generateChart(skillId: string, level: number = 1): Question {
         const maxFruit = fruits[counts.indexOf(max)];
         const opts = fruits.sort(() => Math.random() - 0.5);
         return {
-            id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'mcq',
+            id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'mcq',
             instruction: 'Loại quả nào nhiều nhất?',
             content: { text: tableRows, options: opts },
             answer: maxFruit, explanation: `${maxFruit} nhiều nhất với ${max} quả.`
@@ -525,7 +537,7 @@ export function generateSequence(skillId: string, level: number = 1): Question {
     const answer = seq[hideIdx];
     const display = seq.map((v, i) => i === hideIdx ? '?' : v.toString()).join(', ');
     return {
-        id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+        id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
         instruction: 'Tìm số còn thiếu trong dãy:', content: { text: display },
         answer: answer.toString(), explanation: `Dãy ${isDecreasing ? 'giảm' : 'tăng'} dần ${step} đơn vị.`,
         hint: `Mỗi số cách nhau ${step} đơn vị.`
@@ -540,7 +552,7 @@ export function generateNumberGrid(skillId: string, level: number = 1): Question
     const op = ops[Math.floor(Math.random() * ops.length)];
     const result = op === '+' ? a + b : op === '-' ? Math.abs(a - b) : a * b;
     return {
-        id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+        id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
         instruction: 'Trong bảng cộng/nhân, tìm kết quả:', content: { text: `${a} ${op} ${b} = ?` },
         answer: result.toString(), explanation: `${a} ${op} ${b} = ${result}`
     };
@@ -556,7 +568,7 @@ export function generateNumberTower(skillId: string, level: number = 1): Questio
         const mid2 = b2 + b3;
         const top = mid1 + mid2;
         return {
-            id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+            id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
             instruction: 'Tháp số 3 tầng: ô trên = tổng 2 ô dưới. Tìm ô trên cùng:',
             content: { text: `Tầng dưới cùng: ${b1}, ${b2}, ${b3}\nTầng giữa: ${mid1}, ${mid2}\nTầng trên: ?` },
             answer: top.toString(), explanation: `${mid1} + ${mid2} = ${top}`
@@ -566,7 +578,7 @@ export function generateNumberTower(skillId: string, level: number = 1): Questio
     const base2 = Math.floor(Math.random() * maxBase) + 1;
     const sum = base1 + base2;
     return {
-        id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+        id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
         instruction: 'Trong tháp số, ô phía trên bằng tổng 2 ô phía dưới. Tìm ô trên cùng:',
         content: { text: `Tầng dưới: ${base1} và ${base2}.\nTầng trên: ?` },
         answer: sum.toString(), explanation: `${base1} + ${base2} = ${sum}`,
@@ -585,19 +597,19 @@ export function generateStatistics(skillId: string, level: number = 1): Question
     const type = Math.random();
     if (type < 0.33) {
         return {
-            id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+            id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
             instruction: 'Tính tổng các số:', content: { text: `Cho dãy số: ${data.join(', ')}. Tổng = ?` },
             answer: sum.toString(), explanation: `${data.join(' + ')} = ${sum}`
         };
     } else if (type < 0.66) {
         return {
-            id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+            id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
             instruction: 'Tìm số lớn nhất:', content: { text: `Cho dãy số: ${data.join(', ')}. Số lớn nhất = ?` },
             answer: max.toString(), explanation: `Số lớn nhất là ${max}.`
         };
     } else {
         return {
-            id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'input',
+            id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
             instruction: 'Tìm số nhỏ nhất:', content: { text: `Cho dãy số: ${data.join(', ')}. Số nhỏ nhất = ?` },
             answer: min.toString(), explanation: `Số nhỏ nhất là ${min}.`
         };
@@ -614,7 +626,7 @@ export function generateFraction(skillId: string, level: number = 1): Question {
         const n2 = Math.floor(Math.random() * (d2 - 1)) + 1;
         const isGreater = (n / d) > (n2 / d2);
         return {
-            id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'mcq',
+            id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'mcq',
             instruction: 'So sánh hai phân số:',
             content: { text: `${n}/${d} ... ${n2}/${d2}`, options: ['>', '<', '='] },
             answer: isGreater ? '>' : (n / d) === (n2 / d2) ? '=' : '<',
@@ -622,7 +634,7 @@ export function generateFraction(skillId: string, level: number = 1): Question {
         };
     }
     return {
-        id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'mcq',
+        id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'mcq',
         instruction: `Một cái bánh chia đều thành ${d} phần. Lấy ra ${n} phần. Phần lấy ra được viết là phân số nào?`,
         content: { text: `${n} phần trong ${d} phần bằng nhau`, options: [`${n}/${d}`, `${d}/${n}`, `${remain}/${d}`, `1/${d}`].sort(() => Math.random() - 0.5) },
         answer: `${n}/${d}`, explanation: `Lấy ${n} phần trong ${d} phần → ${n}/${d}.`,
@@ -646,7 +658,7 @@ export function generateProbability(skillId: string, level: number = 1): Questio
     ];
     const ev = events[Math.floor(Math.random() * events.length)];
     return {
-        id: `local-math-${Date.now()}`, subjectId: 'math', skillId, type: 'mcq',
+        id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'mcq',
         instruction: 'Sự kiện sau thuộc loại nào?', content: { text: ev.text, options: ['Chắc chắn xảy ra', 'Có thể xảy ra', 'Không thể xảy ra'] },
         answer: ev.answer, explanation: ev.e
     };

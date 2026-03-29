@@ -1,54 +1,58 @@
 "use client";
 
-import React from 'react';
+import React from "react";
 import {
+    PolarAngleAxis,
+    PolarGrid,
+    PolarRadiusAxis,
     Radar,
     RadarChart,
-    PolarGrid,
-    PolarAngleAxis,
-    PolarRadiusAxis,
     ResponsiveContainer,
-    Tooltip
-} from 'recharts';
-import { ProgressData } from '@/lib/mastery';
-import { motion } from 'framer-motion';
+    Tooltip,
+} from "recharts";
+import { motion } from "framer-motion";
+import { ProgressData } from "@/lib/mastery";
 
 export function AnalyticsChart({ progress }: { progress: ProgressData | null }) {
     if (!progress) return null;
 
-    // Transform skills data
     const skillData = Object.values(progress.skills)
-        .filter(s => s.attempts > 0)
-        .map(s => ({
-            name: s.skillId.split('-')[1] || s.skillId,
-            mastery: Math.max(10, Math.round(s.mastery * 100)), // Min 10 for visibility
+        .filter((skill) => skill.attempts > 0)
+        .map((skill) => ({
+            name: skill.skillId.split("-")[1] || skill.skillId,
+            mastery: Math.max(10, Math.round(skill.mastery * 100)),
             fullMark: 100,
-            attempts: s.attempts
+            attempts: skill.attempts,
         }))
-        .slice(0, 6); // Max 6 for meaningful hexagon/shape
+        .slice(0, 6);
 
-    // If less than 3 skills, Radar looks bad. Fallback to nice Progress Bars.
     const useRadar = skillData.length >= 3;
 
     return (
-        <div className="bg-white dark:bg-slate-800 rounded-[40px] p-8 shadow-2xl border-4 border-slate-50 dark:border-slate-700 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none group-hover:scale-110 group-hover:rotate-12 transition-transform duration-700">
-                <div className="w-64 h-64 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 blur-3xl opacity-50" />
+        <div className="group relative overflow-hidden rounded-[40px] border-4 border-slate-50 bg-white p-8 shadow-2xl dark:border-slate-700 dark:bg-slate-800">
+            <div className="pointer-events-none absolute top-0 right-0 p-12 opacity-5 transition-transform duration-700 group-hover:scale-110 group-hover:rotate-12">
+                <div className="h-64 w-64 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 opacity-50 blur-3xl" />
             </div>
 
             <div className="relative z-10 mb-8 flex items-center justify-between">
                 <div>
-                    <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Biểu đồ Năng lực 🕸️</h3>
-                    <p className="text-slate-500 font-medium">Phân tích điểm mạnh & điểm yếu</p>
+                    <h3 className="mb-2 text-2xl font-black text-slate-900 dark:text-white">
+                        Bieu do nang luc
+                    </h3>
+                    <p className="font-medium text-slate-500">Phan tich diem manh va diem yeu</p>
                 </div>
-                {useRadar && <div className="hidden md:block px-4 py-2 bg-blue-50 dark:bg-slate-700 text-blue-600 dark:text-blue-300 rounded-xl text-xs font-black uppercase tracking-widest">Radar View</div>}
+                {useRadar ? (
+                    <div className="hidden rounded-xl bg-blue-50 px-4 py-2 text-xs font-black uppercase tracking-widest text-blue-600 dark:bg-slate-700 dark:text-blue-300 md:block">
+                        Radar View
+                    </div>
+                ) : null}
             </div>
 
-            <div className="h-[350px] w-full relative z-10 flex items-center justify-center">
+            <div className="relative z-10 flex h-[350px] w-full items-center justify-center">
                 {skillData.length === 0 ? (
                     <div className="text-center text-slate-400">
-                        <p className="text-6xl mb-4">📊</p>
-                        <p className="font-bold">Chưa có dữ liệu để phân tích.</p>
+                        <p className="mb-4 text-6xl">Chart</p>
+                        <p className="font-bold">Chua co du lieu de phan tich.</p>
                     </div>
                 ) : useRadar ? (
                     <ResponsiveContainer width="100%" height="100%">
@@ -62,28 +66,32 @@ export function AnalyticsChart({ progress }: { progress: ProgressData | null }) 
                             <PolarGrid gridType="polygon" stroke="#cbd5e1" strokeDasharray="4 4" />
                             <PolarAngleAxis
                                 dataKey="name"
-                                tick={{ fill: '#64748b', fontSize: 12, fontWeight: 800 }}
+                                tick={{ fill: "#64748b", fontSize: 12, fontWeight: 800 }}
                             />
                             <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                             <Radar
-                                name="Năng lực"
+                                name="Nang luc"
                                 dataKey="mastery"
                                 stroke="#3b82f6"
                                 strokeWidth={3}
                                 fill="url(#radarFill)"
                                 fillOpacity={0.6}
-                                isAnimationActive={true}
+                                isAnimationActive
                             />
                             <Tooltip
                                 contentStyle={{
-                                    borderRadius: '16px',
-                                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                                    border: 'none',
-                                    boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
-                                    padding: '16px'
+                                    borderRadius: "16px",
+                                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                                    border: "none",
+                                    boxShadow:
+                                        "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
+                                    padding: "16px",
                                 }}
-                                itemStyle={{ color: '#1e293b', fontWeight: 800 }}
-                                formatter={(value: number | undefined) => [`${value || 0}%`, 'Thành thạo']}
+                                itemStyle={{ color: "#1e293b", fontWeight: 800 }}
+                                formatter={(value) => {
+                                    const numericValue = typeof value === "number" ? value : Number(value) || 0;
+                                    return [`${numericValue}%`, "Thanh thao"];
+                                }}
                             />
                         </RadarChart>
                     </ResponsiveContainer>
@@ -91,15 +99,17 @@ export function AnalyticsChart({ progress }: { progress: ProgressData | null }) 
                     <div className="w-full max-w-lg space-y-6">
                         {skillData.map((skill) => (
                             <div key={skill.name} className="space-y-2">
-                                <div className="flex justify-between items-end">
+                                <div className="flex items-end justify-between">
                                     <span className="font-bold text-slate-700 dark:text-slate-300">{skill.name}</span>
-                                    <span className="font-black text-blue-600 dark:text-blue-400">{skill.mastery}%</span>
+                                    <span className="font-black text-blue-600 dark:text-blue-400">
+                                        {skill.mastery}%
+                                    </span>
                                 </div>
-                                <div className="h-4 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                <div className="h-4 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
                                     <motion.div
                                         initial={{ width: 0 }}
                                         animate={{ width: `${skill.mastery}%` }}
-                                        className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
+                                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-600"
                                     />
                                 </div>
                             </div>

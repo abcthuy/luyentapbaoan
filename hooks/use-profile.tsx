@@ -1,11 +1,25 @@
-import { useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
-import { AppStorage, UserProfile, INITIAL_PROGRESS } from '@/lib/mastery';
+﻿import { useCallback } from "react";
+import { AppStorage, UserProfile, INITIAL_PROGRESS } from "@/lib/mastery";
 
 const getRandomAvatar = () => {
-    const AVATARS = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🦗', '🕷', '🦂', '🐢', '🐍', '🦎', '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀', '🐡', '🐠', '🐟', '🐬', '🐳', '🐋', '🦈', '🐊', '🐅', '🐆', '🦓', '🦍', '🦧', '🦣', '🐘', '🦛', '🦏', '🐪', '🐫', '🦒', '🦘', '🦬', '🐃', '🐂', '🐄', '🐎', '🐖', '🐏', '🐑', '🦙', '🐐', '🦌', '🐕', '🐩', '🦮', '🐕‍🦺', '🐈', '🐈‍⬛', '🐓', '🦃', '🦚', '🦜', '🦢', '🦩', '🕊', '🐇', '🦝', '🦨', '🦡', '🦫', '🦦', '🦥', '🐁', '🐀', '🐿', '🦔', '🐾', '🐉', '🐲', '🌵', '🎄', '🌲', '🌳', '🌴', '🌱', '🌿', '☘', '🍀', '🎍', '🎋', '🍃', '🍂', '🍁', '🍄', '🌾', '💐', '🌷', '🌹', '🥀', '🌺', '🌸', '🌼', '🌻', '🌞', '🌝', '🌛', '🌜', '🌚', '🌕', '🌖', '🌗', '🌘', '🌑', '🌒', '🌓', '🌔', '🌙'];
+    const AVATARS = ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼"];
     return AVATARS[Math.floor(Math.random() * AVATARS.length)];
 };
+
+async function postJson<T>(url: string, payload: Record<string, unknown>): Promise<T> {
+    const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        throw new Error(typeof data?.error === "string" ? data.error : "Request failed");
+    }
+
+    return data as T;
+}
 
 export const useProfile = (
     storage: AppStorage | null,
@@ -15,6 +29,16 @@ export const useProfile = (
     setAllProfiles: React.Dispatch<React.SetStateAction<{ profile: UserProfile, sourceSyncId: string }[]>>,
     fetchAllProfiles: () => Promise<void>
 ) => {
+    const getAdminPayload = useCallback(() => {
+        const syncId = localStorage.getItem("math_sync_id") || "";
+        const username = storage?.adminAccount?.username?.trim() || "";
+        const pin = storage?.adminAccount?.pin?.trim() || "";
+        if (!syncId || !username || !pin) {
+            throw new Error("Admin account is required for cross-account changes.");
+        }
+
+        return { syncId, username, pin };
+    }, [storage]);
 
     const addProfile = useCallback(async (name: string, pin?: string, avatar?: string, skipAutoLogin?: boolean) => {
         if (!storage) return;
@@ -25,53 +49,47 @@ export const useProfile = (
             avatar: avatar || getRandomAvatar(),
             isPublic: true,
             grade: 2,
-            progress: INITIAL_PROGRESS()
+            progress: INITIAL_PROGRESS(),
         };
         const updated = {
             ...storage,
             profiles: [...storage.profiles, newProfile],
-            activeProfileId: skipAutoLogin ? storage.activeProfileId : (storage.activeProfileId || newProfile.id)
+            activeProfileId: skipAutoLogin ? storage.activeProfileId : (storage.activeProfileId || newProfile.id),
         };
         setStorage(updated);
         save(updated);
 
-        // Optimistic update for UI responsiveness
-        const syncId = localStorage.getItem('math_sync_id') || 'local';
-        setAllProfiles(prev => [...prev, { profile: newProfile, sourceSyncId: syncId }]);
+        const syncId = localStorage.getItem("math_sync_id") || "local";
+        setAllProfiles((prev) => [...prev, { profile: newProfile, sourceSyncId: syncId }]);
 
         await syncToCloud(updated);
-        // Background refresh to ensure consistency
         fetchAllProfiles();
     }, [storage, setStorage, save, syncToCloud, setAllProfiles, fetchAllProfiles]);
 
     const switchProfile = useCallback(async (id: string): Promise<boolean> => {
         if (!storage) return false;
 
-        const profile = storage.profiles.find(p => p.id === id);
-        if (profile) {
-            const updated = { ...storage, activeProfileId: id, lastActive: Date.now() };
-            sessionStorage.setItem('math_session', 'active'); // Mark session active
-            setStorage(updated);
-            save(updated); // This saves to localStorage 'math_progress_multi'
-            await syncToCloud(updated); // Await cloud sync
-            return true;
-        }
-        return false;
+        const profile = storage.profiles.find((item) => item.id === id);
+        if (!profile) return false;
+
+        const updated = { ...storage, activeProfileId: id, lastActive: Date.now() };
+        sessionStorage.setItem("math_session", "active");
+        setStorage(updated);
+        save(updated);
+        await syncToCloud(updated);
+        return true;
     }, [storage, setStorage, save, syncToCloud]);
 
     const deleteProfile = useCallback(async (id: string) => {
         if (!storage) return;
         const updated = {
             ...storage,
-            profiles: storage.profiles.filter(p => p.id !== id),
-            activeProfileId: storage.activeProfileId === id ? (storage.profiles.find(p => p.id !== id)?.id || null) : storage.activeProfileId
+            profiles: storage.profiles.filter((profile) => profile.id !== id),
+            activeProfileId: storage.activeProfileId === id ? (storage.profiles.find((profile) => profile.id !== id)?.id || null) : storage.activeProfileId,
         };
         setStorage(updated);
         save(updated);
-
-        // Optimistic update
-        setAllProfiles(prev => prev.filter(p => p.profile.id !== id));
-
+        setAllProfiles((prev) => prev.filter((item) => item.profile.id !== id));
         await syncToCloud(updated);
         fetchAllProfiles();
     }, [storage, setStorage, save, syncToCloud, setAllProfiles, fetchAllProfiles]);
@@ -79,13 +97,13 @@ export const useProfile = (
     const updateProfilePin = useCallback((id: string, newPin?: string) => {
         if (!storage) return;
 
-        const updatedProfiles = storage.profiles.map(p =>
-            p.id === id ? { ...p, pin: newPin } : p
+        const updatedProfiles = storage.profiles.map((profile) =>
+            profile.id === id ? { ...profile, pin: newPin } : profile
         );
 
         const updated = {
             ...storage,
-            profiles: updatedProfiles
+            profiles: updatedProfiles,
         };
 
         setStorage(updated);
@@ -94,11 +112,11 @@ export const useProfile = (
     }, [storage, setStorage, save, syncToCloud]);
 
     const updateProfilePinBySource = useCallback(async (sourceSyncId: string, profileId: string, newPin?: string) => {
-        const currentSyncId = localStorage.getItem('math_sync_id');
+        const currentSyncId = localStorage.getItem("math_sync_id");
 
-        if (sourceSyncId === currentSyncId || sourceSyncId === 'local') {
+        if (sourceSyncId === currentSyncId || sourceSyncId === "local") {
             updateProfilePin(profileId, newPin);
-            setAllProfiles(prev => prev.map(item =>
+            setAllProfiles((prev) => prev.map((item) =>
                 item.sourceSyncId === sourceSyncId && item.profile.id === profileId
                     ? { ...item, profile: { ...item.profile, pin: newPin } }
                     : item
@@ -106,56 +124,30 @@ export const useProfile = (
             return;
         }
 
-        try {
-            const { data } = await supabase
-                .from('math_progress')
-                .select('data')
-                .eq('id', sourceSyncId)
-                .single();
+        const adminPayload = getAdminPayload();
+        await postJson("/api/admin/profiles/pin", {
+            ...adminPayload,
+            targetSyncId: sourceSyncId,
+            profileId,
+            newPin,
+        });
 
-            if (data && data.data) {
-                let remoteApp = data.data as AppStorage;
-                if (typeof remoteApp === 'string') {
-                    try {
-                        remoteApp = JSON.parse(remoteApp);
-                    } catch {
-                        return;
-                    }
-                }
-
-                const updatedProfiles = (remoteApp.profiles || []).map(profile =>
-                    profile.id === profileId ? { ...profile, pin: newPin } : profile
-                );
-
-                await supabase
-                    .from('math_progress')
-                    .update({
-                        data: { ...remoteApp, profiles: updatedProfiles },
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', sourceSyncId);
-
-                setAllProfiles(prev => prev.map(item =>
-                    item.sourceSyncId === sourceSyncId && item.profile.id === profileId
-                        ? { ...item, profile: { ...item.profile, pin: newPin } }
-                        : item
-                ));
-            }
-        } catch (e) {
-            console.error('Failed to update remote profile PIN', e);
-        }
-    }, [setAllProfiles, updateProfilePin]);
+        setAllProfiles((prev) => prev.map((item) =>
+            item.sourceSyncId === sourceSyncId && item.profile.id === profileId
+                ? { ...item, profile: { ...item.profile, pin: newPin } }
+                : item
+        ));
+        await fetchAllProfiles();
+    }, [fetchAllProfiles, getAdminPayload, setAllProfiles, updateProfilePin]);
 
     const updateProfileVisibility = useCallback((id: string, isPublic: boolean) => {
         if (!storage) return;
 
-        const updatedProfiles = storage.profiles.map(p =>
-            p.id === id ? { ...p, isPublic } : p
-        );
-
         const updated = {
             ...storage,
-            profiles: updatedProfiles
+            profiles: storage.profiles.map((profile) =>
+                profile.id === id ? { ...profile, isPublic } : profile
+            ),
         };
 
         setStorage(updated);
@@ -166,13 +158,11 @@ export const useProfile = (
     const updateProfileGrade = useCallback((id: string, grade: number) => {
         if (!storage) return;
 
-        const updatedProfiles = storage.profiles.map(p =>
-            p.id === id ? { ...p, grade } : p
-        );
-
         const updated = {
             ...storage,
-            profiles: updatedProfiles
+            profiles: storage.profiles.map((profile) =>
+                profile.id === id ? { ...profile, grade } : profile
+            ),
         };
 
         setStorage(updated);
@@ -186,9 +176,9 @@ export const useProfile = (
         const updated = {
             ...storage,
             familyCredentials: {
-                username: 'admin',
-                pin: pin
-            }
+                username: "admin",
+                pin,
+            },
         };
 
         setStorage(updated);
@@ -204,9 +194,9 @@ export const useProfile = (
             adminAccount: {
                 username: username.trim(),
                 pin,
-                displayName: displayName?.trim() || 'Quan tri vien',
-                updatedAt: new Date().toISOString()
-            }
+                displayName: displayName?.trim() || "Quan tri vien",
+                updatedAt: new Date().toISOString(),
+            },
         };
 
         setStorage(updated);
@@ -215,58 +205,22 @@ export const useProfile = (
     }, [storage, setStorage, save, syncToCloud]);
 
     const deleteGhostProfile = useCallback(async (sourceSyncId: string, profileId: string) => {
-        const currentSyncId = localStorage.getItem('math_sync_id');
-        if (sourceSyncId === currentSyncId || sourceSyncId === 'local') {
+        const currentSyncId = localStorage.getItem("math_sync_id");
+        if (sourceSyncId === currentSyncId || sourceSyncId === "local") {
             await deleteProfile(profileId);
             return;
         }
 
-        // Admin/Ghost Delete from other accounts
-        try {
-            // Fetch remote data
-            const { data } = await supabase
-                .from('math_progress')
-                .select('data')
-                .eq('id', sourceSyncId)
-                .single();
+        const adminPayload = getAdminPayload();
+        await postJson("/api/admin/profiles/delete", {
+            ...adminPayload,
+            targetSyncId: sourceSyncId,
+            profileId,
+        });
 
-            if (data && data.data) {
-                let remoteApp = data.data as AppStorage;
-                // Parse if needed
-                if (typeof remoteApp === 'string') {
-                    try { remoteApp = JSON.parse(remoteApp); } catch { }
-                }
-
-                // Filter out the profile
-                const updatedProfiles = (remoteApp.profiles || []).filter(p => p.id !== profileId);
-
-                // If no profiles left, delete the whole row? 
-                // Maybe yes, if it's a ghost account.
-                if (updatedProfiles.length === 0) {
-                    await supabase.from('math_progress').delete().eq('id', sourceSyncId);
-                } else {
-                    remoteApp.profiles = updatedProfiles;
-                    // If active was this one, reset it
-                    if (remoteApp.activeProfileId === profileId) {
-                        remoteApp.activeProfileId = updatedProfiles[0]?.id || null;
-                    }
-
-                    await supabase
-                        .from('math_progress')
-                        .update({ data: remoteApp })
-                        .eq('id', sourceSyncId);
-                }
-
-                // Also delete from Leaderboard
-                await supabase.from('leaderboard').delete().eq('id', profileId);
-
-                // Update UI
-                setAllProfiles(prev => prev.filter(p => !(p.sourceSyncId === sourceSyncId && p.profile.id === profileId)));
-            }
-        } catch (e) {
-            console.error('Failed to delete ghost', e);
-        }
-    }, [deleteProfile, setAllProfiles]);
+        setAllProfiles((prev) => prev.filter((item) => !(item.sourceSyncId === sourceSyncId && item.profile.id === profileId)));
+        await fetchAllProfiles();
+    }, [deleteProfile, fetchAllProfiles, getAdminPayload, setAllProfiles]);
 
     return {
         addProfile,
@@ -278,6 +232,8 @@ export const useProfile = (
         updateProfileVisibility,
         updateProfileGrade,
         updateFamilyCredentials,
-        deleteGhostProfile
+        deleteGhostProfile,
     };
 };
+
+

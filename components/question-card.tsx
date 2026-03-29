@@ -361,9 +361,11 @@ export function QuestionCard({
     const [showNumPad, setShowNumPad] = useState(false);
     const [readyStoryQuestionId, setReadyStoryQuestionId] = useState<string | null>(null);
 
-    // Check if this is a Story Quest question
     const isStoryQuest = question.skillId?.includes('story-quest');
-    const parsedStory = isStoryQuest ? parseStoryText(question.content.text || '') : null;
+    const isListening = question.type === 'listening';
+    const parsedStory = isStoryQuest ? parseStoryText(question.content.text || '') : 
+                        isListening ? { storyText: question.content.audio || question.content.text || '', questionText: '' } : null;
+    const showTTSListener = !!parsedStory && (isStoryQuest || isListening);
     const usesVirtualNumPad = isNumericInputQuestion(question);
 
     const storyReady = readyStoryQuestionId === question.id;
@@ -376,6 +378,7 @@ export function QuestionCard({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 1.05 }}
                 className="bg-white rounded-[40px] border-4 border-slate-100 p-6 md:p-12 shadow-2xl flex-1 flex flex-col justify-center min-h-[500px] relative overflow-hidden"
+
             >
                 {/* Tools Toggle */}
                 <div className="absolute top-4 right-4 flex gap-2 z-40">
@@ -400,8 +403,8 @@ export function QuestionCard({
                         </div>
                     )}
 
-                    {/* STORY QUEST: TTS Listener */}
-                    {isStoryQuest && parsedStory ? (
+                    {/* STORY QUEST & LISTENING: TTS Listener */}
+                    {showTTSListener && parsedStory ? (
                         <StoryListener
                             storyText={parsedStory.storyText}
                             questionText={parsedStory.questionText}
@@ -417,10 +420,10 @@ export function QuestionCard({
                     )}
                 </div>
 
-                {/* Interactions - For Story Quest, only show after listening */}
-                {(!isStoryQuest || storyReady) && (
+                {/* Interactions - For Story Quest & Listening, only show options after listening */}
+                {(!showTTSListener || storyReady) && (
                     <>
-                        {question.type === 'mcq' ? (
+                        {question.type === 'mcq' || question.type === 'listening' ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                                 {question.content.options?.map((opt) => (
                                     <button

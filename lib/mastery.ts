@@ -105,11 +105,23 @@ export interface UserProfile {
     progress: ProgressData;
 }
 
-export interface ParentProfile {
+
+export interface ParentAccount {
     id: string;
     name: string;
-    pin: string; // 4-digit pin
-    childrenIds: string[]; // List of profile.ids they manage
+    pin: string;
+    displayOrder?: number;
+    status?: "active" | "disabled";
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface ParentChildLink {
+    id: string;
+    parentId: string;
+    childId: string;
+    childSyncId?: string;
+    assignedAt?: string;
 }
 
 export interface AdminAccount {
@@ -121,7 +133,8 @@ export interface AdminAccount {
 
 export interface AppStorage {
     profiles: UserProfile[];
-    parents?: ParentProfile[]; // Made optional for backward compatibility
+    parentAccounts?: ParentAccount[];
+    parentChildLinks?: ParentChildLink[];
     customContentLibrary?: ContentLibrary;
     activeProfileId: string | null;
     lastActive?: number; // Timestamp for session timeout
@@ -169,6 +182,7 @@ export const INITIAL_PROGRESS = (): ProgressData => {
         lastStudyDate: undefined,
         longestStreak: 0,
 
+
         // Badges
         badges: []
     };
@@ -207,7 +221,7 @@ export function updateMastery(current: MasteryState, isCorrect: boolean): Master
         }
     } else {
         // Penalty: reduce mastery and stability
-        next.mastery = Math.max(0, current.mastery * 0.75);
+        next.mastery = Math.max(0, current.mastery * 0.85); // FIXED: 0.85 instead of 0.75
         next.wrongStreak += 1;
         next.streak = 0;
         next.stability = Math.max(0, current.stability - 1);
@@ -222,7 +236,7 @@ export function updateMastery(current: MasteryState, isCorrect: boolean): Master
     }
 
     // Level down if stuck (too many wrong in a row)
-    if (next.wrongStreak >= 3 && next.level > 1) {
+    if (next.wrongStreak >= 5 && next.level > 1) { // FIXED: 5 instead of 3
         next.level -= 1;
         next.stability = 0;
         next.mastery = 0.7; // Give them a confidence boost at lower level

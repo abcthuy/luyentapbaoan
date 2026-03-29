@@ -258,11 +258,13 @@ export default function TodayPage() {
         setEvaluating(true);
         const isSpeakingOrReading = currentQuestion?.type === 'speaking' || (currentQuestion?.type as string) === 'reading';
 
-        let isCorrect = finalAnswer.trim().toLowerCase() === (currentQuestion?.answer || '').trim().toLowerCase();
+        let isCorrect = false;
         if (isSpeakingOrReading) {
             isCorrect = false; // Chờ AI xác nhận kết quả thật
         } else {
-            isCorrect = finalAnswer.toLowerCase() === currentQuestion?.answer.toLowerCase();
+            const normalizedStudent = finalAnswer.toLowerCase().replace(/\s+/g, '');
+            const normalizedCorrect = (currentQuestion?.answer || '').toLowerCase().replace(/\s+/g, '');
+            isCorrect = normalizedStudent === normalizedCorrect;
         }
 
         if (isCorrect) {

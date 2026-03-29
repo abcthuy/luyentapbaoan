@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bao An Practice App
 
-## Getting Started
+Ung dung Next.js cho hoc sinh, phu huynh va admin, da duoc harden de on dinh hon khi deploy production.
 
-First, run the development server:
+## Lenh chinh
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run build
+npm run lint -- .
+npm run db:check
+npm run db:backup
+npm run db:cleanup:verified
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Bien moi truong can co
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Trong `.env.local`:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+GEMINI_API_KEY=...
+GEMINI_MODEL=...
+```
 
-## Learn More
+`SUPABASE_SERVICE_ROLE_KEY` can thiet neu muon dung cac API admin an toan hon va khoa policy production.
 
-To learn more about Next.js, take a look at the following resources:
+## Luong van hanh an toan
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Kiem tra suc khoe:
+   `GET /api/health`
+2. Backup DB:
+   `npm run db:backup`
+3. Kiem tra DB:
+   `npm run db:check`
+4. Neu can, cleanup co kiem soat:
+   `npm run db:cleanup:verified`
+5. Build truoc deploy:
+   `npm run build`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Ghi chu bao mat
 
-## Deploy on Vercel
+- `leaderboard` nen duoc public read-only.
+- `math_progress` khong nen de client ghi truc tiep ve lau dai.
+- Cac tac vu admin nhay cam nen di qua API server su dung service role key.
+- File [supabase_setup.sql](/D:/phân%20mềm%20tự%20làm%20mới/luyentapbaoan/supabase_setup.sql) da duoc cap nhat theo huong an toan hon, nhung chi nen ap khi luong ghi server-side da san sang.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Tai lieu workflow
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Production Hardening Workflow](/D:/phân%20mềm%20tự%20làm%20mới/luyentapbaoan/docs/production-hardening-workflow.md)

@@ -1,38 +1,47 @@
 {
-  "name": "math-mastery",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev -H 0.0.0.0",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "@google/generative-ai": "^0.24.1",
-    "@supabase/supabase-js": "^2.93.3",
-    "canvas-confetti": "^1.9.4",
-    "clsx": "^2.1.1",
-    "framer-motion": "^12.30.0",
-    "lucide-react": "^0.563.0",
-    "next": "16.1.6",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "react-hot-toast": "^2.6.0",
-    "recharts": "^3.7.0",
-    "tailwind-merge": "^3.4.0"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/canvas-confetti": "^1.9.0",
-    "@types/node": "^20.19.30",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "dotenv": "^17.2.3",
-    "eslint": "^9",
-    "eslint-config-next": "16.1.6",
-    "tailwindcss": "^4",
-    "ts-node": "^10.9.2",
-    "typescript": "^5"
-  }
+    "name":  "math-mastery",
+    "version":  "0.1.0",
+    "private":  true,
+    "engines":  {
+                    "node":  "\u003e=20.9.0"
+                },
+    "scripts":  {
+                    "dev":  "next dev -H 0.0.0.0",
+                    "build":  "next build",
+                    "start":  "next start",
+                    "lint":  "eslint",
+                    "db:backup":  "node scripts/backup-db.js",
+                    "db:check":  "node scripts/check-db.js",
+                    "db:cleanup":  "npx ts-node --esm scripts/cleanup-cloud.ts",
+                    "db:cleanup:verified":  "node scripts/cleanup-verified.js",
+                    "db:migrate:parents":  "npx ts-node --esm scripts/migrate-parent-data.ts",
+                    "db:check:parents":  "npx ts-node --esm scripts/check-parent-data.ts"
+                },
+    "dependencies":  {
+                         "@google/generative-ai":  "^0.24.1",
+                         "@supabase/supabase-js":  "^2.100.1",
+                         "canvas-confetti":  "^1.9.4",
+                         "clsx":  "^2.1.1",
+                         "framer-motion":  "^12.38.0",
+                         "lucide-react":  "^1.7.0",
+                         "next":  "^16.2.1",
+                         "react":  "^19.2.4",
+                         "react-dom":  "^19.2.4",
+                         "react-hot-toast":  "^2.6.0",
+                         "recharts":  "^3.8.1",
+                         "tailwind-merge":  "^3.5.0"
+                     },
+    "devDependencies":  {
+                            "@tailwindcss/postcss":  "^4.2.2",
+                            "@types/canvas-confetti":  "^1.9.0",
+                            "@types/node":  "^25.5.0",
+                            "@types/react":  "^19.2.14",
+                            "@types/react-dom":  "^19.2.3",
+                            "dotenv":  "^17.3.1",
+                            "eslint":  "^9.39.4",
+                            "eslint-config-next":  "^16.2.1",
+                            "tailwindcss":  "^4.2.2",
+                            "ts-node":  "^10.9.2",
+                            "typescript":  "^6.0.2"
+                        }
 }

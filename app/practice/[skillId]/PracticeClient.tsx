@@ -156,7 +156,9 @@ export default function PracticeClient() {
         if (isSpeakingOrReading) {
             isCorrect = false; // Wait for AI to decide
         } else {
-            isCorrect = finalAnswer.toLowerCase() === currentQuestion?.answer.toLowerCase();
+            const normalizedStudent = finalAnswer.toLowerCase().replace(/\s+/g, '');
+            const normalizedCorrect = (currentQuestion?.answer || '').toLowerCase().replace(/\s+/g, '');
+            isCorrect = normalizedStudent === normalizedCorrect;
         }
 
         if (isCorrect) {

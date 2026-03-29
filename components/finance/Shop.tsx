@@ -15,25 +15,25 @@ export interface ShopItem {
 }
 
 const SHOP_ITEMS: ShopItem[] = [
-    { id: 'candy', name: 'Káº¹o MÃºt', price: 2000, emoji: 'ðŸ­', category: 'food' },
-    { id: 'snack', name: 'Bim Bim', price: 5000, emoji: 'ðŸŸ', category: 'food' },
-    { id: 'soda', name: 'NÆ°á»›c Ngá»t', price: 5000, emoji: 'ðŸ¥¤', category: 'food' },
-    { id: 'icecream', name: 'Kem á»c Quáº¿', price: 10000, emoji: 'ðŸ¦', category: 'food' },
-    { id: 'coffee_black', name: 'CÃ  PhÃª Äen', price: 15000, emoji: 'â˜•', category: 'food' },
-    { id: 'coffee_milk', name: 'CÃ  PhÃª Sá»¯a ÄÃ¡', price: 15000, emoji: 'ðŸ§‹', category: 'food' },
-    { id: 'milk_tea', name: 'TrÃ  Sá»¯a', price: 20000, emoji: 'ðŸ§ƒ', category: 'food' },
-    { id: 'comic', name: 'Truyá»‡n Tranh', price: 20000, emoji: 'ðŸ“–', category: 'fun' },
-    { id: 'chicken', name: 'GÃ  RÃ¡n', price: 35000, emoji: 'ðŸ—', category: 'food' },
-    { id: 'toy_car', name: 'Xe Äá»“ ChÆ¡i', price: 50000, emoji: 'ðŸŽï¸', category: 'toy' },
-    { id: 'robot', name: 'Robot', price: 50000, emoji: 'ðŸ¤–', category: 'toy' },
-    { id: 'ticket', name: 'VÃ© Äi ChÆ¡i', price: 100000, emoji: 'ðŸŽŸï¸', category: 'fun' },
-    { id: 'lego', name: 'Bá»™ Lego', price: 500000, emoji: 'ðŸ§±', category: 'toy' },
-    { id: 'lego_technic', name: 'Lego Ká»¹ Thuáº­t (Lá»›n)', price: 1500000, emoji: 'ðŸ—ï¸', category: 'toy' },
-    { id: 'bicycle', name: 'Xe Äáº¡p Thá»ƒ Thao', price: 2000000, emoji: 'ðŸš²', category: 'fun' },
-    { id: 'cash_5k', name: 'RÃºt 5.000Ä‘ (Chá» duyá»‡t)', price: 5000, emoji: 'ðŸ’µ', category: 'virtual' },
-    { id: 'cash_10k', name: 'RÃºt 10.000Ä‘ (Chá» duyá»‡t)', price: 10000, emoji: 'ðŸ’µ', category: 'virtual' },
-    { id: 'cash_20k', name: 'RÃºt 20.000Ä‘ (Chá» duyá»‡t)', price: 20000, emoji: 'ðŸ’µ', category: 'virtual' },
-    { id: 'cash_50k', name: 'RÃºt 50.000Ä‘ (Chá» duyá»‡t)', price: 50000, emoji: 'ðŸ’µ', category: 'virtual' },
+    { id: 'candy', name: 'Kẹo Mút', price: 2000, emoji: '🍭', category: 'food' },
+    { id: 'snack', name: 'Bim Bim', price: 5000, emoji: '🍟', category: 'food' },
+    { id: 'soda', name: 'Nước Ngọt', price: 5000, emoji: '🥤', category: 'food' },
+    { id: 'icecream', name: 'Kem Ốc Quế', price: 10000, emoji: '🍦', category: 'food' },
+    { id: 'coffee_black', name: 'Cà Phê Đen', price: 15000, emoji: '☕', category: 'food' },
+    { id: 'coffee_milk', name: 'Cà Phê Sữa Đá', price: 15000, emoji: '🧋', category: 'food' },
+    { id: 'milk_tea', name: 'Trà Sữa', price: 20000, emoji: '🧋', category: 'food' },
+    { id: 'comic', name: 'Truyện Tranh', price: 20000, emoji: '📖', category: 'fun' },
+    { id: 'chicken', name: 'Gà Rán', price: 35000, emoji: '🍗', category: 'food' },
+    { id: 'toy_car', name: 'Xe Đồ Chơi', price: 50000, emoji: '🏎️', category: 'toy' },
+    { id: 'robot', name: 'Robot', price: 50000, emoji: '🤖', category: 'toy' },
+    { id: 'ticket', name: 'Vé Đi Chơi', price: 100000, emoji: '🎟️', category: 'fun' },
+    { id: 'lego', name: 'Bộ Lego', price: 500000, emoji: '🧱', category: 'toy' },
+    { id: 'lego_technic', name: 'Lego Kỹ Thuật (Lớn)', price: 1500000, emoji: '🏗️', category: 'toy' },
+    { id: 'bicycle', name: 'Xe Đạp Thể Thao', price: 2000000, emoji: '🚲', category: 'fun' },
+    { id: 'cash_5k', name: 'Rút 5.000đ (Chờ duyệt)', price: 5000, emoji: '💵', category: 'virtual' },
+    { id: 'cash_10k', name: 'Rút 10.000đ (Chờ duyệt)', price: 10000, emoji: '💵', category: 'virtual' },
+    { id: 'cash_20k', name: 'Rút 20.000đ (Chờ duyệt)', price: 20000, emoji: '💵', category: 'virtual' },
+    { id: 'cash_50k', name: 'Rút 50.000đ (Chờ duyệt)', price: 50000, emoji: '💵', category: 'virtual' },
 ];
 
 interface ShopProps {
@@ -44,10 +44,10 @@ interface ShopProps {
 type ShopTab = 'all' | 'food' | 'toy' | 'virtual';
 
 const SHOP_TABS: Array<{ id: ShopTab; label: string }> = [
-    { id: 'all', label: 'Táº¥t cáº£' },
-    { id: 'food', label: 'Äá»“ Äƒn' },
-    { id: 'toy', label: 'Äá»“ chÆ¡i' },
-    { id: 'virtual', label: 'Vui váº»' },
+    { id: 'all', label: 'Tất cả' },
+    { id: 'food', label: 'Đồ ăn' },
+    { id: 'toy', label: 'Đồ chơi' },
+    { id: 'virtual', label: 'Vui vẻ' },
 ];
 
 export const Shop: React.FC<ShopProps> = ({ balance, onBuy }) => {
@@ -74,8 +74,8 @@ export const Shop: React.FC<ShopProps> = ({ balance, onBuy }) => {
                         <ShoppingBag size={24} />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-black text-slate-800">Cá»­a HÃ ng</h2>
-                        <p className="text-sm font-bold text-slate-500">Äá»•i tiá»n láº¥y quÃ  xá»‹n!</p>
+                        <h2 className="text-2xl font-black text-slate-800">Cửa Hàng</h2>
+                        <p className="text-sm font-bold text-slate-500">Đổi tiền lấy quà xịn!</p>
                     </div>
                 </div>
 
@@ -109,7 +109,7 @@ export const Shop: React.FC<ShopProps> = ({ balance, onBuy }) => {
                             whileTap={{ scale: 0.95 }}
                             onClick={() => {
                                 if (canAfford) {
-                                    if (confirm(`Con muá»‘n mua ${item.name} vá»›i giÃ¡ ${formatVND(item.price)} khÃ´ng?`)) {
+                                    if (confirm(`Con muốn mua ${item.name} với giá ${formatVND(item.price)} không?`)) {
                                         onBuy(item);
                                     }
                                 } else {

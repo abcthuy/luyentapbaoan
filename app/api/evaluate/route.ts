@@ -3,8 +3,25 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export async function POST(req: NextRequest) {
     try {
+        const body = await req.json().catch(() => null) as {
+            prompt?: string;
+            studentAnswer?: string;
+            correctAnswer?: string;
+            skillId?: string;
+            audioData?: string;
+            mimeType?: string;
+        } | null;
 
-        const { prompt, studentAnswer, correctAnswer, skillId, audioData, mimeType } = await req.json();
+        const prompt = body?.prompt || '';
+        const studentAnswer = body?.studentAnswer || '';
+        const correctAnswer = body?.correctAnswer || '';
+        const skillId = body?.skillId || '';
+        const audioData = body?.audioData;
+        const mimeType = body?.mimeType;
+
+        if (!skillId || !prompt) {
+            return NextResponse.json({ error: "Missing skillId or prompt" }, { status: 400 });
+        }
 
         // Multi-key rotation logic
         const apiKeys = (process.env.GEMINI_API_KEY || "").split(',').map(k => k.trim()).filter(Boolean);

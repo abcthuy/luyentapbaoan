@@ -219,7 +219,7 @@ export const generateReadingQuestion = (skillId: string, level: number = 1): Que
     const qData = getRandom(passage.questions);
 
     return {
-        id: `vn-read-${Date.now()}`,
+        id: `vn-read-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
         subjectId: 'vietnamese',
         skillId,
         type: 'mcq',
@@ -244,7 +244,7 @@ export const generateVocabQuestion = (skillId: string, level: number = 1): Quest
         : "Tìm từ TRÁI nghĩa với từ sau:";
 
     return {
-        id: `vn-vocab-${Date.now()}`,
+        id: `vn-vocab-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
         subjectId: 'vietnamese',
         skillId,
         type: 'mcq',
@@ -264,7 +264,7 @@ export const generateWritingQuestion = (skillId: string, level: number = 1): Que
     const item = getRandom(pool);
 
     return {
-        id: `vn-write-${Date.now()}`,
+        id: `vn-write-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
         subjectId: 'vietnamese',
         skillId,
         type: item.type as "input" | "mcq",
@@ -325,7 +325,7 @@ export const generateSpeakingQuestion = (skillId: string, level: number = 1): Qu
     if (skillId.includes('doc-dien-cam')) {
         const passage = getRandom(EXPRESSIVE_READING_PASSAGES);
         return {
-            id: `vn-ddc-${Date.now()}`,
+            id: `vn-ddc-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
             subjectId: 'vietnamese',
             skillId,
             type: 'reading',
@@ -344,7 +344,7 @@ export const generateSpeakingQuestion = (skillId: string, level: number = 1): Qu
     const selectedTopic = getRandom(pool);
 
     return {
-        id: `vn-speak-${Date.now()}`,
+        id: `vn-speak-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
         subjectId: 'vietnamese',
         skillId,
         type: 'speaking',

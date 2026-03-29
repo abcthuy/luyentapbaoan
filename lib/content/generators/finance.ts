@@ -57,7 +57,7 @@ function generateMoneyIdQuestion(level: number, skillId: string): Question {
 
     const item = pickRandom(pools[level]);
     return {
-        id: `fin-id-${Date.now()}`,
+        id: `fin-id-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
         subjectId: 'finance',
         skillId,
         type: 'mcq',
@@ -89,7 +89,7 @@ function generateMoneyCompareQuestion(level: number, skillId: string): Question 
 
     const item = pickRandom(pools[level]);
     return {
-        id: `fin-compare-${Date.now()}`,
+        id: `fin-compare-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
         subjectId: 'finance',
         skillId,
         type: 'mcq',
@@ -121,7 +121,7 @@ function generateMoneySumQuestion(level: number, skillId: string): Question {
 
     const item = pickRandom(pools[level]);
     return {
-        id: `fin-sum-${Date.now()}`,
+        id: `fin-sum-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
         subjectId: 'finance',
         skillId,
         type: 'input',
@@ -154,7 +154,7 @@ function generateNeedWantQuestion(level: number, skillId: string): Question {
 
     const item = pickRandom(pools[level]);
     return {
-        id: `fin-need-${Date.now()}`,
+        id: `fin-need-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
         subjectId: 'finance',
         skillId,
         type: 'mcq',
@@ -226,7 +226,7 @@ function generateShoppingQuestion(level: number, skillId: string): Question {
 
     const item = pickRandom(pools[level]);
     return {
-        id: `fin-shop-${Date.now()}`,
+        id: `fin-shop-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
         subjectId: 'finance',
         skillId,
         type: 'mcq',
@@ -298,7 +298,7 @@ function generateSavingQuestion(level: number, skillId: string): Question {
 
     const item = pickRandom(pools[level]);
     return {
-        id: `fin-save-${Date.now()}`,
+        id: `fin-save-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
         subjectId: 'finance',
         skillId,
         type: 'mcq',
@@ -333,12 +333,15 @@ function generateBudgetQuestion(level: number, skillId: string): Question {
     const left = item.total - spentSum;
     const options = [left, left + 5000, Math.max(0, left - 5000), item.total].map(formatMoney);
     const uniqueOptions = Array.from(new Set(options));
-    while (uniqueOptions.length < 4) {
-        uniqueOptions.push(formatMoney(left + uniqueOptions.length * 10000));
+    let attempts = 0;
+    while (uniqueOptions.length < 4 && attempts < 10) {
+        const newVal = formatMoney(left + (attempts + 1) * 10000);
+        if (!uniqueOptions.includes(newVal)) uniqueOptions.push(newVal);
+        attempts++;
     }
 
     return {
-        id: `fin-budget-${Date.now()}`,
+        id: `fin-budget-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
         subjectId: 'finance',
         skillId,
         type: 'mcq',
@@ -360,7 +363,7 @@ function generateJobValueQuestion(skillId: string): Question {
     ]);
 
     return {
-        id: `fin-job-${Date.now()}`,
+        id: `fin-job-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
         subjectId: 'finance',
         skillId,
         type: 'mcq',

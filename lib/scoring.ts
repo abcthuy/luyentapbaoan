@@ -39,7 +39,7 @@ export const calculateReward = (skillId: string, quality?: string, level: number
     const isEnglishSkill = normalizedSkillId.startsWith('eng') || normalizedSkillId.includes('-eng');
     const isSpeaking = hasToken('speak', 'hung-bien', 'thuyet-trinh', 'thao-luan');
     const isReading = hasToken('read', 'doc', 'dien-cam', 'story-quest');
-    const isListening = hasToken('list');
+    const isListening = hasToken('listen', 'list-');
 
     if (isSpeaking || isReading || isListening) {
         amount = 150;
@@ -54,14 +54,14 @@ export const calculateReward = (skillId: string, quality?: string, level: number
     }
 
     if (quality === 'Xuất sắc') {
-        if (hasToken('hung-bien', 'story-quest')) amount += 1000;
-        else if (hasToken('dien-cam') || (isEnglishSkill && (isSpeaking || isReading))) amount += 200;
+        if (hasToken('hung-bien', 'story-quest')) amount += 400; // Giảm từ 1000 xuống để tránh lạm phát
+        else if (hasToken('dien-cam') || (isEnglishSkill && (isSpeaking || isReading))) amount += 150;
         else amount += 50;
 
         bonusReason = bonusReason ? `${bonusReason} + Xuất sắc` : 'Xuất sắc';
     } else if (quality === 'Giỏi') {
-        if (hasToken('hung-bien', 'story-quest')) amount += 500;
-        else if (hasToken('dien-cam') || (isEnglishSkill && (isSpeaking || isReading))) amount += 100;
+        if (hasToken('hung-bien', 'story-quest')) amount += 200; // Giảm từ 500
+        else if (hasToken('dien-cam') || (isEnglishSkill && (isSpeaking || isReading))) amount += 50;
         else amount += 20;
 
         bonusReason = bonusReason ? `${bonusReason} + Giỏi` : 'Giỏi';

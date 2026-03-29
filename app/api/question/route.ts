@@ -6,7 +6,14 @@ import { getStaticQuestion } from "@/lib/content/static";
 
 export async function POST(req: Request) {
     try {
-        const { skillId, level, subjectId } = await req.json();
+        const body = await req.json().catch(() => null) as { skillId?: string; level?: number; subjectId?: string } | null;
+        const skillId = body?.skillId?.trim();
+        const subjectId = body?.subjectId?.trim();
+        const level = Number(body?.level || 1);
+
+        if (!skillId || !subjectId) {
+            return NextResponse.json({ error: "Missing skillId or subjectId" }, { status: 400 });
+        }
 
         // 1. Try to get a static question first (Hybrid approach)
         const staticQuestion = getStaticQuestion(skillId, level || 1);

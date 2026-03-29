@@ -269,7 +269,7 @@ function getWritingSeeds(skillId: string, level: number): WritingSeed[] {
 export function generateEnglishListeningQuestion(skillId: string, level: number = 1): Question {
     const item = pickRandom(getListeningSeeds(skillId, getBalancedEnglishLevel(skillId, level)));
     return {
-        id: `eng-list-${Date.now()}`,
+        id: `eng-list-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
         subjectId: 'english',
         skillId,
         type: 'listening',
@@ -286,7 +286,7 @@ export function generateEnglishListeningQuestion(skillId: string, level: number 
 export function generateEnglishSpeakingQuestion(skillId: string, level: number = 1): Question {
     const item = pickRandom(getReadAloudSeeds(skillId, getBalancedEnglishLevel(skillId, level)));
     return {
-        id: `eng-speak-${Date.now()}`,
+        id: `eng-speak-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
         subjectId: 'english',
         skillId,
         type: 'reading',
@@ -301,7 +301,7 @@ export function generateEnglishSpeakingQuestion(skillId: string, level: number =
 export function generateEnglishReadingQuestion(skillId: string, level: number = 1): Question {
     const item = pickRandom(getReadingSeeds(skillId, getBalancedEnglishLevel(skillId, level)));
     return {
-        id: `eng-read-${Date.now()}`,
+        id: `eng-read-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
         subjectId: 'english',
         skillId,
         type: 'mcq',
@@ -318,7 +318,7 @@ export function generateEnglishReadingQuestion(skillId: string, level: number = 
 export function generateEnglishWritingQuestion(skillId: string, level: number = 1): Question {
     const item = pickRandom(getWritingSeeds(skillId, getBalancedEnglishLevel(skillId, level)));
     return {
-        id: `eng-write-${Date.now()}`,
+        id: `eng-write-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
         subjectId: 'english',
         skillId,
         type: 'input',

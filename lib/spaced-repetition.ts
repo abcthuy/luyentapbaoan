@@ -1,6 +1,6 @@
 import { ProgressData, ReviewItem } from './mastery';
 
-const INTERVALS = [1, 3, 7, 14, 30]; // ngày
+const INTERVALS = [1, 3, 7, 14, 21, 30]; // ngày
 
 function getToday(): string {
     return new Date().toISOString().split('T')[0];
@@ -40,8 +40,16 @@ export function addToReviewQueue(
         });
     }
 
-    // Giới hạn tối đa 50 câu trong queue
-    const trimmed = queue.slice(-50);
+    // Giới hạn tối đa 50 câu trong queue - Ưu tiên giữ câu sai nhiều và câu mới
+    let trimmed = queue;
+    if (queue.length > 50) {
+        trimmed = queue
+            .sort((a, b) => {
+                if (b.wrongCount !== a.wrongCount) return b.wrongCount - a.wrongCount;
+                return a.interval - b.interval;
+            })
+            .slice(0, 50);
+    }
 
     return { ...progress, reviewQueue: trimmed };
 }

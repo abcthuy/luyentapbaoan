@@ -1,156 +1,69 @@
 "use client";
 
-import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { AppStorage, getOverallRank } from '@/lib/mastery';
-import { getSubjectScore } from '@/lib/scoring';
-import { RefreshCw, Check, AlertCircle } from 'lucide-react';
+import { useState } from "react";
+import { AlertCircle, Check, RefreshCw } from "lucide-react";
 
-interface LeaderboardEntry {
-    id: string;
-    name: string;
-    total_score: number;
-    last_score: number;
-    best_time: number;
-    tier: string;
-    is_public: boolean;
-    math_score: number;
-    vietnamese_score: number;
-    english_score: number;
-    finance_score: number;
-    updated_at: string;
-}
+type SyncStatus = "idle" | "loading" | "success" | "error";
 
 export function LeaderboardSyncButton() {
-    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [status, setStatus] = useState<SyncStatus>("idle");
     const [count, setCount] = useState(0);
 
     const handleSync = async () => {
-        setStatus('loading');
+        const syncId = localStorage.getItem("math_sync_id") || "";
+        const username = prompt("Nhap tai khoan admin de dong bo bang xep hang:");
+        if (!username) return;
+
+        const pin = prompt("Nhap PIN admin:");
+        if (!pin) return;
+
+        setStatus("loading");
+
         try {
-            // 1. Fetch all raw progress
-            const { data: progressRows, error } = await supabase
-                .from('math_progress')
-                .select('*');
+            const response = await fetch("/api/admin/leaderboard-sync", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    syncId,
+                    username,
+                    pin,
+                }),
+            });
 
-            if (error) throw error;
-            if (!progressRows) return;
-
-            const updates: LeaderboardEntry[] = [];
-
-            // 2. Process each user storage
-            for (const row of progressRows) {
-                const storage = row.data as AppStorage;
-                if (!storage || !storage.profiles) continue;
-
-                // 3. Extract profiles
-                for (const profile of storage.profiles) {
-                    if (profile.isPublic === false) continue;
-
-                    const rank = getOverallRank(profile.progress);
-                    const math = getSubjectScore(profile.progress, 'math');
-                    const vietnamese = getSubjectScore(profile.progress, 'vietnamese');
-                    const english = getSubjectScore(profile.progress, 'english');
-                    const finance = getSubjectScore(profile.progress, 'finance');
-
-                    updates.push({
-                        id: profile.id,
-                        name: profile.name,
-                        total_score: profile.progress.totalScore || 0,
-                        last_score: profile.progress.lastSessionScore || 0,
-                        best_time: profile.progress.bestTimeSeconds || 999999,
-                        tier: rank?.label || 'Tập sự',
-                        is_public: true,
-                        math_score: math,
-                        vietnamese_score: vietnamese,
-                        english_score: english,
-                        finance_score: finance,
-                        updated_at: new Date().toISOString()
-                    });
-                }
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(payload.error || "Dong bo that bai");
             }
 
-            // 4. Deduplicate by name (keep highest total_score)
-            const deduped = new Map<string, LeaderboardEntry>();
-            for (const entry of updates) {
-                const key = entry.name.toLowerCase().trim();
-                const existing = deduped.get(key);
-                if (!existing || entry.total_score > existing.total_score) {
-                    deduped.set(key, entry);
-                }
-            }
-
-            // Filter out zero-score entries (empty/test accounts)
-            const finalUpdates = Array.from(deduped.values()).filter(e => e.total_score > 0);
-
-            // 5. Batch Upsert
-            if (finalUpdates.length > 0) {
-                const { error: upsertError } = await supabase
-                    .from('leaderboard')
-                    .upsert(finalUpdates);
-
-                if (upsertError) throw upsertError;
-            }
-
-            // 6. Clean up zero-score entries from leaderboard
-            await supabase
-                .from('leaderboard')
-                .delete()
-                .eq('total_score', 0);
-
-            // Also clean up duplicate names (keep only the one with highest score)
-            // This handles legacy duplicates already in the database
-            const { data: allLeaderboard } = await supabase
-                .from('leaderboard')
-                .select('id, name, total_score')
-                .order('total_score', { ascending: false });
-
-            if (allLeaderboard) {
-                const bestByName = new Map<string, string>();
-                const idsToDelete: string[] = [];
-                for (const entry of allLeaderboard) {
-                    const nameKey = entry.name.toLowerCase().trim();
-                    if (!bestByName.has(nameKey)) {
-                        bestByName.set(nameKey, entry.id);
-                    } else {
-                        idsToDelete.push(entry.id);
-                    }
-                }
-                if (idsToDelete.length > 0) {
-                    await supabase
-                        .from('leaderboard')
-                        .delete()
-                        .in('id', idsToDelete);
-                }
-            }
-
-            setCount(finalUpdates.length);
-            setStatus('success');
+            setCount(Number(payload.count || 0));
+            setStatus("success");
             setTimeout(() => {
-                setStatus('idle');
-                window.location.reload(); // Reload to show new data
-            }, 2000);
-
-        } catch (e) {
-            console.error(e);
-            setStatus('error');
+                setStatus("idle");
+                window.location.reload();
+            }, 1500);
+        } catch (error) {
+            console.error(error);
+            setStatus("error");
         }
     };
 
     return (
         <button
             onClick={handleSync}
-            disabled={status === 'loading'}
-            className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-sm font-medium transition-colors"
+            disabled={status === "loading"}
+            className="flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-200 disabled:opacity-60"
         >
-            {status === 'loading' && <RefreshCw size={16} className="animate-spin" />}
-            {status === 'success' && <Check size={16} className="text-green-600" />}
-            {status === 'error' && <AlertCircle size={16} className="text-red-600" />}
+            {status === "loading" ? <RefreshCw size={16} className="animate-spin" /> : null}
+            {status === "success" ? <Check size={16} className="text-green-600" /> : null}
+            {status === "error" ? <AlertCircle size={16} className="text-red-600" /> : null}
+            {status === "idle" ? <RefreshCw size={16} /> : null}
 
-            {status === 'idle' && <RefreshCw size={16} />}
-            {status === 'idle' ? 'Làm mới dữ liệu' :
-                status === 'loading' ? 'Đang đồng bộ...' :
-                    status === 'success' ? `Đã cập nhật ${count} bé` : 'Lỗi!'}
+            {status === "idle" ? "Lam moi du lieu" : null}
+            {status === "loading" ? "Dang dong bo..." : null}
+            {status === "success" ? `Da cap nhat ${count} be` : null}
+            {status === "error" ? "Loi!" : null}
         </button>
     );
 }

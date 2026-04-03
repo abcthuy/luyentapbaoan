@@ -12,6 +12,7 @@ import { Volume2, VolumeX, Sun, Moon, Settings } from 'lucide-react';
 import { useTheme } from '@/hooks/use-theme';
 import { UserMenu } from '@/components/user-menu';
 import { getTheme } from '@/lib/theme';
+import { SKILL_MAP } from '@/lib/skills';
 
 function SoundToggle() {
     const { isMuted, toggleMute } = useSound();
@@ -102,12 +103,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         if (pathname.startsWith('/practice/')) {
             const skillId = pathname.split('/practice/')[1];
             if (skillId) {
-                if (skillId.startsWith('tv')) return { id: 'vietnamese', label: 'Tiếng Việt' };
-                if (skillId.startsWith('en')) return { id: 'english', label: 'Tiếng Anh' };
-                if (skillId.startsWith('fi')) return { id: 'finance', label: 'Tài chính' };
-                // Default to math if no other prefix matches (or explicit math prefix if we had one)
-                // Assuming others are math for now based on legacy ids
-                return { id: 'math', label: 'Toán học' };
+                const skill = SKILL_MAP[skillId];
+                if (skill?.subjectId === 'math') return { id: 'math', label: 'Toán học' };
+                if (skill?.subjectId === 'vietnamese') return { id: 'vietnamese', label: 'Tiếng Việt' };
+                if (skill?.subjectId === 'english') return { id: 'english', label: 'Tiếng Anh' };
+                if (skill?.subjectId === 'finance') return { id: 'finance', label: 'Tài chính' };
             }
         }
 

@@ -1,5 +1,6 @@
-﻿import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { AppStorage } from "@/lib/mastery";
+import { getDeviceId } from "@/lib/device";
 
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
 
@@ -14,14 +15,7 @@ const parseStorage = (raw: string | null): AppStorage | null => {
     }
 };
 
-const getDeviceId = (): string => {
-    let deviceId = localStorage.getItem("math_device_id");
-    if (!deviceId) {
-        deviceId = `DEV-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-        localStorage.setItem("math_device_id", deviceId);
-    }
-    return deviceId;
-};
+
 
 async function postJson<T>(url: string, payload: Record<string, unknown>): Promise<T> {
     const response = await fetch(url, {

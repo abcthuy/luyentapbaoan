@@ -46,6 +46,15 @@ export const useRecording = (): UseRecordingReturn => {
     const startRecording = async () => {
         setStartError(null);
         try {
+            if (typeof window === 'undefined' || !navigator?.mediaDevices?.getUserMedia) {
+                setStartError("Thiết bị này chưa hỗ trợ ghi âm trong trình duyệt.");
+                return;
+            }
+            if (typeof MediaRecorder === 'undefined') {
+                setStartError("Trình duyệt chưa hỗ trợ MediaRecorder. Bé có thể dùng ô nhập chữ thay thế.");
+                return;
+            }
+
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             const mediaRecorder = new MediaRecorder(stream);
             mediaRecorderRef.current = mediaRecorder;
@@ -93,7 +102,10 @@ export const useRecording = (): UseRecordingReturn => {
         if (mediaRecorderRef.current && isRecording) {
             mediaRecorderRef.current.stop();
             setIsRecording(false);
-            if (timerRef.current) clearInterval(timerRef.current);
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
         }
     };
 
@@ -104,6 +116,7 @@ export const useRecording = (): UseRecordingReturn => {
         setHasRecorded(false);
         setDuration(0);
         setStartError(null);
+        setIsPlayingBack(false);
     };
 
     const playRecording = () => {

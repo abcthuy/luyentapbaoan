@@ -2,7 +2,9 @@
 import { Question } from '../types';
 
 export function generateNumberStructureComparison(skillId: string, level: number = 1): Question {
-    const range = level * 100; // Level 1: 0-100, Level 2: 0-200, etc.
+    // Clamp range to ≤1000 to comply with math-grade2-rules (A1 must stay within 1000)
+    const safeLevel = Math.min(level, 10);
+    const range = safeLevel * 100; // Level 1: 0-100, Level 2: 0-200, ..., Level 10: 0-1000
     const type = Math.random() > 0.5 ? 'structure' : 'comparison';
 
     if (type === 'comparison') {
@@ -79,6 +81,11 @@ export function generateAdditionSubtraction(skillId: string, level: number = 1):
     let a = Math.floor(Math.random() * max);
     let b = Math.floor(Math.random() * max);
 
+    if (isAddition && a + b > 1000) {
+        const safeMaxForB = Math.max(0, 1000 - a);
+        b = safeMaxForB === 0 ? 0 : Math.floor(Math.random() * (safeMaxForB + 1));
+    }
+
     if (!isAddition && a < b) {
         [a, b] = [b, a]; // Ensure a >= b for subtraction
     }
@@ -103,12 +110,15 @@ export function generateAdditionSubtraction(skillId: string, level: number = 1):
 export function generateMissingNumber(skillId: string, level: number = 1): Question {
     const maxStart = level <= 2 ? 50 : level <= 3 ? 200 : 500;
     const maxStep = level <= 2 ? 5 : level <= 3 ? 10 : level <= 4 ? 25 : 50;
-    const start = Math.floor(Math.random() * maxStart);
     const step = Math.floor(Math.random() * maxStep) + (level <= 2 ? 1 : 2);
     const length = level <= 3 ? 5 : 6;
     const missingIndex = Math.floor(Math.random() * length);
 
     const isDecreasing = level >= 3 && Math.random() > 0.5;
+    const minStartForDecrease = step * (length - 1);
+    const start = isDecreasing
+        ? Math.floor(Math.random() * Math.max(1, maxStart - minStartForDecrease + 1)) + minStartForDecrease
+        : Math.floor(Math.random() * (maxStart + 1));
     const sequence: (number | string)[] = Array.from({ length }, (_, i) =>
         isDecreasing ? start - i * step : start + i * step
     );
@@ -126,7 +136,7 @@ export function generateMissingNumber(skillId: string, level: number = 1): Quest
 
 export function generateMultiplicationDivision(skillId: string, level: number = 1): Question {
     const isMult = Math.random() > 0.5;
-    const tables = level <= 1 ? [2, 5] : level <= 2 ? [2, 3, 4, 5] : level <= 3 ? [2, 3, 4, 5, 6, 7] : [2, 3, 4, 5, 6, 7, 8, 9];
+    const tables = [2, 5];
     const table = tables[Math.floor(Math.random() * tables.length)];
     const maxFactor = level <= 2 ? 10 : 12;
     const factor = Math.floor(Math.random() * maxFactor) + 1;
@@ -155,8 +165,7 @@ export function generateWordProblem(skillId: string, level: number = 1): Questio
         { template: "Trên cây có {a} con chim, {b} con bay đi. Hỏi trên cây còn lại bao nhiêu con?", calc: (a: number, b: number) => a - b, unit: "con chim" },
         { template: "Lớp 2A có {a} học sinh nam và {b} học sinh nữ. Hỏi lớp 2A có tất cả bao nhiêu học sinh?", calc: (a: number, b: number) => a + b, unit: "học sinh" },
         ...(level >= 3 ? [
-            { template: "Cửa hàng có {a} quyển vở, bán đi {b} quyển. Hỏi còn lại bao nhiêu quyển vở?", calc: (a: number, b: number) => a - b, unit: "quyển vở" },
-            { template: "Mỗi hộp có {b} cái bút. Có {a} hộp. Hỏi có tất cả bao nhiêu cái bút?", calc: (a: number, b: number) => a * b, unit: "cái bút" }
+            { template: "Cửa hàng có {a} quyển vở, bán đi {b} quyển. Hỏi còn lại bao nhiêu quyển vở?", calc: (a: number, b: number) => a - b, unit: "quyển vở" }
         ] : [])
     ];
     const problem = problems[Math.floor(Math.random() * problems.length)];
@@ -189,15 +198,18 @@ export function generateWordProblem2Steps(skillId: string, level: number = 1): Q
         { text: (a: number, b: number, c: number) => `Lan có ${a} viên bi xanh và ${b} viên bi đỏ. Lan cho bạn ${c} viên. Hỏi Lan còn bao nhiêu viên bi?`, calc: (a: number, b: number, c: number) => a + b - c, explain: (a: number, b: number, c: number) => `Bước 1: ${a} + ${b} = ${a + b}. Bước 2: ${a + b} - ${c} = ${a + b - c}.` },
         { text: (a: number, b: number, c: number) => `Trong vườn có ${a} cây cam và ${b} cây bưởi. Bố trồng thêm ${c} cây cam. Hỏi trong vườn có tất cả bao nhiêu cây?`, calc: (a: number, b: number, c: number) => a + b + c, explain: (a: number, b: number, c: number) => `Bước 1: ${a} + ${c} = ${a + c}. Bước 2: ${a + c} + ${b} = ${a + b + c}.` },
         { text: (a: number, b: number, c: number) => `Một cửa hàng có ${a} quyển vở. Buổi sáng bán ${b} quyển, buổi chiều bán ${c} quyển. Hỏi còn lại bao nhiêu quyển vở?`, calc: (a: number, b: number, c: number) => a - b - c, explain: (a: number, b: number, c: number) => `Bước 1: ${a} - ${b} = ${a - b}. Bước 2: ${a - b} - ${c} = ${a - b - c}.` },
-        ...(level >= 3 ? [{ text: (a: number, b: number, c: number) => `Mỗi túi có ${b} quả cam. Có ${c} túi. Mẹ thêm ${a} quả nữa. Hỏi có tất cả bao nhiêu quả cam?`, calc: (a: number, b: number, c: number) => b * c + a, explain: (a: number, b: number, c: number) => `Bước 1: ${b} × ${c} = ${b * c}. Bước 2: ${b * c} + ${a} = ${b * c + a}.` }] : [])
+        ...(level >= 4 ? [{ text: (a: number, b: number, c: number) => `Mỗi túi có ${b} quả cam. Có ${c} túi. Mẹ thêm ${a} quả nữa. Hỏi có tất cả bao nhiêu quả cam?`, calc: (a: number, b: number, c: number) => b * c + a, explain: (a: number, b: number, c: number) => `Bước 1: ${b} × ${c} = ${b * c}. Bước 2: ${b * c} + ${a} = ${b * c + a}.` }] : [])
     ];
     const t = templates[Math.floor(Math.random() * templates.length)];
     const maxA = level <= 2 ? 30 : level <= 3 ? 100 : 500;
     const maxB = level <= 2 ? 10 : level <= 3 ? 30 : 50;
     const maxC = level <= 2 ? 5 : level <= 3 ? 15 : 30;
-    const a = Math.floor(Math.random() * maxA) + 20;
+    let a = Math.floor(Math.random() * maxA) + 20;
     const b = Math.floor(Math.random() * maxB) + 3;
     const c = Math.floor(Math.random() * maxC) + 1;
+    if (t.calc(0, b, c) < 0 && a <= b + c) {
+        a = b + c + Math.floor(Math.random() * 20) + 1;
+    }
     const result = t.calc(a, b, c);
     const useInput = level >= 3;
     const w1 = a + b + c;
@@ -331,25 +343,35 @@ export function generateTime(skillId: string, level: number = 1): Question {
             answer: correct, explanation: `Kim ngắn chỉ ${h}, kim dài chỉ ${m / 5} → ${correct}.`
         };
     } else {
-        const start = Math.floor(Math.random() * 8) + 7;
+        const start = Math.floor(Math.random() * 5) + 7; // 7-11 giờ sáng
         const dur = level <= 2 ? Math.floor(Math.random() * 3) + 1 : Math.floor(Math.random() * 5) + 1;
         const durMin = level >= 3 ? Math.floor(Math.random() * 4) * 15 : 0;
+        // Helper: format giờ với buổi sáng/chiều cho trẻ dễ hiểu
+        const formatTime = (h: number, m: number = 0): string => {
+            const period = h < 12 ? 'sáng' : h < 18 ? 'chiều' : 'tối';
+            const displayH = h > 12 ? h - 12 : h;
+            if (m > 0) return `${displayH} giờ ${m} phút ${period}`;
+            return `${displayH} giờ ${period}`;
+        };
         if (durMin > 0) {
             const totalMin = dur * 60 + durMin;
             const endH = start + Math.floor(totalMin / 60);
             const endM = totalMin % 60;
+            const displayH = endH > 12 ? endH - 12 : endH;
             return {
                 id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
-                instruction: `Bé đi học lúc ${start} giờ, học ${dur} giờ ${durMin} phút. Hỏi tan học lúc mấy giờ? (trả lời số giờ)`,
-                content: { text: `${start} giờ + ${dur} giờ ${durMin} phút = ?` },
-                answer: endH.toString(), explanation: `${start}:00 + ${dur}h${durMin}m = ${endH}:${endM.toString().padStart(2, '0')}`
+                instruction: `Bé đi học lúc ${start} giờ sáng, học ${dur} giờ ${durMin} phút. Hỏi tan học lúc mấy giờ? (trả lời số giờ)`,
+                content: { text: `${start} giờ sáng + ${dur} giờ ${durMin} phút = ?` },
+                answer: displayH.toString(), explanation: `${start}:00 + ${dur}h${durMin}m = ${formatTime(endH, endM)}`
             };
         }
+        const endHour = start + dur;
+        const displayHour = endHour > 12 ? endHour - 12 : endHour;
         return {
             id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'input',
-            instruction: `Bé đi học lúc ${start} giờ, sau ${dur} giờ thì tan học. Hỏi bé tan học lúc mấy giờ?`,
-            content: { text: `${start} giờ + ${dur} giờ = ? giờ` },
-            answer: (start + dur).toString(), explanation: `${start} + ${dur} = ${start + dur} giờ`
+            instruction: `Bé đi học lúc ${start} giờ sáng, sau ${dur} giờ thì tan học. Hỏi bé tan học lúc mấy giờ?`,
+            content: { text: `${start} giờ sáng + ${dur} giờ = ? giờ` },
+            answer: displayHour.toString(), explanation: `${start} giờ sáng + ${dur} giờ = ${formatTime(endHour)}`
         };
     }
 }
@@ -514,7 +536,7 @@ export function generateChart(skillId: string, level: number = 1): Question {
     } else {
         const max = Math.max(...counts);
         const maxFruit = fruits[counts.indexOf(max)];
-        const opts = fruits.sort(() => Math.random() - 0.5);
+        const opts = [...fruits].sort(() => Math.random() - 0.5);
         return {
             id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'mcq',
             instruction: 'Loại quả nào nhiều nhất?',
@@ -528,10 +550,13 @@ export function generateChart(skillId: string, level: number = 1): Question {
 export function generateSequence(skillId: string, level: number = 1): Question {
     const maxStart = level <= 2 ? 20 : level <= 3 ? 100 : 500;
     const maxStep = level <= 2 ? 5 : level <= 3 ? 10 : 25;
-    const start = Math.floor(Math.random() * maxStart) + 1;
     const step = Math.floor(Math.random() * maxStep) + 2;
     const len = level <= 2 ? 6 : 7;
     const isDecreasing = level >= 3 && Math.random() > 0.5;
+    const minStartForDecrease = step * (len - 1) + 1;
+    const start = isDecreasing
+        ? Math.floor(Math.random() * Math.max(1, maxStart - minStartForDecrease + 1)) + minStartForDecrease
+        : Math.floor(Math.random() * maxStart) + 1;
     const seq = Array.from({ length: len }, (_, i) => isDecreasing ? start - i * step : start + i * step);
     const hideIdx = Math.floor(Math.random() * (len - 2)) + 2;
     const answer = seq[hideIdx];
@@ -624,12 +649,15 @@ export function generateFraction(skillId: string, level: number = 1): Question {
     if (level >= 3 && Math.random() > 0.5) {
         const d2 = denoms[Math.floor(Math.random() * denoms.length)];
         const n2 = Math.floor(Math.random() * (d2 - 1)) + 1;
-        const isGreater = (n / d) > (n2 / d2);
+        // Cross-multiplication for exact integer comparison (avoids floating-point errors)
+        const cross1 = n * d2;
+        const cross2 = n2 * d;
+        const cmp = cross1 > cross2 ? '>' : cross1 < cross2 ? '<' : '=';
         return {
             id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'mcq',
             instruction: 'So sánh hai phân số:',
             content: { text: `${n}/${d} ... ${n2}/${d2}`, options: ['>', '<', '='] },
-            answer: isGreater ? '>' : (n / d) === (n2 / d2) ? '=' : '<',
+            answer: cmp,
             explanation: `${n}/${d} = ${(n / d).toFixed(2)}, ${n2}/${d2} = ${(n2 / d2).toFixed(2)}`
         };
     }

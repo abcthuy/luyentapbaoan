@@ -1,5 +1,6 @@
+﻿import { SubjectId, COURSES } from './content/registry';
 import { ProgressData } from './mastery';
-import { SubjectId, COURSES } from './content/registry';
+import { REWARD_CONFIG } from './reward-config';
 
 export const getSubjectScore = (progress: ProgressData, subjectId: SubjectId): number => {
     if (!progress || !progress.skills) return 0;
@@ -31,7 +32,7 @@ export const getSubjectScore = (progress: ProgressData, subjectId: SubjectId): n
 };
 
 export const calculateReward = (skillId: string, quality?: string, level: number = 1): { amount: number, bonusReason?: string } => {
-    let amount = 100;
+    let amount: number = REWARD_CONFIG.baseReward;
     let bonusReason = '';
 
     const normalizedSkillId = skillId.toLowerCase();
@@ -40,43 +41,48 @@ export const calculateReward = (skillId: string, quality?: string, level: number
     const isSpeaking = hasToken('speak', 'hung-bien', 'thuyet-trinh', 'thao-luan');
     const isReading = hasToken('read', 'doc', 'dien-cam', 'story-quest');
     const isListening = hasToken('listen', 'list-');
+    const isExpressiveSkill = hasToken('expressive', 'dien-cam') || (isEnglishSkill && (isSpeaking || isReading));
+    const isOratorySkill = hasToken('oratory', 'hung-bien', 'story-quest');
 
     if (isSpeaking || isReading || isListening) {
-        amount = 150;
+        amount = REWARD_CONFIG.skillReward;
 
-        if (hasToken('oratory', 'hung-bien', 'story-quest')) {
-            amount = 1000;
+        if (isOratorySkill) {
+            amount = REWARD_CONFIG.oratoryReward;
             bonusReason = 'Hung bien';
-        } else if (hasToken('expressive', 'dien-cam') || (isEnglishSkill && (isSpeaking || isReading))) {
-            amount = 800;
+        } else if (isExpressiveSkill) {
+            amount = REWARD_CONFIG.expressiveReward;
             bonusReason = 'Doc troi chay';
         }
     }
 
     if (quality === 'Xuất sắc') {
-        if (hasToken('hung-bien', 'story-quest')) amount += 400; // Giảm từ 1000 xuống để tránh lạm phát
-        else if (hasToken('dien-cam') || (isEnglishSkill && (isSpeaking || isReading))) amount += 150;
-        else amount += 50;
+        if (isOratorySkill) amount += REWARD_CONFIG.qualityBonus.excellent.oratory;
+        else if (isExpressiveSkill) amount += REWARD_CONFIG.qualityBonus.excellent.expressive;
+        else amount += REWARD_CONFIG.qualityBonus.excellent.standard;
 
         bonusReason = bonusReason ? `${bonusReason} + Xuất sắc` : 'Xuất sắc';
     } else if (quality === 'Giỏi') {
-        if (hasToken('hung-bien', 'story-quest')) amount += 200; // Giảm từ 500
-        else if (hasToken('dien-cam') || (isEnglishSkill && (isSpeaking || isReading))) amount += 50;
-        else amount += 20;
+        if (isOratorySkill) amount += REWARD_CONFIG.qualityBonus.good.oratory;
+        else if (isExpressiveSkill) amount += REWARD_CONFIG.qualityBonus.good.expressive;
+        else amount += REWARD_CONFIG.qualityBonus.good.standard;
 
         bonusReason = bonusReason ? `${bonusReason} + Giỏi` : 'Giỏi';
     }
 
     if (level >= 2) {
-        const levelMultiplier = level <= 2 ? 1.2 : level <= 3 ? 1.5 : level <= 4 ? 1.8 : 2.0;
+        const levelMultiplier = REWARD_CONFIG.levelMultipliers[level] ?? REWARD_CONFIG.maxLevelMultiplier;
         amount = Math.round(amount * levelMultiplier);
         bonusReason = bonusReason ? `${bonusReason} (Level ${level})` : `Level ${level} bonus`;
     }
 
     if (isEnglishSkill) {
-        amount *= 2;
-        bonusReason = bonusReason ? `${bonusReason} (x2 Tieng Anh)` : 'x2 Tieng Anh';
+        amount = Math.round(amount * REWARD_CONFIG.englishMultiplier);
+        bonusReason = bonusReason
+            ? `${bonusReason} (x${REWARD_CONFIG.englishMultiplier} Tieng Anh)`
+            : `x${REWARD_CONFIG.englishMultiplier} Tieng Anh`;
     }
 
     return { amount, bonusReason };
 };
+

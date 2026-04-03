@@ -57,6 +57,10 @@ export function buildParentId() {
     return `pr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+export function buildParentMatchKey(parent: Pick<ParentAccount, 'name' | 'pin'>) {
+    return `${parent.name.trim().toLowerCase()}::${String(parent.pin).trim()}`;
+}
+
 export function buildParentChildLinkId() {
     return `pcl-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -87,28 +91,34 @@ export function addProfileToStorage(
 export function deleteProfileFromStorage(storage: AppStorage, profileId: string) {
     const profiles = storage.profiles.filter((profile) => profile.id !== profileId);
     const parentChildLinks = (storage.parentChildLinks || []).filter((link) => link.childId !== profileId);
+    const deletedProfileIds = Array.from(new Set([...(storage.deletedProfileIds || []), profileId]));
 
     return sanitizeStorage({
         ...storage,
         profiles,
+        deletedProfileIds,
         parentChildLinks,
-        activeProfileId: storage.activeProfileId === profileId ? (profiles[0]?.id || null) : storage.activeProfileId,
+        activeProfileId: storage.activeProfileId === profileId ? null : storage.activeProfileId,
     });
 }
 
 export function addParentToStorage(storage: AppStorage, parent: ParentAccount) {
     const parentAccounts = [...(storage.parentAccounts || [])].filter((item) => item.id !== parent.id);
     parentAccounts.push(parent);
+    const deletedParentKeys = (storage.deletedParentKeys || []).filter((key) => key !== buildParentMatchKey(parent));
 
     return sanitizeStorage({
         ...storage,
         parentAccounts,
+        deletedParentKeys,
     });
 }
 
-export function deleteParentFromStorage(storage: AppStorage, parentId: string) {
+export function deleteParentFromStorage(storage: AppStorage, parentId: string, parentKey?: string) {
+    const deletedParentKeys = Array.from(new Set([...(storage.deletedParentKeys || []), ...(parentKey ? [parentKey] : [])]));
     return sanitizeStorage({
         ...storage,
+        deletedParentKeys,
         parentAccounts: (storage.parentAccounts || []).filter((parent) => parent.id !== parentId),
         parentChildLinks: (storage.parentChildLinks || []).filter((link) => link.parentId !== parentId),
     });
@@ -147,3 +157,4 @@ export function unassignChildFromParentInStorage(storage: AppStorage, parentId: 
         }),
     });
 }
+

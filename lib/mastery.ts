@@ -34,7 +34,6 @@ export interface Transaction {
     icon?: string; // Optional icon override
 }
 
-// Piggy Bank Goal
 export interface SavingsGoal {
     name: string;
     targetAmount: number;
@@ -42,23 +41,21 @@ export interface SavingsGoal {
     image?: string; // Emoji
 }
 
-// Bank Deposit
 export interface BankDeposit {
     id: string;
     amount: number;
-    termMonths: number; // 1 to 6
-    interestRate: number; // monthly rate (e.g. 0.01 for 1%)
-    startDate: string; // ISO date
-    isSettled?: boolean; // If true, it's history
+    termMonths: number;
+    interestRate: number;
+    startDate: string;
+    isSettled?: boolean;
 }
 
-// Spaced Repetition Item
 export interface ReviewItem {
     skillId: string;
     questionText: string;
     correctAnswer: string;
-    nextReviewDate: string;  // YYYY-MM-DD
-    interval: number;        // days: 1, 3, 7, 14, 30
+    nextReviewDate: string;
+    interval: number;
     wrongCount: number;
 }
 
@@ -72,8 +69,6 @@ export type ProgressData = {
     bestTimeSeconds: number;
     totalTimeMinutes: number;
     updatedAt: string;
-
-    // Economy
     balance: number;
     savings: number;
     savingsGoal?: SavingsGoal;
@@ -82,29 +77,22 @@ export type ProgressData = {
     lastDailyReward?: string;
     attendanceStreak?: number;
     inventory: InventoryItem[];
-
-    // Spaced Repetition
     reviewQueue?: ReviewItem[];
-
-    // Daily Streak
     dailyStreak?: number;
-    lastStudyDate?: string;    // YYYY-MM-DD
+    lastStudyDate?: string;
     longestStreak?: number;
-
-    // Badges
     badges?: string[];
 };
 
 export interface UserProfile {
     id: string;
     name: string;
-    pin?: string; // Optional secret code
-    avatar?: string; // Emoji or URL
-    isPublic?: boolean; // Show on leaderboard
-    grade?: number; // 2, 3...
+    pin?: string;
+    avatar?: string;
+    isPublic?: boolean;
+    grade?: number;
     progress: ProgressData;
 }
-
 
 export interface ParentAccount {
     id: string;
@@ -135,9 +123,12 @@ export interface AppStorage {
     profiles: UserProfile[];
     parentAccounts?: ParentAccount[];
     parentChildLinks?: ParentChildLink[];
+    deletedProfileIds?: string[];
+    deletedParentKeys?: string[];
+    // Legacy local content cache. New question content should live in DB question_bank.
     customContentLibrary?: ContentLibrary;
     activeProfileId: string | null;
-    lastActive?: number; // Timestamp for session timeout
+    lastActive?: number;
     familyCredentials?: {
         username: string;
         pin: string;
@@ -145,8 +136,13 @@ export interface AppStorage {
     adminAccount?: AdminAccount;
     activeSession?: {
         deviceId: string;
-        lastSeen: number; // timestamp ms
+        lastSeen: number;
     } | null;
+    loginSecurity?: {
+        failedAttempts: number;
+        lockedUntil?: number | null;
+        lastFailedAt?: number | null;
+    };
 }
 
 export const INITIAL_PROGRESS = (): ProgressData => {
@@ -164,8 +160,6 @@ export const INITIAL_PROGRESS = (): ProgressData => {
         bestTimeSeconds: 999999,
         totalTimeMinutes: 0,
         updatedAt: new Date().toISOString(),
-
-        // Economy
         balance: 20000,
         savings: 0,
         savingsGoal: undefined,
@@ -173,17 +167,10 @@ export const INITIAL_PROGRESS = (): ProgressData => {
         lastDailyReward: undefined,
         attendanceStreak: 0,
         inventory: [],
-
-        // Spaced Repetition
         reviewQueue: [],
-
-        // Daily Streak
         dailyStreak: 0,
         lastStudyDate: undefined,
         longestStreak: 0,
-
-
-        // Badges
         badges: []
     };
 };
@@ -206,40 +193,34 @@ export function updateMastery(current: MasteryState, isCorrect: boolean): Master
     const next = { ...current, lastSeen: now, attempts: current.attempts + 1 };
 
     if (isCorrect) {
-        // EMA: Current Mastery + 10% of remaining to 1.0
         next.mastery = Math.min(1, current.mastery + (1 - current.mastery) * 0.15);
         next.correctCount += 1;
         next.wrongStreak = 0;
         next.streak += 1;
         next.lastCorrect = now;
 
-        // Stability logic: increase if it's a new day and already decent mastery
         const lastDate = current.lastCorrect ? current.lastCorrect.split('T')[0] : '';
         const today = now.split('T')[0];
         if (lastDate !== today && current.mastery > 0.5) {
             next.stability = Math.min(5, current.stability + 1);
         }
     } else {
-        // Penalty: reduce mastery and stability
-        next.mastery = Math.max(0, current.mastery * 0.85); // FIXED: 0.85 instead of 0.75
+        next.mastery = Math.max(0, current.mastery * 0.85);
         next.wrongStreak += 1;
         next.streak = 0;
         next.stability = Math.max(0, current.stability - 1);
     }
 
-    // Leveling Logic (Simple)
-    // Level up if mastery is high and stability is good
     if (next.mastery > 0.9 && next.stability >= 3 && next.level < 6) {
         next.level += 1;
-        next.stability = 1; // Reset stability on new level
-        next.mastery = 0.5; // Reset mastery slightly to avoid rapid leveling
+        next.stability = 1;
+        next.mastery = 0.5;
     }
 
-    // Level down if stuck (too many wrong in a row)
-    if (next.wrongStreak >= 5 && next.level > 1) { // FIXED: 5 instead of 3
+    if (next.wrongStreak >= 5 && next.level > 1) {
         next.level -= 1;
         next.stability = 0;
-        next.mastery = 0.7; // Give them a confidence boost at lower level
+        next.mastery = 0.7;
         next.wrongStreak = 0;
     }
 
@@ -268,15 +249,10 @@ export function getOverallRank(progress: ProgressData | undefined) {
     return { label: 'Tập sự', icon: '🐣', color: 'text-slate-800', bg: 'bg-slate-100', border: 'border-slate-300' };
 }
 
-// NOTE: getSubjectScore was removed from here to avoid duplication.
-// Use the canonical version from '@/lib/scoring' instead.
-
-// === DAILY STREAK ===
 export function updateDailyStreak(progress: ProgressData): ProgressData {
     const today = new Date().toISOString().split('T')[0];
     const lastDate = progress.lastStudyDate;
 
-    // Đã học hôm nay rồi → không đổi
     if (lastDate === today) return progress;
 
     let newStreak = 1;
@@ -285,10 +261,8 @@ export function updateDailyStreak(progress: ProgressData): ProgressData {
         const now = new Date(today);
         const diffDays = Math.floor((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
         if (diffDays === 1) {
-            // Ngày liên tiếp → +1
             newStreak = (progress.dailyStreak || 0) + 1;
         } else {
-            // Bỏ ngày → reset
             newStreak = 1;
         }
     }

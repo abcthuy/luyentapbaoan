@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { INITIAL_PROGRESS, type AppStorage, type UserProfile } from "@/lib/mastery";
+import { hashPinIfNeeded } from "@/lib/pin-hash";
 import { fetchStorage, syncStorageToDatabase } from "@/lib/server/account/sync";
 
 const AVATARS = ["A", "B", "C", "D", "E", "F", "G", "H"];
@@ -24,6 +25,11 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Invalid register payload" }, { status: 400 });
         }
 
+        const hashedPin = await hashPinIfNeeded(pin);
+        if (!hashedPin) {
+            return NextResponse.json({ error: "Invalid PIN" }, { status: 400 });
+        }
+
         const syncId = `USER-${cleanUsername}`;
         const existing = await fetchStorage(syncId);
         if (existing) {
@@ -45,13 +51,18 @@ export async function POST(req: NextRequest) {
             lastActive: Date.now(),
             familyCredentials: {
                 username: cleanUsername,
-                pin,
+                pin: hashedPin,
             },
             adminAccount: {
                 username: "admin",
-                pin,
+                pin: hashedPin,
                 displayName: "Quan tri vien",
                 updatedAt: new Date().toISOString(),
+            },
+            loginSecurity: {
+                failedAttempts: 0,
+                lockedUntil: null,
+                lastFailedAt: null,
             },
         };
 
@@ -72,4 +83,3 @@ export async function POST(req: NextRequest) {
         );
     }
 }
-

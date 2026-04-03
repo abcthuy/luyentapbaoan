@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import type { ParentAccount } from "@/lib/mastery";
+import { verifyPinInput } from "@/lib/pin-hash";
 import { verifyAdminCredentials } from "@/lib/server/admin-auth";
 import {
     fetchMathProgressRow,
@@ -7,15 +8,20 @@ import {
     unassignChildFromParentInStorage,
 } from "@/lib/server/math-progress-admin";
 
-function findMatchingParent(storage: { parentAccounts?: ParentAccount[] }, parentId?: string, parentName?: string, parentPin?: string) {
+async function findMatchingParent(storage: { parentAccounts?: ParentAccount[] }, parentId?: string, parentName?: string, parentPin?: string) {
     const normalizedName = parentName?.trim().toLowerCase() || "";
     const normalizedPin = parentPin?.trim() || "";
 
-    return (storage.parentAccounts || []).find((parent) => {
-        if (parentId && parent.id === parentId) return true;
-        if (!normalizedName || !normalizedPin) return false;
-        return parent.name.trim().toLowerCase() === normalizedName && String(parent.pin).trim() === normalizedPin;
-    }) || null;
+    for (const parent of (storage.parentAccounts || [])) {
+        if (parentId && parent.id === parentId) return parent;
+        if (!normalizedName || !normalizedPin) continue;
+        if (parent.name.trim().toLowerCase() !== normalizedName) continue;
+        if (await verifyPinInput(normalizedPin, String(parent.pin))) {
+            return parent;
+        }
+    }
+
+    return null;
 }
 
 export async function POST(req: NextRequest) {
@@ -50,7 +56,7 @@ export async function POST(req: NextRequest) {
         }
 
         const { storage } = await fetchMathProgressRow(childSyncId);
-        const matchedParent = findMatchingParent(storage, parentId, parentName, parentPin);
+        const matchedParent = await findMatchingParent(storage, parentId, parentName, parentPin);
         if (!matchedParent) {
             return NextResponse.json({ success: true, skipped: true });
         }
@@ -64,4 +70,3 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Failed to unassign child" }, { status: 500 });
     }
 }
-

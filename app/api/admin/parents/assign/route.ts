@@ -1,22 +1,29 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import type { ParentAccount } from "@/lib/mastery";
+import { hashPinIfNeeded, verifyPinInput } from "@/lib/pin-hash";
 import { verifyAdminCredentials } from "@/lib/server/admin-auth";
 import {
+    addParentToStorage,
     assignChildToParentInStorage,
     buildParentId,
     fetchMathProgressRow,
     saveMathProgressRow,
 } from "@/lib/server/math-progress-admin";
 
-function findMatchingParent(storage: { parentAccounts?: ParentAccount[] }, parentId?: string, parentName?: string, parentPin?: string) {
+async function findMatchingParent(storage: { parentAccounts?: ParentAccount[] }, parentId?: string, parentName?: string, parentPin?: string) {
     const normalizedName = parentName?.trim().toLowerCase() || "";
     const normalizedPin = parentPin?.trim() || "";
 
-    return (storage.parentAccounts || []).find((parent) => {
-        if (parentId && parent.id === parentId) return true;
-        if (!normalizedName || !normalizedPin) return false;
-        return parent.name.trim().toLowerCase() === normalizedName && String(parent.pin).trim() === normalizedPin;
-    }) || null;
+    for (const parent of (storage.parentAccounts || [])) {
+        if (parentId && parent.id === parentId) return parent;
+        if (!normalizedName || !normalizedPin) continue;
+        if (parent.name.trim().toLowerCase() !== normalizedName) continue;
+        if (await verifyPinInput(normalizedPin, String(parent.pin))) {
+            return parent;
+        }
+    }
+
+    return null;
 }
 
 export async function POST(req: NextRequest) {
@@ -56,20 +63,23 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Child not found in target account" }, { status: 404 });
         }
 
-        const matchedParent = findMatchingParent(storage, parentId, parentName, parentPin);
+        const matchedParent = await findMatchingParent(storage, parentId, parentName, parentPin);
+        const hashedParentPin = await hashPinIfNeeded(parentPin);
         const targetParent = matchedParent || {
             id: buildParentId(),
             name: parentName,
-            pin: parentPin,
+            pin: hashedParentPin || parentPin,
             status: "active" as const,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         };
 
+        const storageWithParent = matchedParent
+            ? storage
+            : addParentToStorage(storage, targetParent);
+
         const nextStorage = assignChildToParentInStorage(
-            matchedParent
-                ? storage
-                : { ...storage, parentAccounts: [...(storage.parentAccounts || []), targetParent] },
+            storageWithParent,
             targetParent.id,
             childId,
             childSyncId
@@ -82,4 +92,3 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Failed to assign child" }, { status: 500 });
     }
 }
-

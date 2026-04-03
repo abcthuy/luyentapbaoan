@@ -5,6 +5,7 @@ import { LogOut, ChevronDown, Book, GraduationCap, Globe2, KeyRound, X } from 'l
 import { motion, AnimatePresence } from 'framer-motion';
 import { SubjectTheme } from '@/lib/theme';
 import type { CSSProperties } from 'react';
+import { SUPPORTED_GRADES } from '@/lib/grades';
 
 interface UserMenuProps {
     children?: React.ReactNode;
@@ -107,7 +108,7 @@ export function UserMenu({ children, theme }: UserMenuProps) {
                                         <GraduationCap size={16} className={accentColor} />
                                         <span>Lớp</span>
                                     </div>
-                                    {[2, 3].map((g) => (
+                                    {SUPPORTED_GRADES.map((g) => (
                                         <button
                                             key={g}
                                             onClick={() => updateProfileGrade(activeProfile.id, g)}

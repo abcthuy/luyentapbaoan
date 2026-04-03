@@ -1,5 +1,6 @@
-﻿import { useCallback } from "react";
+import { useCallback } from "react";
 import { AppStorage, UserProfile, INITIAL_PROGRESS } from "@/lib/mastery";
+import { hashPin, hashPinIfNeeded } from "@/lib/pin-hash";
 
 const getRandomAvatar = () => {
     const AVATARS = ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼"];
@@ -42,10 +43,11 @@ export const useProfile = (
 
     const addProfile = useCallback(async (name: string, pin?: string, avatar?: string, skipAutoLogin?: boolean) => {
         if (!storage) return;
+        const hashedPin = pin ? await hashPin(pin) : undefined;
         const newProfile: UserProfile = {
             id: Math.random().toString(36).substring(7),
             name,
-            pin,
+            pin: hashedPin,
             avatar: avatar || getRandomAvatar(),
             isPublic: true,
             grade: 2,
@@ -82,10 +84,13 @@ export const useProfile = (
 
     const deleteProfile = useCallback(async (id: string) => {
         if (!storage) return;
+        const deletedProfileIds = Array.from(new Set([...(storage.deletedProfileIds || []), id]));
         const updated = {
             ...storage,
             profiles: storage.profiles.filter((profile) => profile.id !== id),
-            activeProfileId: storage.activeProfileId === id ? (storage.profiles.find((profile) => profile.id !== id)?.id || null) : storage.activeProfileId,
+            deletedProfileIds,
+            parentChildLinks: (storage.parentChildLinks || []).filter((link) => link.childId !== id),
+            activeProfileId: storage.activeProfileId === id ? null : storage.activeProfileId,
         };
         setStorage(updated);
         save(updated);
@@ -94,11 +99,12 @@ export const useProfile = (
         fetchAllProfiles();
     }, [storage, setStorage, save, syncToCloud, setAllProfiles, fetchAllProfiles]);
 
-    const updateProfilePin = useCallback((id: string, newPin?: string) => {
+    const updateProfilePin = useCallback(async (id: string, newPin?: string) => {
         if (!storage) return;
+        const hashedPin = newPin ? await hashPin(newPin) : undefined;
 
         const updatedProfiles = storage.profiles.map((profile) =>
-            profile.id === id ? { ...profile, pin: newPin } : profile
+            profile.id === id ? { ...profile, pin: hashedPin } : profile
         );
 
         const updated = {
@@ -170,30 +176,34 @@ export const useProfile = (
         syncToCloud(updated);
     }, [storage, setStorage, save, syncToCloud]);
 
-    const updateFamilyCredentials = useCallback((pin: string) => {
+    const updateFamilyCredentials = useCallback(async (pin: string) => {
         if (!storage) return;
+        const hashedPin = await hashPinIfNeeded(pin);
+        if (!hashedPin) return;
 
         const updated = {
             ...storage,
             familyCredentials: {
                 username: "admin",
-                pin,
+                pin: hashedPin,
             },
         };
 
         setStorage(updated);
         save(updated);
-        syncToCloud(updated);
+        await syncToCloud(updated);
     }, [storage, setStorage, save, syncToCloud]);
 
-    const upsertAdminAccount = useCallback((username: string, pin: string, displayName?: string) => {
+    const upsertAdminAccount = useCallback(async (username: string, pin: string, displayName?: string) => {
         if (!storage) return;
+        const hashedPin = await hashPinIfNeeded(pin);
+        if (!hashedPin) return;
 
         const updated = {
             ...storage,
             adminAccount: {
                 username: username.trim(),
-                pin,
+                pin: hashedPin,
                 displayName: displayName?.trim() || "Quan tri vien",
                 updatedAt: new Date().toISOString(),
             },
@@ -201,7 +211,7 @@ export const useProfile = (
 
         setStorage(updated);
         save(updated);
-        syncToCloud(updated);
+        await syncToCloud(updated);
     }, [storage, setStorage, save, syncToCloud]);
 
     const deleteGhostProfile = useCallback(async (sourceSyncId: string, profileId: string) => {

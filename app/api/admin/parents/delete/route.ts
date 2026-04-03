@@ -1,14 +1,16 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import type { AppStorage } from "@/lib/mastery";
+import { verifyPinInput } from "@/lib/pin-hash";
 import { verifyAdminCredentials } from "@/lib/server/admin-auth";
-import { fetchMathProgressRow, saveMathProgressRow } from "@/lib/server/math-progress-admin";
+import { buildParentMatchKey, deleteParentFromStorage, saveMathProgressRow } from "@/lib/server/math-progress-admin";
 import { sanitizeStorage } from "@/lib/server/app-storage";
 import { getServerSupabase } from "@/lib/server/supabase-admin";
 
-function matchesParent(parent: { id: string; name: string; pin: string }, parentId?: string, parentName?: string, parentPin?: string) {
+async function matchesParent(parent: { id: string; name: string; pin: string }, parentId?: string, parentName?: string, parentPin?: string) {
     if (parentId && parent.id === parentId) return true;
     if (!parentName || !parentPin) return false;
-    return parent.name.trim().toLowerCase() === parentName.trim().toLowerCase() && String(parent.pin).trim() === parentPin.trim();
+    if (parent.name.trim().toLowerCase() !== parentName.trim().toLowerCase()) return false;
+    return verifyPinInput(parentPin, String(parent.pin));
 }
 
 export async function POST(req: NextRequest) {
@@ -45,15 +47,18 @@ export async function POST(req: NextRequest) {
         let updatedRows = 0;
         for (const row of (data || []) as { id: string; data: unknown }[]) {
             const storage = sanitizeStorage(row.data as AppStorage);
-            const matchedParents = (storage.parentAccounts || []).filter((parent) => matchesParent(parent, parentId, parentName, parentPin));
+            const matchedParents: { id: string; name: string; pin: string }[] = [];
+            for (const parent of (storage.parentAccounts || [])) {
+                if (await matchesParent(parent, parentId, parentName, parentPin)) {
+                    matchedParents.push(parent);
+                }
+            }
             if (matchedParents.length === 0) continue;
 
-            const matchedIds = new Set(matchedParents.map((parent) => parent.id));
-            const nextStorage = sanitizeStorage({
-                ...storage,
-                parentAccounts: (storage.parentAccounts || []).filter((parent) => !matchedIds.has(parent.id)),
-                parentChildLinks: (storage.parentChildLinks || []).filter((link) => !matchedIds.has(link.parentId)),
-            });
+            let nextStorage = storage;
+            for (const matchedParent of matchedParents) {
+                nextStorage = deleteParentFromStorage(nextStorage, matchedParent.id, buildParentMatchKey(matchedParent));
+            }
 
             await saveMathProgressRow(row.id, nextStorage);
             updatedRows += 1;

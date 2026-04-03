@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { getOverallRank, type AppStorage } from "@/lib/mastery";
 import { getSubjectScore } from "@/lib/scoring";
 import { sanitizeStorage } from "@/lib/server/app-storage";
+import { verifyAdminCredentials } from "@/lib/server/admin-auth";
 import { getServerSupabase, hasServiceRoleKey } from "@/lib/server/supabase-admin";
 
 type LeaderboardEntry = {
@@ -18,24 +19,6 @@ type LeaderboardEntry = {
     finance_score: number;
     updated_at: string;
 };
-
-async function verifyAdmin(syncId: string, username: string, pin: string) {
-    const supabase = getServerSupabase();
-    const { data, error } = await supabase
-        .from("math_progress")
-        .select("data")
-        .eq("id", syncId)
-        .single();
-
-    if (error || !data) return false;
-
-    const storage = sanitizeStorage(data.data as AppStorage);
-    const admin = storage.adminAccount;
-    if (!admin?.pin) return false;
-
-    return admin.username.trim().toLowerCase() === username.trim().toLowerCase()
-        && String(admin.pin).trim() === pin.trim();
-}
 
 export async function POST(req: NextRequest) {
     try {
@@ -60,7 +43,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const isAuthorized = await verifyAdmin(syncId, username, pin);
+        const isAuthorized = await verifyAdminCredentials({ syncId, username, pin });
         if (!isAuthorized) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }

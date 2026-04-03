@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 import Layout from "@/components/layout";
 import { ProgressProvider } from "@/components/progress-provider";
@@ -7,9 +8,16 @@ import { ThemeProvider } from "@/hooks/use-theme";
 import { Suspense } from "react";
 import { Toaster } from "react-hot-toast";
 
+const beVietnamPro = Be_Vietnam_Pro({
+  subsets: ["latin", "vietnamese"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+  variable: "--font-be-vietnam-pro",
+});
+
 export const metadata: Metadata = {
   title: "SuperKids - Học Tập Toàn Diện",
-  description: "Ứng dụng luyện toán lớp 2 theo trình độ",
+  description: "Ứng dụng luyện tập lớp 2 theo trình độ",
 };
 
 export default function RootLayout({
@@ -19,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" suppressHydrationWarning>
-      <body suppressHydrationWarning>
+      <body className={`${beVietnamPro.className} ${beVietnamPro.variable} antialiased`} suppressHydrationWarning>
         <ThemeProvider>
           <ProgressProvider>
             <SoundProvider>

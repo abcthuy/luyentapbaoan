@@ -1,21 +1,42 @@
-﻿import type { AppStorage } from "@/lib/mastery";
+import type { AppStorage } from "@/lib/mastery";
 import { getOverallRank } from "@/lib/mastery";
 import { getSubjectScore } from "@/lib/scoring";
 import { sanitizeStorage } from "@/lib/server/app-storage";
+import { syncCurriculumProgressForStorage } from "@/lib/server/curriculum-progress";
 import { getServerSupabase } from "@/lib/server/supabase-admin";
+import { mergeAppStorage } from "@/lib/storage-merge";
 
 export async function syncStorageToDatabase(syncId: string, storage: AppStorage) {
     const supabase = getServerSupabase();
-    const normalized = sanitizeStorage({
+    const normalizedIncoming = sanitizeStorage({
         ...storage,
         lastActive: storage.lastActive || Date.now(),
     });
+
+    const { data: existingRow } = await supabase
+        .from("math_progress")
+        .select("data")
+        .eq("id", syncId)
+        .maybeSingle();
+
+    const existingStorage = existingRow?.data ? sanitizeStorage(existingRow.data as AppStorage) : null;
+    const mergedStorage = existingStorage ? mergeAppStorage(existingStorage, normalizedIncoming) : normalizedIncoming;
+    const normalized = sanitizeStorage({
+        ...mergedStorage,
+        lastActive: Math.max(mergedStorage.lastActive || 0, Date.now()),
+    });
+    const deletedProfileIds = Array.from(new Set([...(existingStorage?.deletedProfileIds || []), ...(normalized.deletedProfileIds || [])]));
+    const deletedParentKeys = Array.from(new Set([...(existingStorage?.deletedParentKeys || []), ...(normalized.deletedParentKeys || [])]));
 
     const { error } = await supabase
         .from("math_progress")
         .upsert({
             id: syncId,
-            data: normalized,
+            data: {
+                ...normalized,
+                deletedProfileIds,
+                deletedParentKeys,
+            },
             updated_at: new Date().toISOString(),
         });
 
@@ -54,7 +75,20 @@ export async function syncStorageToDatabase(syncId: string, storage: AppStorage)
         if (deleteLeaderboardError) throw deleteLeaderboardError;
     }
 
-    return normalized;
+    if (deletedProfileIds.length > 0) {
+        const { error: deletedLeaderboardError } = await supabase.from("leaderboard").delete().in("id", deletedProfileIds);
+        if (deletedLeaderboardError) throw deletedLeaderboardError;
+    }
+
+    await syncCurriculumProgressForStorage({
+        ...normalized,
+        deletedProfileIds,
+    });
+
+    return sanitizeStorage({
+        ...normalized,
+        deletedProfileIds,
+    });
 }
 
 export async function fetchStorage(syncId: string) {

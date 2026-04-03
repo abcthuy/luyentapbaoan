@@ -18,6 +18,7 @@ import { GameContainer } from '@/components/games/GameContainer';
 import { addToReviewQueue } from '@/lib/spaced-repetition';
 import { checkNewBadges, applyNewBadges } from '@/lib/badges';
 import { BadgeDisplay } from '@/components/BadgeDisplay';
+import { isAnswerCorrect } from '@/lib/answer-check';
 
 export default function PracticeClient() {
     type EvaluationFeedback = Feedback & { quality?: string };
@@ -61,6 +62,13 @@ export default function PracticeClient() {
 
     const hasLoadedRef = React.useRef(false);
 
+    const getRequestedLevelCap = useCallback((questionSkillId: SkillId) => {
+        const info = SKILL_MAP[questionSkillId];
+        if (!info) return 5;
+        if (info.subjectId === 'english') return 2;
+        return 5;
+    }, []);
+
     const nextQuestion = useCallback(async () => {
         if (!progress || isLoadingQuestion) return;
 
@@ -89,8 +97,8 @@ export default function PracticeClient() {
         const adaptiveLevelBonus =
             sessionTotal >= 8 && currentAccuracy >= 0.9 ? 2 :
                 sessionTotal >= 5 && currentAccuracy >= 0.8 ? 1 : 0;
-        skillLevel = Math.min(progress.skills?.[skillId]?.level || 1, 5) + adaptiveLevelBonus;
-        skillLevel = Math.min(skillLevel, 5);
+        skillLevel = Math.min(skillLevel + adaptiveLevelBonus, 5);
+        skillLevel = Math.min(skillLevel, getRequestedLevelCap(skillId));
 
         try {
             const newQ = await generateQuestion(skillInfo.subjectId, skillId, skillLevel);
@@ -120,7 +128,7 @@ export default function PracticeClient() {
         } finally {
             setIsLoadingQuestion(false);
         }
-    }, [currentGrade, isLoadingQuestion, play, progress, router, sessionCorrect, sessionTotal, skillId]);
+    }, [currentGrade, getRequestedLevelCap, isLoadingQuestion, play, progress, router, sessionCorrect, sessionTotal, skillId]);
 
     useEffect(() => {
         if (!progress || !skillId) return;
@@ -156,9 +164,7 @@ export default function PracticeClient() {
         if (isSpeakingOrReading) {
             isCorrect = false; // Wait for AI to decide
         } else {
-            const normalizedStudent = finalAnswer.toLowerCase().replace(/\s+/g, '');
-            const normalizedCorrect = (currentQuestion?.answer || '').toLowerCase().replace(/\s+/g, '');
-            isCorrect = normalizedStudent === normalizedCorrect;
+            isCorrect = currentQuestion ? isAnswerCorrect(currentQuestion, finalAnswer) : false;
         }
 
         if (isCorrect) {
@@ -214,8 +220,12 @@ export default function PracticeClient() {
 
                 const res = await fetch('/api/evaluate', {
                     method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body),
                 });
+                if (!res.ok) {
+                    throw new Error(`Evaluate failed with status ${res.status}`);
+                }
                 const aiResponse = await res.json();
                 if (typeof aiResponse?.isCorrect === 'boolean') {
                     isCorrect = aiResponse.isCorrect;
@@ -361,7 +371,7 @@ export default function PracticeClient() {
     }
     const skillLevel = progress.skills?.[skillId]?.level || 1;
     // Current adaptive level for the next question
-    const activeLevel = Math.min(skillLevel + Math.floor(sessionTotal / 3), 5);
+    const activeLevel = Math.min(skillLevel + Math.floor(sessionTotal / 3), getRequestedLevelCap(skillId));
     const currentMastery = progress.skills?.[skillId]?.mastery || 0;
     const masteryGain = Math.round((currentMastery - startMastery) * 100);
 

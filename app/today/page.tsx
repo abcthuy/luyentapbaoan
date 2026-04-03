@@ -1,10 +1,11 @@
-"use client";
+﻿"use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useProgress } from '@/components/progress-provider';
-import { generateQuestion } from '@/lib/content/registry';
+import { generateQuestion, resetQuestionSessionTracker } from '@/lib/content/registry';
 import { Question } from '@/lib/content/types';
 import { selectNextSkill } from '@/lib/selector';
+import { buildCurriculumSelectionContext, CurriculumSelectionContext } from '@/lib/curriculum';
 import { updateMastery, getOverallRank, updateDailyStreak } from '@/lib/mastery';
 import { isSkillAvailableForGrade, SkillId, SKILL_MAP } from '@/lib/skills';
 import { getTheme } from '@/lib/theme';
@@ -19,30 +20,78 @@ import { QuestionCard } from '@/components/question-card';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { UserMenu } from '@/components/user-menu';
 import { BackButton } from '@/components/ui/back-button';
-import { addToReviewQueue } from '@/lib/spaced-repetition';
+import { addToReviewQueue, getReviewQuestions, updateReviewItem } from '@/lib/spaced-repetition';
 import { checkNewBadges, applyNewBadges } from '@/lib/badges';
 import { WalletButton } from '@/components/ui/wallet-button';
 import toast from 'react-hot-toast';
 import { getUnlockStatus } from '@/lib/unlock';
 import { Feedback } from '@/lib/types/game';
+import { ReviewItem } from '@/lib/mastery';
+import { isAnswerCorrect } from '@/lib/answer-check';
+
+const VALID_SUBJECT_IDS = new Set(['math', 'vietnamese', 'english', 'finance']);
+
+function getSubjectMasteryAverage(subjectId: string | undefined, progress: any, grade: number) {
+    if (!subjectId || !progress?.skills) return 0;
+
+    const subjectSkills = Object.values(SKILL_MAP).filter((skill) =>
+        skill.subjectId === subjectId && isSkillAvailableForGrade(skill, grade)
+    );
+
+    if (subjectSkills.length === 0) return 0;
+
+    return subjectSkills.reduce((sum, skill) => sum + (progress.skills[skill.id]?.mastery || 0), 0) / subjectSkills.length;
+}
+
+function getAdaptiveQuestionLevel(params: {
+    skillId: SkillId;
+    subjectId: string;
+    progress: any;
+    grade: number;
+}) {
+    const { skillId, subjectId, progress, grade } = params;
+    const skillState = progress?.skills?.[skillId];
+    const skillMastery = skillState?.mastery || 0;
+    const skillAttempts = skillState?.attempts || 0;
+    const subjectAverage = getSubjectMasteryAverage(subjectId, progress, grade);
+
+    if (skillAttempts < 3 || skillMastery < 0.35 || subjectAverage < 0.4) return 1;
+    if (skillMastery < 0.65 || subjectAverage < 0.6) return 2;
+    if (skillMastery < 0.82 || subjectAverage < 0.78) return 3;
+
+    return grade <= 2 ? 3 : 4;
+}
 
 export default function TodayPage() {
     type EvaluationFeedback = Feedback & { quality?: string };
 
     const router = useRouter();
     const searchParams = useSearchParams();
-    const subjectId = searchParams.get('subject');
+    const urlSubjectId = searchParams.get('subject');
+    const normalizedUrlSubjectId = urlSubjectId && VALID_SUBJECT_IDS.has(urlSubjectId) ? urlSubjectId : null;
+
+    // Game State
+    const [sessionHistory, setSessionHistory] = useState<SkillId[]>([]);
+
+    const activeSubjectId = useMemo(() => {
+        if (normalizedUrlSubjectId) return normalizedUrlSubjectId;
+        if (sessionHistory.length > 0) {
+            const firstSkill = SKILL_MAP[sessionHistory[0]];
+            if (firstSkill) return firstSkill.subjectId;
+        }
+        return undefined;
+    }, [normalizedUrlSubjectId, sessionHistory]);
 
     // Title Logic
     const getTitle = () => {
-        if (!subjectId) return "Nhà Thông Thái Nhí";
+        if (!activeSubjectId) return "NhÃ  ThÃ´ng ThÃ¡i NhÃ­";
         const map: Record<string, string> = {
-            'math': 'Nhà Toán Học Nhí 🧮',
-            'vietnamese': 'Nhà Văn Nhí ✍️',
-            'english': 'Nhà Ngôn Ngữ Học 🌍',
-            'finance': 'Nhà Đầu Tư Nhí 💰'
+            'math': 'NhÃ  ToÃ¡n Há»c NhÃ­ ðŸ§®',
+            'vietnamese': 'NhÃ  VÄƒn NhÃ­ âœï¸',
+            'english': 'NhÃ  NgÃ´n Ngá»¯ Há»c ðŸŒ',
+            'finance': 'NhÃ  Äáº§u TÆ° NhÃ­ ðŸ’°'
         };
-        return map[subjectId] || "Nhà Thông Thái Nhí";
+        return map[activeSubjectId] || "NhÃ  ThÃ´ng ThÃ¡i NhÃ­";
     };
     const pageTitle = getTitle();
 
@@ -52,19 +101,51 @@ export default function TodayPage() {
 
     // Subject Lock: Prevent direct URL access to locked subjects (mastery-based)
     useEffect(() => {
-        if (!progress || !subjectId) return;
-        const status = getUnlockStatus(progress, subjectId, currentGrade);
+        if (!progress || !activeSubjectId) return;
+        const status = getUnlockStatus(progress, activeSubjectId, currentGrade);
         if (!status.unlocked) {
             const missingReqs = status.requirements.filter(r => !r.met);
             const msg = missingReqs.map(r => `${r.subjectName}: ${r.currentPercent}%/${r.requiredPercent}%`).join(', ');
-            toast.error(`Chưa đủ điều kiện! ${msg}`, {
-                icon: '🔒',
+            toast.error(`ChÆ°a Ä‘á»§ Ä‘iá»u kiá»‡n! ${msg}`, {
+                icon: 'ðŸ”’',
                 style: { borderRadius: '20px', background: '#333', color: '#fff', fontWeight: 'bold' }
             });
             setTimeout(() => router.push('/subjects'), 100);
         }
-    }, [currentGrade, progress, subjectId, router]);
+    }, [currentGrade, progress, activeSubjectId, router]);
 
+
+    useEffect(() => {
+        let ignore = false;
+
+        const loadCurriculum = async () => {
+            if (!activeSubjectId || !activeProfile?.id) {
+                if (!ignore) setCurriculumContext(null);
+                return;
+            }
+
+            try {
+                const params = new URLSearchParams({
+                    subjectId: activeSubjectId,
+                    grade: String(currentGrade),
+                    profileId: activeProfile.id,
+                });
+                const res = await fetch(`/api/curriculum?${params.toString()}`);
+                const payload = await res.json().catch(() => ({ enabled: false }));
+                if (ignore) return;
+                setCurriculumContext(buildCurriculumSelectionContext(payload));
+            } catch (error) {
+                console.warn('Failed to load curriculum context:', error);
+                if (!ignore) setCurriculumContext(null);
+            }
+        };
+
+        loadCurriculum();
+
+        return () => {
+            ignore = true;
+        };
+    }, [activeProfile?.id, currentGrade, activeSubjectId]);
     // Game State
     const [sessionActive, setSessionActive] = useState(false);
     const [gameMode, setGameMode] = useState<{ total: number, time: number, level: number } | null>(null); // Added level
@@ -73,6 +154,7 @@ export default function TodayPage() {
     const [answer, setAnswer] = useState('');
     const [feedback, setFeedback] = useState<EvaluationFeedback | null>(null);
     const [evaluating, setEvaluating] = useState(false);
+    const [isLoadingQuestion, setIsLoadingQuestion] = useState(false);
 
     const [count, setCount] = useState(0);
     const [correctCount, setCorrectCount] = useState(0);
@@ -86,10 +168,11 @@ export default function TodayPage() {
 
     // Internal logic for question selection
     const [, setCurrentBucket] = useState<string>('mixed');
-    const [sessionHistory, setSessionHistory] = useState<SkillId[]>([]);
     const [sessionCorrect, setSessionCorrect] = useState(0);
     const [sessionStreak, setSessionStreak] = useState(0);
     const [sessionEarnings, setSessionEarnings] = useState(0);
+    const [currentReviewItem, setCurrentReviewItem] = useState<ReviewItem | null>(null);
+    const [curriculumContext, setCurriculumContext] = useState<CurriculumSelectionContext | null>(null);
 
     // --- ACTIONS ---
 
@@ -105,28 +188,28 @@ export default function TodayPage() {
 
         if (percent >= 90) {
             return {
-                title: 'Xuất sắc!',
-                summary: `Xuất sắc! Con đã trả lời đúng ${correct}/${total} câu trong ${formattedTime}. Thành tích tuyệt vời, cứ giữ vững phong độ này nhé! 🏆✨`,
+                title: 'Xuáº¥t sáº¯c!',
+                summary: `Xuáº¥t sáº¯c! Con Ä‘Ã£ tráº£ lá»i Ä‘Ãºng ${correct}/${total} cÃ¢u trong ${formattedTime}. ThÃ nh tÃ­ch tuyá»‡t vá»i, cá»© giá»¯ vá»¯ng phong Ä‘á»™ nÃ y nhÃ©! ðŸ†âœ¨`,
             };
         }
 
         if (percent >= 70) {
             return {
-                title: 'Rất giỏi!',
-                summary: `Rất giỏi! ${correct}/${total} câu đúng trong ${formattedTime}. Con đã rất cố gắng, luyện thêm chút nữa sẽ hoàn hảo! 🌟💪`,
+                title: 'Ráº¥t giá»i!',
+                summary: `Ráº¥t giá»i! ${correct}/${total} cÃ¢u Ä‘Ãºng trong ${formattedTime}. Con Ä‘Ã£ ráº¥t cá»‘ gáº¯ng, luyá»‡n thÃªm chÃºt ná»¯a sáº½ hoÃ n háº£o! ðŸŒŸðŸ’ª`,
             };
         }
 
         if (percent >= 50) {
             return {
-                title: 'Tốt lắm!',
-                summary: `Tốt lắm! ${correct}/${total} câu đúng. Con đang tiến bộ mỗi ngày. Hãy ôn lại những bài chưa vững nhé! 📖🌈`,
+                title: 'Tá»‘t láº¯m!',
+                summary: `Tá»‘t láº¯m! ${correct}/${total} cÃ¢u Ä‘Ãºng. Con Ä‘ang tiáº¿n bá»™ má»—i ngÃ y. HÃ£y Ã´n láº¡i nhá»¯ng bÃ i chÆ°a vá»¯ng nhÃ©! ðŸ“–ðŸŒˆ`,
             };
         }
 
         return {
-            title: 'Cố lên nào!',
-            summary: `Cố lên nào! ${correct}/${total} câu đúng. Không sao đâu, mỗi lần luyện tập con sẽ giỏi hơn. Thử lại nhé! 💪🌱`,
+            title: 'Cá»‘ lÃªn nÃ o!',
+            summary: `Cá»‘ lÃªn nÃ o! ${correct}/${total} cÃ¢u Ä‘Ãºng. KhÃ´ng sao Ä‘Ã¢u, má»—i láº§n luyá»‡n táº­p con sáº½ giá»i hÆ¡n. Thá»­ láº¡i nhÃ©! ðŸ’ªðŸŒ±`,
         };
     }, [formatTime]);
 
@@ -136,17 +219,17 @@ export default function TodayPage() {
         setSessionActive(false);
         const score = correctCount * 10;
 
-        // === TEMPLATE TĨNH thay vì gọi AI ===
+        // === TEMPLATE TÄ¨NH thay vÃ¬ gá»i AI ===
         const percent = gameMode ? Math.round((correctCount / gameMode.total) * 100) : 0;
         let summary = '';
         if (percent >= 90) {
-            summary = `Xuất sắc! Con đã trả lời đúng ${correctCount}/${gameMode?.total} câu trong ${formatTime(timeInSeconds)}. Thành tích tuyệt vời, cứ giữ vững phong độ này nhé! 🏆✨`;
+            summary = `Xuáº¥t sáº¯c! Con Ä‘Ã£ tráº£ lá»i Ä‘Ãºng ${correctCount}/${gameMode?.total} cÃ¢u trong ${formatTime(timeInSeconds)}. ThÃ nh tÃ­ch tuyá»‡t vá»i, cá»© giá»¯ vá»¯ng phong Ä‘á»™ nÃ y nhÃ©! ðŸ†âœ¨`;
         } else if (percent >= 70) {
-            summary = `Rất giỏi! ${correctCount}/${gameMode?.total} câu đúng trong ${formatTime(timeInSeconds)}. Con đã rất cố gắng, luyện thêm chút nữa sẽ hoàn hảo! 🌟💪`;
+            summary = `Ráº¥t giá»i! ${correctCount}/${gameMode?.total} cÃ¢u Ä‘Ãºng trong ${formatTime(timeInSeconds)}. Con Ä‘Ã£ ráº¥t cá»‘ gáº¯ng, luyá»‡n thÃªm chÃºt ná»¯a sáº½ hoÃ n háº£o! ðŸŒŸðŸ’ª`;
         } else if (percent >= 50) {
-            summary = `Tốt lắm! ${correctCount}/${gameMode?.total} câu đúng. Con đang tiến bộ mỗi ngày. Hãy ôn lại những bài chưa vững nhé! 📖🌈`;
+            summary = `Tá»‘t láº¯m! ${correctCount}/${gameMode?.total} cÃ¢u Ä‘Ãºng. Con Ä‘ang tiáº¿n bá»™ má»—i ngÃ y. HÃ£y Ã´n láº¡i nhá»¯ng bÃ i chÆ°a vá»¯ng nhÃ©! ðŸ“–ðŸŒˆ`;
         } else {
-            summary = `Cố lên nào! ${correctCount}/${gameMode?.total} câu đúng. Không sao đâu, mỗi lần luyện tập con sẽ giỏi hơn. Thử lại nhé! 💪🌱`;
+            summary = `Cá»‘ lÃªn nÃ o! ${correctCount}/${gameMode?.total} cÃ¢u Ä‘Ãºng. KhÃ´ng sao Ä‘Ã¢u, má»—i láº§n luyá»‡n táº­p con sáº½ giá»i hÆ¡n. Thá»­ láº¡i nhÃ©! ðŸ’ªðŸŒ±`;
         }
         setAiSummary(summary);
         const review = getPerformanceReview(correctCount, gameMode?.total || 0, timeInSeconds);
@@ -158,7 +241,7 @@ export default function TodayPage() {
                 ? timeInSeconds
                 : (progress.bestTimeSeconds || 999999);
 
-            // CỘ TIỀN + STREAK + BADGES khi hoàn thành
+            // Cá»˜ TIá»€N + STREAK + BADGES khi hoÃ n thÃ nh
             let finalProgress: typeof progress = {
                 ...progress,
                 lastSessionDate: todayStr,
@@ -183,7 +266,9 @@ export default function TodayPage() {
         }
     }, [correctCount, count, formatTime, gameMode, getPerformanceReview, play, progress, sessionEarnings, timeInSeconds, updateLocalProgress]);
 
-    const startGame = (total: number, minutes: number, level: number) => {
+    const startGame = (total: number, minutes: number, level: number = 1) => {
+        resetQuestionSessionTracker();
+        setSessionActive(true);
         setGameMode({ total, time: minutes * 60, level });
         setTimeLeft(minutes * 60);
         setCount(0);
@@ -193,63 +278,106 @@ export default function TodayPage() {
         setTimeInSeconds(0);
         setIsFinished(false);
         setSessionActive(true);
+        setCurrentReviewItem(null);
+        setCurrentQuestion(null);
+        setAnswer('');
+        setFeedback(null);
+        setEvaluating(false);
+        setIsLoadingQuestion(false);
+        setAiSummary('');
         play('click');
     };
 
+    const buildReviewQuestion = useCallback((reviewItem: ReviewItem): Question | null => {
+        const reviewSkill = SKILL_MAP[reviewItem.skillId];
+        if (!reviewSkill) return null;
+
+        return {
+            id: `review-${reviewItem.skillId}-${Date.now()}`,
+            subjectId: reviewSkill.subjectId,
+            skillId: reviewItem.skillId,
+            type: 'input',
+            instruction: 'On lai cau con da tung lam sai:',
+            content: {
+                text: reviewItem.questionText
+            },
+            answer: reviewItem.correctAnswer,
+            hint: 'Con thu nhin lai cach lam that cham nhe.',
+            explanation: `Dap an dung la: ${reviewItem.correctAnswer}`
+        };
+    }, []);
+
     const nextQuestion = useCallback(async () => {
-        if (!progress || !gameMode) return;
+        if (!progress || !gameMode || isLoadingQuestion) return;
         if (count >= gameMode.total) {
             finishSession();
             return;
         }
 
-        const currentPerformance = count > 0 ? (sessionCorrect / count) : 1.0;
-        const { skillId, bucket } = selectNextSkill(progress, sessionHistory, count, currentPerformance, subjectId || undefined, currentGrade);
+        const dueReviewItems = getReviewQuestions(progress).filter((item) => {
+            const reviewSkill = SKILL_MAP[item.skillId];
+            if (!reviewSkill) return false;
+            if (activeSubjectId && reviewSkill.subjectId !== activeSubjectId) return false;
+            return isSkillAvailableForGrade(reviewSkill, currentGrade);
+        });
 
-        setCurrentBucket(bucket);
-        setSessionHistory(prev => [...prev.slice(-10), skillId]);
+        const shouldServeReview =
+            dueReviewItems.length > 0 &&
+            count > 0 &&
+            count % 4 === 0;
 
-        // --- PHÂN CẤP THÁCH THỨC (DIFFERENTIATED DIFFICULTY) ---
-        let finalLevel = 1;
+        if (shouldServeReview) {
+            const reviewItem = dueReviewItems[0];
+            const reviewQuestion = buildReviewQuestion(reviewItem);
 
-        if (gameMode.total === 10) {
-            finalLevel = 1; // Gói 10 câu: Luôn Level 1 (Ưu tiên kho tĩnh)
-        } else if (gameMode.total === 20) {
-            // Gói 20 câu: 10 câu đầu Lvl 2, 10 câu sau Lvl 3
-            finalLevel = count < 10 ? 2 : 3;
-        } else if (gameMode.total === 30) {
-            // Gói 30 câu: Tăng dần 3-4-5 sau mỗi 10 câu
-            if (count < 10) finalLevel = 3;
-            else if (count < 20) finalLevel = 4;
-            else finalLevel = 5;
+            if (reviewQuestion) {
+                setCurrentBucket('review');
+                setCurrentReviewItem(reviewItem);
+                setCurrentQuestion(reviewQuestion);
+                setAnswer('');
+                setFeedback(null);
+                return;
+            }
         }
 
-        // Đảm bảo Level không vượt quá giới hạn 1-5
-        finalLevel = Math.max(1, Math.min(5, finalLevel));
+        const currentPerformance = count > 0 ? (sessionCorrect / count) : 1.0;
+        const { skillId, bucket } = selectNextSkill(progress, sessionHistory, count, currentPerformance, {
+            subjectId: activeSubjectId || undefined,
+            grade: currentGrade,
+            curriculumContext,
+            sessionLength: gameMode.total,
+        });
+
+        setCurrentBucket(bucket);
+        setCurrentReviewItem(null);
+        setSessionHistory(prev => [...prev, skillId]);
 
         const skillInfo = SKILL_MAP[skillId];
         if (!skillInfo || !isSkillAvailableForGrade(skillInfo, currentGrade)) {
             return;
         }
 
-        const storedSkillLevel = progress.skills?.[skillId]?.level || 1;
-        const sessionBonus = gameMode.total === 30
-            ? Math.floor(count / 12)
-            : gameMode.total === 20
-                ? Math.floor(count / 15)
-                : 0;
-        const performanceBonus = currentPerformance >= 0.85 && count >= 5 ? 1 : 0;
-        finalLevel = Math.min(gameMode.level, storedSkillLevel + sessionBonus + performanceBonus);
-        finalLevel = Math.max(1, Math.min(5, finalLevel));
+        let finalLevel = getAdaptiveQuestionLevel({
+            skillId,
+            subjectId: skillInfo.subjectId,
+            progress,
+            grade: currentGrade,
+        });
 
-        // AI Generation Logic (Simulated or Real)
-        // ... (Keep existing complex logic or simplify for now to ensure stability)
-        // For brevity in this rewrite, using standard generator primarily
-        const newQ = await generateQuestion(skillInfo.subjectId, skillId, finalLevel);
-        setCurrentQuestion(newQ);
+        finalLevel = Math.max(1, Math.min(currentGrade <= 2 ? 3 : 4, finalLevel));
+
+        setIsLoadingQuestion(true);
+        setCurrentQuestion(null);
         setAnswer('');
         setFeedback(null);
-    }, [count, currentGrade, finishSession, gameMode, progress, sessionCorrect, sessionHistory, subjectId]);
+
+        try {
+            const newQ = await generateQuestion(skillInfo.subjectId, skillId, finalLevel);
+            setCurrentQuestion(newQ);
+        } finally {
+            setIsLoadingQuestion(false);
+        }
+    }, [buildReviewQuestion, count, currentGrade, curriculumContext, finishSession, gameMode, isLoadingQuestion, progress, sessionCorrect, sessionHistory, activeSubjectId]);
 
     const submitAnswer = async (selectedAnswer?: string, audioBlob?: Blob) => {
         const finalAnswer = selectedAnswer !== undefined ? selectedAnswer : answer;
@@ -260,11 +388,9 @@ export default function TodayPage() {
 
         let isCorrect = false;
         if (isSpeakingOrReading) {
-            isCorrect = false; // Chờ AI xác nhận kết quả thật
+            isCorrect = false; // Chá» AI xÃ¡c nháº­n káº¿t quáº£ tháº­t
         } else {
-            const normalizedStudent = finalAnswer.toLowerCase().replace(/\s+/g, '');
-            const normalizedCorrect = (currentQuestion?.answer || '').toLowerCase().replace(/\s+/g, '');
-            isCorrect = normalizedStudent === normalizedCorrect;
+            isCorrect = currentQuestion ? isAnswerCorrect(currentQuestion, finalAnswer) : false;
         }
 
         if (isCorrect) {
@@ -280,18 +406,18 @@ export default function TodayPage() {
             setSessionStreak(0);
         }
 
-        // === ĐÁNH GIÁ HYBRID ===
-        // Bước 1: Tạo feedback local tức thì
+        // === ÄÃNH GIÃ HYBRID ===
+        // BÆ°á»›c 1: Táº¡o feedback local tá»©c thÃ¬
         const localFeedback = {
             isCorrect,
             explain: isCorrect
-                ? (currentQuestion?.explanation || 'Chính xác! Bạn rất giỏi. 🌟')
-                : `Chưa đúng rồi. Đáp án là: ${currentQuestion?.answer}. ${currentQuestion?.explanation || ''}`,
+                ? (currentQuestion?.explanation || 'ChÃ­nh xÃ¡c! Báº¡n ráº¥t giá»i. ðŸŒŸ')
+                : `ChÆ°a Ä‘Ãºng rá»“i. ÄÃ¡p Ã¡n lÃ : ${currentQuestion?.answer}. ${currentQuestion?.explanation || ''}`,
             microLesson: !isCorrect ? (currentQuestion?.hint || '') : ''
         };
 
         if (isSpeakingOrReading) {
-            // Bài nói/viết: BẮT BUỘC gọi AI để phân tích
+            // BÃ i nÃ³i/viáº¿t: Báº®T BUá»˜C gá»i AI Ä‘á»ƒ phÃ¢n tÃ­ch
             try {
                 const blobToBase64 = (blob: Blob): Promise<string> => {
                     return new Promise((resolve, reject) => {
@@ -337,11 +463,11 @@ export default function TodayPage() {
                 }
                 setFeedback(aiResponse || localFeedback);
             } catch (e) {
-                console.error('Lỗi khi gọi AI đánh giá bài nói:', e);
+                console.error('Lá»—i khi gá»i AI Ä‘Ã¡nh giÃ¡ bÃ i nÃ³i:', e);
                 setFeedback(localFeedback);
             }
         } else {
-            // Bài thường (Trắc nghiệm, Điền số, Kéo thả): Feedback local ngay, KHÔNG gọi API
+            // BÃ i thÆ°á»ng (Tráº¯c nghiá»‡m, Äiá»n sá»‘, KÃ©o tháº£): Feedback local ngay, KHÃ”NG gá»i API
             setFeedback(localFeedback);
         }
 
@@ -359,7 +485,7 @@ export default function TodayPage() {
 
         setEvaluating(false);
 
-        // Cập nhật Mastery
+        // Cáº­p nháº­t Mastery
         if (progress && currentQuestion && progress.skills) {
             const currentSkillState = progress.skills[currentQuestion.skillId] || {
                 skillId: currentQuestion.skillId,
@@ -377,13 +503,20 @@ export default function TodayPage() {
             };
             const updatedSkill = updateMastery(currentSkillState, isCorrect);
 
-            // Spaced Repetition: thêm câu sai vào hàng đợi ôn tập
+            // Spaced Repetition: thÃªm cÃ¢u sai vÃ o hÃ ng Ä‘á»£i Ã´n táº­p
             let updatedProgress = {
                 ...progress,
                 skills: { ...progress.skills, [currentQuestion.skillId]: updatedSkill }
             };
 
-            if (!isCorrect && currentQuestion.content?.text) {
+            if (currentReviewItem) {
+                updatedProgress = updateReviewItem(
+                    updatedProgress,
+                    currentReviewItem.skillId,
+                    currentReviewItem.questionText,
+                    isCorrect
+                );
+            } else if (!isCorrect && currentQuestion.content?.text) {
                 updatedProgress = addToReviewQueue(
                     updatedProgress,
                     currentQuestion.skillId,
@@ -394,11 +527,12 @@ export default function TodayPage() {
 
             updateLocalProgress(updatedProgress);
             setCount(prev => prev + 1);
+            setCurrentReviewItem(null);
 
-            // Tích lũy tiền thưởng (chỉ thưởng khi đúng hoàn toàn liên tiếp)
+            // TÃ­ch lÅ©y tiá»n thÆ°á»Ÿng (chá»‰ thÆ°á»Ÿng khi Ä‘Ãºng hoÃ n toÃ n liÃªn tiáº¿p)
             let earnedAmount = isCorrect ? 100 : 0;
             if (isCorrect) {
-                // sessionStreak đã được +1 ở trên rồi, dùng giá trị mới
+                // sessionStreak Ä‘Ã£ Ä‘Æ°á»£c +1 á»Ÿ trÃªn rá»“i, dÃ¹ng giÃ¡ trá»‹ má»›i
                 const newStreak = sessionStreak + 1;
                 if (newStreak === 10) {
                     earnedAmount += 1000;
@@ -438,6 +572,17 @@ export default function TodayPage() {
         };
     }, [finishSession, isFinished, sessionActive, timeLeft]);
 
+    useEffect(() => {
+        if (sessionActive) return;
+
+        setCurrentQuestion(null);
+        setAnswer('');
+        setFeedback(null);
+        setEvaluating(false);
+        setCurrentReviewItem(null);
+        setIsLoadingQuestion(false);
+    }, [activeSubjectId, sessionActive]);
+
     // Question Init
     useEffect(() => {
         let nextQuestionTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -451,7 +596,7 @@ export default function TodayPage() {
 
     // --- RENDER ---
 
-    const theme = getTheme(subjectId);
+    const theme = getTheme(activeSubjectId);
     const performanceReview = getPerformanceReview(correctCount, gameMode?.total || 0, timeInSeconds);
 
     if (isFinished) {
@@ -489,13 +634,13 @@ export default function TodayPage() {
                     </h1>
 
                     <h1 className="hidden">
-                        Xuất Sắc!
+                        Xuáº¥t Sáº¯c!
                     </h1>
 
                     <div className="bg-white/50 backdrop-blur-md rounded-3xl p-6 mb-10 border-2 border-white/50 shadow-inner">
                         {!aiSummary ? (
                             <div className="flex items-center justify-center gap-2 text-slate-400 font-bold italic">
-                                <motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.5 }}>Gia sư AI đang viết nhận xét...</motion.span>
+                                <motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.5 }}>Gia sÆ° AI Ä‘ang viáº¿t nháº­n xÃ©t...</motion.span>
                             </div>
                         ) : (
                             <motion.p
@@ -510,15 +655,15 @@ export default function TodayPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
                         <div className="bg-emerald-50/80 p-5 rounded-[32px] border-2 border-emerald-100/50 shadow-sm">
-                            <div className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Chính xác</div>
+                            <div className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">ChÃ­nh xÃ¡c</div>
                             <div className="text-3xl font-black text-emerald-600">{correctCount}/{gameMode?.total}</div>
                         </div>
                         <div className="bg-blue-50/80 p-5 rounded-[32px] border-2 border-blue-100/50 shadow-sm">
-                            <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Điểm Thưởng</div>
+                            <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Äiá»ƒm ThÆ°á»Ÿng</div>
                             <div className="text-3xl font-black text-blue-600">+{correctCount * 10}</div>
                         </div>
                         <div className="bg-purple-50/80 p-5 rounded-[32px] border-2 border-purple-100/50 shadow-sm">
-                            <div className="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1">Thời gian</div>
+                            <div className="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1">Thá»i gian</div>
                             <div className="text-3xl font-black text-purple-600">{formatTime(timeInSeconds)}</div>
                         </div>
                     </div>
@@ -530,7 +675,7 @@ export default function TodayPage() {
                             onClick={() => window.location.reload()}
                             className="flex-1 py-5 px-8 bg-slate-900 text-white rounded-[28px] font-black text-xl shadow-xl shadow-slate-900/20 flex items-center justify-center gap-3"
                         >
-                            <Zap size={24} className="fill-yellow-400 text-yellow-400" /> Chơi Lại
+                            <Zap size={24} className="fill-yellow-400 text-yellow-400" /> ChÆ¡i Láº¡i
                         </motion.button>
                         <motion.button
                             whileHover={{ scale: 1.05, y: -4 }}
@@ -538,7 +683,7 @@ export default function TodayPage() {
                             onClick={() => router.push('/subjects')}
                             className="flex-1 py-5 px-8 bg-white text-slate-800 border-4 border-white rounded-[28px] font-black text-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-3 shadow-lg"
                         >
-                            <ArrowLeft size={24} /> Trang Chủ
+                            <ArrowLeft size={24} /> Trang Chá»§
                         </motion.button>
                     </div>
                 </motion.div>
@@ -547,7 +692,7 @@ export default function TodayPage() {
     }
 
     if (!sessionActive) {
-        const rank = progress ? getOverallRank(progress) : { label: 'Tập Sự', icon: '🐣', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200' };
+        const rank = progress ? getOverallRank(progress) : { label: 'Táº­p Sá»±', icon: 'ðŸ£', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200' };
 
         return (
             <div className={`min-h-screen transition-colors duration-700 ${theme.colors.light} p-4 md:p-8 space-y-8 relative overflow-hidden font-sans selection:${theme.colors.primary}/30`}>
@@ -564,8 +709,8 @@ export default function TodayPage() {
                             <BackButton />
                             <div className="h-8 w-[2px] bg-slate-200/50 hidden md:block" />
                             <div className="hidden md:flex flex-col">
-                                <h1 className="text-xl font-black text-slate-800 leading-none">Chế độ Thách đấu</h1>
-                                <span className="text-xs font-bold text-slate-400">Rèn luyện tư duy mỗi ngày</span>
+                                <h1 className="text-xl font-black text-slate-800 leading-none">Cháº¿ Ä‘á»™ ThÃ¡ch Ä‘áº¥u</h1>
+                                <span className="text-xs font-bold text-slate-400">RÃ¨n luyá»‡n tÆ° duy má»—i ngÃ y</span>
                             </div>
                         </div>
 
@@ -577,7 +722,7 @@ export default function TodayPage() {
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-sm font-black text-slate-800 leading-none">{progress?.overallStreak || 0}</span>
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none">Ngày</span>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none">NgÃ y</span>
                                 </div>
                             </div>
                             <WalletButton />
@@ -606,7 +751,7 @@ export default function TodayPage() {
                                     <div className="flex items-center gap-2 bg-white/20 w-fit px-4 py-1.5 rounded-full mb-4 backdrop-blur-md border border-white/20 shadow-lg">
                                         <Star size={16} className="text-yellow-300 fill-yellow-300" />
                                         <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white">
-                                            Đấu Trường Trí Tuệ
+                                            Äáº¥u TrÆ°á»ng TrÃ­ Tuá»‡
                                         </span>
                                     </div>
 
@@ -617,7 +762,7 @@ export default function TodayPage() {
                             </div>
 
                             <p className="text-blue-50 text-lg font-medium max-w-lg leading-relaxed opacity-90 text-left">
-                                Hãy chọn mức độ phù hợp để bắt đầu hành trình chinh phục kiến thức ngay bây giờ!
+                                HÃ£y chá»n má»©c Ä‘á»™ phÃ¹ há»£p Ä‘á»ƒ báº¯t Ä‘áº§u hÃ nh trÃ¬nh chinh phá»¥c kiáº¿n thá»©c ngay bÃ¢y giá»!
                             </p>
                         </div>
 
@@ -626,9 +771,9 @@ export default function TodayPage() {
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 {(() => {
                                     return [
-                                        { q: 10, t: 10, lvl: 1, label: 'Học Viên', color: 'from-emerald-400 to-green-500', shadow: 'shadow-emerald-900/20', border: 'border-emerald-400/30', icon: '📝', hidden: false },
-                                        { q: 20, t: 15, lvl: 2, label: 'Chuyên Gia', color: 'from-blue-400 to-indigo-500', shadow: 'shadow-blue-900/20', border: 'border-blue-400/30', icon: '🎖️', hidden: false },
-                                        { q: 30, t: 20, lvl: 3, label: 'Giáo Sư', color: 'from-orange-400 to-red-500', shadow: 'shadow-orange-900/20', border: 'border-orange-400/30', icon: '🧠', hidden: false },
+                                        { q: 10, t: 10, lvl: 1, label: 'Há»c ViÃªn', color: 'from-emerald-400 to-green-500', shadow: 'shadow-emerald-900/20', border: 'border-emerald-400/30', icon: 'ðŸ“', hidden: false },
+                                        { q: 20, t: 15, lvl: 2, label: 'ChuyÃªn Gia', color: 'from-blue-400 to-indigo-500', shadow: 'shadow-blue-900/20', border: 'border-blue-400/30', icon: 'ðŸŽ–ï¸', hidden: false },
+                                        { q: 30, t: 20, lvl: 3, label: 'GiÃ¡o SÆ°', color: 'from-orange-400 to-red-500', shadow: 'shadow-orange-900/20', border: 'border-orange-400/30', icon: 'ðŸ§ ', hidden: false },
                                     ].map((mode) => (
                                         !mode.hidden ? (
                                             <button
@@ -649,18 +794,18 @@ export default function TodayPage() {
                                                     <div className="text-left">
                                                         <div className="flex items-baseline gap-1">
                                                             <span className="text-5xl font-black text-white tracking-tighter">{mode.q}</span>
-                                                            <span className="text-sm font-bold text-white/60">câu</span>
+                                                            <span className="text-sm font-bold text-white/60">cÃ¢u</span>
                                                         </div>
                                                         <div className="flex items-center gap-1 text-[11px] font-bold text-white/80 uppercase tracking-wide mt-1">
-                                                            <Clock size={12} /> {mode.t} Phút
+                                                            <Clock size={12} /> {mode.t} PhÃºt
                                                         </div>
                                                     </div>
                                                 </div>
                                             </button>
                                         ) : (
                                             <div key={mode.q} className="rounded-[32px] bg-white/10 border border-white/20 p-6 flex flex-col items-center justify-center opacity-80 grayscale">
-                                                <div className="text-3xl mb-2 opacity-80">⭐</div>
-                                                <span className="text-[11px] font-black text-white/90 uppercase tracking-widest text-center shadow-black/50 drop-shadow-md">Bé đã quá giỏi mức này!</span>
+                                                <div className="text-3xl mb-2 opacity-80">â­</div>
+                                                <span className="text-[11px] font-black text-white/90 uppercase tracking-widest text-center shadow-black/50 drop-shadow-md">BÃ© Ä‘Ã£ quÃ¡ giá»i má»©c nÃ y!</span>
                                             </div>
                                         )
                                     ));
@@ -687,7 +832,7 @@ export default function TodayPage() {
                         </motion.div>
 
                         <div className={`relative z-10 inline-block px-6 py-2 rounded-full ${rank.bg} ${rank.color} font-black text-xs uppercase tracking-[0.2em] mb-6 shadow-sm border border-current/10 transform hover:scale-105 transition-transform`}>
-                            Cấp độ hiện tại
+                            Cáº¥p Ä‘á»™ hiá»‡n táº¡i
                         </div>
 
                         <h3 className={`relative z-10 text-4xl md:text-5xl font-black ${rank.color} uppercase tracking-tighter mb-8 max-w-[200px] leading-tight`}>{rank.label}</h3>
@@ -695,7 +840,7 @@ export default function TodayPage() {
                         {/* Progress Bar */}
                         <div className="relative z-10 w-full bg-slate-50 rounded-3xl p-6 border border-slate-200 shadow-inner group-hover:border-slate-300 transition-colors">
                             <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-3 text-slate-400">
-                                <span>Tiến độ thăng hạng</span>
+                                <span>Tiáº¿n Ä‘á»™ thÄƒng háº¡ng</span>
                                 <span>{Math.round((Object.values(progress?.skills || {}).reduce((sum, skill) => sum + Number(skill.mastery), 0) / (Object.keys(progress?.skills || {}).length || 1)) * 100)}%</span>
                             </div>
                             <div className="h-5 w-full bg-slate-200 rounded-full overflow-hidden shadow-inner border border-slate-200/50">
@@ -722,7 +867,7 @@ export default function TodayPage() {
                     <div className="mb-6 flex justify-between items-end">
                         <h1 className="text-2xl md:text-3xl font-black text-slate-800">{pageTitle}</h1>
                         <div className="px-4 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-black uppercase tracking-widest">
-                            {gameMode?.total} Câu hỏi
+                            {gameMode?.total} CÃ¢u há»i
                         </div>
                     </div>
 
@@ -745,23 +890,23 @@ export default function TodayPage() {
                 <div className="lg:col-span-4 flex flex-col gap-6">
                     <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm px-5 py-2 rounded-2xl border border-white shadow-sm">
                         <div className="flex items-center gap-1.5">
-                            <span className="text-2xl">🔥</span>
+                            <span className="text-2xl">ðŸ”¥</span>
                             <span className="font-black text-slate-700">{sessionStreak}</span>
                         </div>
                         <div className="w-[1px] h-4 bg-slate-200" />
                         <div className="flex items-center gap-1.5">
-                            <span className="text-2xl">🎯</span>
+                            <span className="text-2xl">ðŸŽ¯</span>
                             <span className="font-black text-slate-700">{correctCount}</span>
                         </div>
                     </div>
                     <div className="bg-white rounded-3xl p-6 border-4 border-slate-100 shadow-xl">
                         <div className="flex items-center justify-between mb-4">
                             <div>
-                                <span className="text-xs font-black text-slate-400 uppercase tracking-wider block">Tiến độ</span>
+                                <span className="text-xs font-black text-slate-400 uppercase tracking-wider block">Tiáº¿n Ä‘á»™</span>
                                 <span className="text-3xl font-black text-slate-800">{count}/{gameMode?.total}</span>
                             </div>
                             <div className="text-right">
-                                <span className="text-xs font-black text-slate-400 uppercase tracking-wider block">Thời gian</span>
+                                <span className="text-xs font-black text-slate-400 uppercase tracking-wider block">Thá»i gian</span>
                                 <div className={`text-3xl font-black ${timeLeft < 60 ? 'text-rose-600 animate-pulse' : 'text-blue-600'}`}>
                                     {formatTime(timeLeft)}
                                 </div>
@@ -778,7 +923,7 @@ export default function TodayPage() {
                             onClick={finishSession}
                             className="w-full py-4 rounded-2xl border-2 border-rose-100 bg-rose-50 text-rose-600 font-black hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center gap-2"
                         >
-                            <XCircle size={24} /> KẾT THÚC SỚM
+                            <XCircle size={24} /> Káº¾T THÃšC Sá»šM
                         </button>
                     </div>
 
@@ -795,17 +940,17 @@ export default function TodayPage() {
                                     <div className="flex items-center gap-3 mb-4">
                                         {feedback.isCorrect ? <CheckCircle2 className="text-emerald-500" size={32} /> : <XCircle className="text-rose-500" size={32} />}
                                         <span className={`text-xl font-black ${feedback.isCorrect ? 'text-emerald-700' : 'text-rose-700'}`}>
-                                            {feedback.isCorrect ? 'CHÍNH XÁC!' : 'CỐ GẮNG LÊN!'}
+                                            {feedback.isCorrect ? 'CHÃNH XÃC!' : 'Cá» Gáº®NG LÃŠN!'}
                                         </span>
                                     </div>
                                     <p className="text-slate-700 font-bold mb-6">{feedback.explain}</p>
-                                    <button onClick={nextQuestion} className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold">Tiếp Tục</button>
+                                    <button onClick={nextQuestion} className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold">Tiáº¿p Tá»¥c</button>
                                 </motion.div>
                             ) : (
                                 <div className="h-full rounded-3xl border-4 border-dashed border-slate-200 bg-slate-50/50 p-6 flex items-center justify-center text-center opacity-50">
                                     <div>
-                                        <div className="text-4xl mb-2">🤔</div>
-                                        <div className="font-bold text-slate-400">Đang suy nghĩ...</div>
+                                        <div className="text-4xl mb-2">ðŸ¤”</div>
+                                        <div className="font-bold text-slate-400">Äang suy nghÄ©...</div>
                                     </div>
                                 </div>
                             )}
@@ -816,3 +961,6 @@ export default function TodayPage() {
         </div>
     );
 }
+
+
+

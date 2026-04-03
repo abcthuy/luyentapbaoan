@@ -52,8 +52,9 @@ export function VirtualNumPad({ value, onChange, onSubmit, disabled }: VirtualNu
                 className="col-span-3 h-14 rounded-xl bg-blue-600 text-white border-b-4 border-blue-800 hover:bg-blue-500 font-black text-lg shadow-md active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2"
             >
                 <Check size={24} />
-                Xác Nhận
+                Xac nhan
             </button>
         </div>
     );
 }
+

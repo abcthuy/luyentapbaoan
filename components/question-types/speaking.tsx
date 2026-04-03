@@ -9,7 +9,7 @@ interface SpeakingQuestionProps {
     topic?: string;      // Topic to discuss
     hint?: string;       // Dynamic hint/outline
     mode: 'reading' | 'speaking';
-    onSubmitRecording?: (audioBlob: Blob) => void;
+    onSubmitResponse?: (payload: { audioBlob?: Blob; textAnswer?: string }) => void;
     disabled?: boolean;
 }
 
@@ -19,14 +19,15 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
     hint,
     mode,
     disabled,
-    onSubmitRecording
+    onSubmitResponse
 }) => {
     const [showHint, setShowHint] = useState(false);
+    const [textFallback, setTextFallback] = useState('');
     const recorder = useRecording();
 
     const handleSubmit = () => {
         if (recorder.audioBlob) {
-            onSubmitRecording?.(recorder.audioBlob);
+            onSubmitResponse?.({ audioBlob: recorder.audioBlob });
         }
     };
 
@@ -96,6 +97,11 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
 
                 {/* Recording Controls Area - Integrated */}
                 <div className="bg-slate-50 p-8 border-t-2 border-slate-100 flex flex-col items-center gap-6">
+                    {recorder.startError && (
+                        <div className="w-full max-w-2xl rounded-2xl border-2 border-rose-200 bg-rose-50 px-5 py-4 text-sm font-bold text-rose-700 text-center">
+                            {recorder.startError}
+                        </div>
+                    )}
                     {!recorder.hasRecorded ? (
                         <div className="flex flex-col items-center gap-4">
                             <motion.button
@@ -161,6 +167,27 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
                             </motion.button>
                         </div>
                     )}
+
+                    <div className="w-full max-w-2xl rounded-[28px] border-2 border-slate-200 bg-white p-5">
+                        <div className="mb-3 text-center text-xs font-black uppercase tracking-widest text-slate-400">
+                            Không dùng mic? Nhập phần con muốn nói
+                        </div>
+                        <textarea
+                            value={textFallback}
+                            onChange={(e) => setTextFallback(e.target.value)}
+                            disabled={disabled}
+                            placeholder={mode === 'reading' ? 'Con có thể gõ lại phần con đã đọc hoặc ghi chú nội dung chính...' : 'Con gõ nhanh ý chính hoặc bài nói của con vào đây...'}
+                            className="min-h-[120px] w-full resize-y rounded-2xl border-2 border-slate-200 bg-slate-50 px-4 py-3 text-base font-medium text-slate-700 outline-none transition-all focus:border-indigo-400 focus:bg-white"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => onSubmitResponse?.({ textAnswer: textFallback.trim() })}
+                            disabled={disabled || !textFallback.trim()}
+                            className="mt-4 w-full rounded-2xl bg-slate-900 px-5 py-3 text-base font-black text-white transition-all hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Gửi Bài Bằng Chữ
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

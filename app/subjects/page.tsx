@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,6 +18,8 @@ import { isSkillAvailableForGrade, SKILL_MAP } from '@/lib/skills';
 import { StreakBanner } from '@/components/StreakBanner';
 import { BadgeDisplay } from '@/components/BadgeDisplay';
 import { getUnlockStatus, getUnlockMessage } from '@/lib/unlock';
+import { normalizeDisplayText } from '@/lib/text';
+import { SUPPORTED_GRADES } from '@/lib/grades';
 
 export default function SubjectsPage() {
     const router = useRouter();
@@ -184,7 +186,7 @@ export default function SubjectsPage() {
                             <span className="font-black text-slate-800 text-lg leading-tight tracking-tight">{activeProfile?.name}</span>
                             <span className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">
                                 <GraduationCap size={12} />
-                                Học sinh Lớp {currentGrade}
+                                Học sinh lớp {currentGrade}
                             </span>
                         </div>
                     </div>
@@ -267,10 +269,10 @@ export default function SubjectsPage() {
                                             <div className="space-y-4 mb-auto text-left">
                                                 <div>
                                                     <h2 className={`text-4xl font-black tracking-tight mb-2 drop-shadow-md ${!isLocked && 'group-hover:translate-x-1'} transition-transform`}>
-                                                        {sub.label} {isLocked && <span className="text-xl ml-2 text-slate-500">🔒</span>}
+                                                        {normalizeDisplayText(sub.label)} {isLocked && <span className="text-xl ml-2 text-slate-500">🔒</span>}
                                                     </h2>
                                                     <p className="text-white/80 font-medium text-base leading-snug max-w-[90%]">
-                                                        {isLocked ? `${motivation?.emoji} ${motivation?.text}` : sub.desc}
+                                                        {isLocked ? `${motivation?.emoji} ${motivation?.text}` : normalizeDisplayText(sub.desc)}
                                                     </p>
                                                 </div>
                                             </div>
@@ -397,7 +399,7 @@ export default function SubjectsPage() {
                                             <p className="text-xs font-medium text-slate-400 mt-1">Chương trình học</p>
                                         </div>
                                         <div className="flex gap-2">
-                                            {[2, 3].map(g => (
+                                            {SUPPORTED_GRADES.map(g => (
                                                 <button
                                                     key={g}
                                                     onClick={() => {
@@ -534,3 +536,4 @@ export default function SubjectsPage() {
         </div >
     );
 }
+

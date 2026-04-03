@@ -20555,10 +20555,10 @@ export const englishStaticQuestions: Record<string, Record<number, Question[]>> 
                 "content": {
                     "text": "Which sentence starts correctly?",
                     "options": [
-                        "my name is Lan.",
                         "My name is Lan.",
-                        "MY NAME IS LAN.",
-                        "my Name is lan."
+                        "Lan my name is.",
+                        "My Lan is name.",
+                        "Name is Lan my."
                     ]
                 },
                 "answer": "My name is Lan.",
@@ -20699,9 +20699,9 @@ export const englishStaticQuestions: Record<string, Record<number, Question[]>> 
                 "content": {
                     "text": "Which sentence starts correctly?",
                     "options": [
-                        "my name is Lan.",
-                        "my Name is lan.",
-                        "MY NAME IS LAN.",
+                        "Lan my name is.",
+                        "My Lan is name.",
+                        "Name is Lan my.",
                         "My name is Lan."
                     ]
                 },
@@ -20843,8 +20843,8 @@ export const englishStaticQuestions: Record<string, Record<number, Question[]>> 
                 "content": {
                     "text": "Which sentence starts correctly?",
                     "options": [
-                        "MY NAME IS LAN.",
-                        "my Name is lan.",
+                        "Name is Lan my.",
+                        "My Lan is name.",
                         "My name is Lan.",
                         "my name is Lan."
                     ]
@@ -20987,9 +20987,9 @@ export const englishStaticQuestions: Record<string, Record<number, Question[]>> 
                 "content": {
                     "text": "Which sentence starts correctly?",
                     "options": [
-                        "my name is Lan.",
-                        "MY NAME IS LAN.",
-                        "my Name is lan.",
+                        "Lan my name is.",
+                        "Name is Lan my.",
+                        "My Lan is name.",
                         "My name is Lan."
                     ]
                 },
@@ -21131,8 +21131,8 @@ export const englishStaticQuestions: Record<string, Record<number, Question[]>> 
                 "content": {
                     "text": "Which sentence starts correctly?",
                     "options": [
-                        "my Name is lan.",
-                        "MY NAME IS LAN.",
+                        "My Lan is name.",
+                        "Name is Lan my.",
                         "My name is Lan.",
                         "my name is Lan."
                     ]
@@ -21275,9 +21275,9 @@ export const englishStaticQuestions: Record<string, Record<number, Question[]>> 
                 "content": {
                     "text": "Which sentence starts correctly?",
                     "options": [
-                        "my Name is lan.",
-                        "my name is Lan.",
-                        "MY NAME IS LAN.",
+                        "My Lan is name.",
+                        "Lan my name is.",
+                        "Name is Lan my.",
                         "My name is Lan."
                     ]
                 },

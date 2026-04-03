@@ -335,17 +335,17 @@ function parseStoryText(fullText: string): { storyText: string; questionText: st
     return { storyText: storyPart, questionText: questionPart };
 }
 
-function isNumericInputQuestion(question: Question): boolean {
-    if (question.type !== 'input') return false;
-    if (question.subjectId !== 'math' && question.subjectId !== 'finance') return false;
+function getInputMode(question: Question): React.HTMLAttributes<HTMLInputElement>['inputMode'] {
+    if (question.type !== 'input') return 'text';
+    if (question.subjectId !== 'math' && question.subjectId !== 'finance') return 'text';
 
     const normalizedAnswer = (question.answer || '')
         .toLowerCase()
         .replace(/\s+/g, '');
 
-    if (!normalizedAnswer) return false;
+    if (!normalizedAnswer) return 'text';
 
-    return /^[-+]?[\d.,/%()*/]+(?:cm|mm|m|km|g|kg|ml|l|đ|dong)?$/.test(normalizedAnswer);
+    return /[.,/]/.test(normalizedAnswer) ? 'decimal' : 'numeric';
 }
 
 export function QuestionCard({
@@ -358,7 +358,6 @@ export function QuestionCard({
     play
 }: QuestionCardProps) {
     const [showScratchpad, setShowScratchpad] = useState(false);
-    const [showNumPad, setShowNumPad] = useState(false);
     const [readyStoryQuestionId, setReadyStoryQuestionId] = useState<string | null>(null);
 
     const isStoryQuest = question.skillId?.includes('story-quest');
@@ -366,7 +365,7 @@ export function QuestionCard({
     const parsedStory = isStoryQuest ? parseStoryText(question.content.text || '') : 
                         isListening ? { storyText: question.content.audio || question.content.text || '', questionText: '' } : null;
     const showTTSListener = !!parsedStory && (isStoryQuest || isListening);
-    const usesVirtualNumPad = isNumericInputQuestion(question);
+    const answerInputMode = getInputMode(question);
 
     const storyReady = readyStoryQuestionId === question.id;
 
@@ -464,9 +463,10 @@ export function QuestionCard({
                                     topic={question.content.text}
                                     hint={question.hint}
                                     mode={question.type as 'speaking' | 'reading'}
-                                    onSubmitRecording={(blob) => {
-                                        setAnswer("Đã ghi âm thành công");
-                                        submitAnswer("Đã ghi âm thành công", blob);
+                                    onSubmitResponse={({ audioBlob, textAnswer }) => {
+                                        const finalAnswer = textAnswer?.trim() || 'Đã ghi âm thành công';
+                                        setAnswer(finalAnswer);
+                                        submitAnswer(finalAnswer, audioBlob);
                                     }}
                                     disabled={evaluating || !!feedback}
                                 />
@@ -515,51 +515,26 @@ export function QuestionCard({
                                         value={answer}
                                         onChange={(e) => setAnswer(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && submitAnswer()}
-                                        onFocus={() => {
-                                            if (usesVirtualNumPad) {
-                                                setShowNumPad(true);
-                                            }
-                                        }}
-                                        onClick={() => {
-                                            if (usesVirtualNumPad) {
-                                                setShowNumPad(true);
-                                            }
-                                        }}
                                         disabled={evaluating || !!feedback}
-                                        readOnly={usesVirtualNumPad}
-                                        inputMode={usesVirtualNumPad ? 'none' : 'text'}
+                                        inputMode={answerInputMode}
+                                        enterKeyHint="done"
+                                        autoComplete="off"
+                                        autoCorrect="off"
+                                        autoCapitalize="off"
+                                        spellCheck={false}
                                         className="w-full rounded-3xl border-4 border-slate-200 bg-slate-50 p-6 text-center text-5xl md:text-7xl font-black outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all text-slate-800 placeholder-slate-300"
                                         placeholder="?"
                                         autoFocus
                                     />
                                 </div>
 
-                                {/* Virtual NumPad */}
-                                <AnimatePresence>
-                                    {usesVirtualNumPad && showNumPad && !feedback && !evaluating && (
-                                        <motion.div
-                                            initial={{ height: 0, opacity: 0 }}
-                                            animate={{ height: 'auto', opacity: 1 }}
-                                            exit={{ height: 0, opacity: 0 }}
-                                        >
-                                            <VirtualNumPad
-                                                value={answer}
-                                                onChange={setAnswer}
-                                                onSubmit={() => submitAnswer()}
-                                                disabled={evaluating || !!feedback}
-                                            />
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-
-                                {/* Chỉ hiện nút "Trả lời" khi bảng số KHÔNG hiện */}
-                                {!usesVirtualNumPad && !feedback && !evaluating && (
+                                {!feedback && !evaluating && (
                                     <button
                                         onClick={() => submitAnswer()}
                                         disabled={!answer || evaluating}
                                         className="rounded-3xl bg-slate-900 p-6 text-2xl font-black text-white shadow-xl hover:bg-blue-600 hover:shadow-blue-200 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        Trả lời
+                                        Tra loi
                                     </button>
                                 )}
                             </div>
@@ -578,4 +553,5 @@ export function QuestionCard({
         </AnimatePresence >
     );
 }
+
 

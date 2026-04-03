@@ -98,11 +98,11 @@ Tac vu can uu tien:
    - process reward approval
 
 File lien quan:
-- [hooks/use-auth.tsx](/D:/phÃ¢n%20má»m%20tá»±%20lÃ m%20má»›i/luyentapbaoan/hooks/use-auth.tsx)
-- [hooks/use-profile.tsx](/D:/phÃ¢n%20má»m%20tá»±%20lÃ m%20má»›i/luyentapbaoan/hooks/use-profile.tsx)
-- [components/progress-provider.tsx](/D:/phÃ¢n%20má»m%20tá»±%20lÃ m%20má»›i/luyentapbaoan/components/progress-provider.tsx)
-- [app/admin/users/page.tsx](/D:/phÃ¢n%20má»m%20tá»±%20lÃ m%20má»›i/luyentapbaoan/app/admin/users/page.tsx)
-- [app/admin/parents/page.tsx](/D:/phÃ¢n%20má»m%20tá»±%20lÃ m%20má»›i/luyentapbaoan/app/admin/parents/page.tsx)
+- [hooks/use-auth.tsx](/D:/phân%20mềm%20tự%20làm%20mới/luyentapbaoan/hooks/use-auth.tsx)
+- [hooks/use-profile.tsx](/D:/phân%20mềm%20tự%20làm%20mới/luyentapbaoan/hooks/use-profile.tsx)
+- [components/progress-provider.tsx](/D:/phân%20mềm%20tự%20làm%20mới/luyentapbaoan/components/progress-provider.tsx)
+- [app/admin/users/page.tsx](/D:/phân%20mềm%20tự%20làm%20mới/luyentapbaoan/app/admin/users/page.tsx)
+- [app/admin/parents/page.tsx](/D:/phân%20mềm%20tự%20làm%20mới/luyentapbaoan/app/admin/parents/page.tsx)
 
 Pass:
 - Client khong con goi `.from('math_progress').update/insert/delete` cho cac tac vu nhay cam
@@ -124,10 +124,10 @@ Tac vu:
 - Route loi phai co fallback de nguoi dung con thao tac duoc
 
 File lien quan:
-- [components/progress-provider.tsx](/D:/phÃ¢n%20má»m%20tá»±%20lÃ m%20má»›i/luyentapbaoan/components/progress-provider.tsx)
-- [lib/server/app-storage.ts](/D:/phÃ¢n%20má»m%20tá»±%20lÃ m%20má»›i/luyentapbaoan/lib/server/app-storage.ts)
-- [app/api/question/route.ts](/D:/phÃ¢n%20má»m%20tá»±%20lÃ m%20má»›i/luyentapbaoan/app/api/question/route.ts)
-- [app/api/evaluate/route.ts](/D:/phÃ¢n%20má»m%20tá»±%20lÃ m%20má»›i/luyentapbaoan/app/api/evaluate/route.ts)
+- [components/progress-provider.tsx](/D:/phân%20mềm%20tự%20làm%20mới/luyentapbaoan/components/progress-provider.tsx)
+- [lib/server/app-storage.ts](/D:/phân%20mềm%20tự%20làm%20mới/luyentapbaoan/lib/server/app-storage.ts)
+- [app/api/question/route.ts](/D:/phân%20mềm%20tự%20làm%20mới/luyentapbaoan/app/api/question/route.ts)
+- [app/api/evaluate/route.ts](/D:/phân%20mềm%20tự%20làm%20mới/luyentapbaoan/app/api/evaluate/route.ts)
 
 Pass:
 - `npm run build` pass
@@ -145,7 +145,7 @@ Dieu kien truoc khi ap:
 - `SUPABASE_SERVICE_ROLE_KEY` da cau hinh dung tren env production
 
 Thuc hien:
-- Apply file [supabase_setup.sql](/D:/phÃ¢n%20má»m%20tá»±%20lÃ m%20má»›i/luyentapbaoan/supabase_setup.sql)
+- Apply file [supabase_setup.sql](/D:/phân%20mềm%20tự%20làm%20mới/luyentapbaoan/supabase_setup.sql)
 
 Ky vong sau khi ap:
 - `leaderboard` public select only

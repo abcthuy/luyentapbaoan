@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -6,6 +6,7 @@ import { useProgress } from '@/components/progress-provider';
 import { Lock, ShieldCheck, ArrowRight, User, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { clearAdminSession, hasActiveAdminSession, startAdminSession } from '@/lib/admin-session';
+import { verifyPin } from '@/lib/pin-hash';
 
 function getSafeNextPath(rawNext: string | null) {
     if (!rawNext || !rawNext.startsWith('/')) return '/admin/dashboard';
@@ -14,7 +15,7 @@ function getSafeNextPath(rawNext: string | null) {
 }
 
 export default function AdminLoginPage() {
-    const { storage, upsertAdminAccount, isInitialized, refreshData } = useProgress();
+    const { storage, upsertAdminAccount, isInitialized, refreshData, logout } = useProgress();
     const router = useRouter();
     const searchParams = useSearchParams();
     const redirectPath = useMemo(() => getSafeNextPath(searchParams.get('next')), [searchParams]);
@@ -56,12 +57,13 @@ export default function AdminLoginPage() {
 
     const handleLogoutSession = () => {
         clearAdminSession();
+        logout();
         setShowLoginForm(true);
         setPin('');
         setError('');
     };
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
 
         const cleanUsername = (isSetupMode ? username : (adminAccount?.username || '')).trim().toLowerCase();
@@ -79,13 +81,13 @@ export default function AdminLoginPage() {
             }
 
             setIsSubmitting(true);
-            upsertAdminAccount(cleanUsername, cleanPin, 'Quan tri vien');
+            await upsertAdminAccount(cleanUsername, cleanPin, 'Quan tri vien');
             startAdminSession();
             router.replace(redirectPath);
             return;
         }
 
-        if (cleanUsername === adminAccount.username.toLowerCase() && cleanPin === String(adminAccount.pin)) {
+        if (cleanUsername === adminAccount.username.toLowerCase() && await verifyPin(cleanPin, String(adminAccount.pin))) {
             setIsSubmitting(true);
             finishLogin();
             return;
@@ -159,7 +161,7 @@ export default function AdminLoginPage() {
 
                         <button
                             type="button"
-                            onClick={() => router.push('/')}
+                            onClick={() => { clearAdminSession(); logout(); router.push('/profiles'); }}
                             className="w-full py-3 rounded-xl font-bold text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all text-sm"
                         >
                             Quay lại màn hình chọn người dùng
@@ -249,7 +251,7 @@ export default function AdminLoginPage() {
 
                     <button
                         type="button"
-                        onClick={() => router.push('/')}
+                        onClick={() => { clearAdminSession(); logout(); router.push('/profiles'); }}
                         className="w-full py-3 rounded-xl font-bold text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all text-sm"
                     >
                         Quay lại màn hình chọn người dùng
@@ -273,3 +275,5 @@ export default function AdminLoginPage() {
         </div>
     );
 }
+
+

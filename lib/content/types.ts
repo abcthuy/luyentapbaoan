@@ -1,3 +1,4 @@
+﻿import type { SupportedGrade } from '../grades';
 
 export type SubjectId = 'math' | 'english' | 'vietnamese' | 'finance';
 
@@ -35,8 +36,8 @@ export interface Skill {
     name: string;
     description?: string;
     tier: 1 | 2 | 3; // Basic vs Advanced vs Expert
-    grade: 2 | 3; // Lớp 2 hoặc Lớp 3
-    semester?: 1 | 2; // Học kỳ 1 hoặc 2
+    grade: SupportedGrade; // Lop duoc ho tro trong he thong
+    semester?: 1 | 2; // Há»c ká»³ 1 hoáº·c 2
     order?: number;
     instructions?: string;
 }
@@ -55,3 +56,4 @@ export interface Course {
     icon?: React.ReactNode;
     color?: string; // Main theme color for this subject
 }
+

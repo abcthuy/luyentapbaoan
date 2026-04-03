@@ -10,16 +10,18 @@ import { useProgress } from '@/components/progress-provider';
 import { UserMenu } from '@/components/user-menu';
 import { WalletButton } from '@/components/ui/wallet-button';
 import { vietnameseCourse } from '@/lib/content/courses/vietnamese';
-
 import { BackButton } from '@/components/ui/back-button';
 import { getTheme } from '@/lib/theme';
-import { isSkillAvailableForGrade } from '@/lib/skills';
+import { normalizeDisplayText } from '@/lib/text';
+import { GradeContentNotice } from '@/components/grade-content-notice';
+import { resolveContentGrade } from '@/lib/grades';
 
 export default function VietnamesePage() {
     const router = useRouter();
     const { progress, activeProfile } = useProgress();
     const theme = getTheme('vietnamese');
     const currentGrade = activeProfile?.grade || 2;
+    const contentGrade = resolveContentGrade('vietnamese', currentGrade);
 
     const getSkillProgress = (skillId: string) => {
         if (!progress || !progress.skills) return { mastery: 0, stars: 0 };
@@ -33,7 +35,6 @@ export default function VietnamesePage() {
 
     return (
         <div className={`min-h-screen ${theme.colors.light} relative overflow-hidden font-sans selection:${theme.colors.primary}/30`}>
-            {/* Header */}
             <div className="relative z-10 pt-8 pb-12 px-4 text-center">
                 <div className="absolute top-6 left-6 flex items-center gap-3">
                     <BackButton href="/today?subject=vietnamese" theme={theme} />
@@ -41,7 +42,6 @@ export default function VietnamesePage() {
 
                 <div className="absolute top-6 right-6 flex items-center gap-3">
                     <WalletButton />
-                    {/* Only show UserMenu on mobile here */}
                     <div className="md:hidden">
                         <UserMenu theme={theme} />
                     </div>
@@ -64,12 +64,10 @@ export default function VietnamesePage() {
                 </p>
             </div>
 
-            {/* Main Content */}
             <div className="max-w-6xl mx-auto px-4 pb-20 relative z-20 space-y-16">
+                <GradeContentNotice subjectId="vietnamese" grade={currentGrade} />
                 {vietnameseCourse.topics.map((topic) => (
                     <div key={topic.id} className="relative flex flex-col">
-
-                        {/* Topic Title */}
                         <motion.div
                             initial={{ opacity: 0, x: -20 }}
                             whileInView={{ opacity: 1, x: 0 }}
@@ -83,11 +81,11 @@ export default function VietnamesePage() {
                                 {topic.id === 'nghe-noi' && <Mic size={24} />}
                                 {!['doc-hieu', 'luyen-tu-cau', 'chinh-ta-tap-lam-van', 'nghe-noi'].includes(topic.id) && <Feather size={24} />}
                             </div>
-                            <h2 className="text-2xl md:text-3xl font-black text-slate-900">{topic.name}</h2>
+                            <h2 className="text-2xl md:text-3xl font-black text-slate-900">{normalizeDisplayText(topic.name)}</h2>
                         </motion.div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {topic.skills.filter((skill) => isSkillAvailableForGrade(skill, currentGrade)).map((skill, skillIndex) => {
+                            {topic.skills.filter((skill) => skill.grade === contentGrade).map((skill, skillIndex) => {
                                 const { mastery, stars } = getSkillProgress(skill.id);
                                 return (
                                     <motion.button
@@ -102,7 +100,6 @@ export default function VietnamesePage() {
                                         className="group relative h-full text-left"
                                     >
                                         <div className="h-full bg-white rounded-[32px] p-6 border-2 border-slate-100 shadow-xl shadow-slate-200/50 group-hover:border-orange-500/30 group-hover:shadow-orange-500/10 transition-all duration-300 relative overflow-hidden">
-
                                             <div className="flex justify-between items-start mb-6">
                                                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-black ${mastery >= 100 ? 'bg-yellow-100 text-yellow-600' : 'bg-orange-50 text-orange-500'}`}>
                                                     <Book size={20} />
@@ -119,7 +116,7 @@ export default function VietnamesePage() {
                                             </div>
 
                                             <h3 className="text-xl font-bold text-slate-800 mb-2 line-clamp-2 group-hover:text-orange-600 transition-colors">
-                                                {skill.name}
+                                                {normalizeDisplayText(skill.name)}
                                             </h3>
 
                                             <div className="mt-4">

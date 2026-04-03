@@ -29,6 +29,10 @@ function getBalancedFinanceLevel(skillId: string, level: number) {
         return Math.min(safeLevel, 2);
     }
 
+    if (['money-sum', 'fin2-shopping', 'shopping-math', 'saving-goal', 'fin2-saving'].includes(skillId)) {
+        return Math.min(safeLevel, 2);
+    }
+
     return safeLevel;
 }
 
@@ -36,12 +40,16 @@ function formatMoney(value: number) {
     return `${value.toLocaleString('vi-VN')}đ`;
 }
 
+function uniqueOptions(options: string[]) {
+    return Array.from(new Set(options));
+}
+
 function generateMoneyIdQuestion(level: number, skillId: string): Question {
     const pools: Record<number, McqSeed[]> = {
         1: [
-            { text: 'Tờ tiền nào lớn hơn?', options: ['1.000đ', '2.000đ', '1.000đ', '2.000đ'], answer: '2.000đ', explanation: '2.000đ lớn hơn 1.000đ.' },
-            { text: 'Tờ tiền nào nhỏ hơn?', options: ['5.000đ', '2.000đ', '5.000đ', '2.000đ'], answer: '2.000đ', explanation: '2.000đ nhỏ hơn 5.000đ.' },
-            { text: 'Muốn mua món đồ 5.000đ, bé nên chọn tờ nào?', options: ['1.000đ', '2.000đ', '5.000đ', '2.000đ'], answer: '5.000đ', explanation: 'Chọn đúng mệnh giá 5.000đ.' },
+            { text: 'Tờ tiền nào lớn hơn?', options: ['1.000đ', '2.000đ', '5.000đ', '10.000đ'], answer: '2.000đ', explanation: '2.000đ lớn hơn 1.000đ.' },
+            { text: 'Tờ tiền nào nhỏ hơn?', options: ['5.000đ', '2.000đ', '10.000đ', '20.000đ'], answer: '2.000đ', explanation: '2.000đ nhỏ hơn 5.000đ.' },
+            { text: 'Muốn mua món đồ 5.000đ, bé nên chọn tờ nào?', options: ['1.000đ', '2.000đ', '5.000đ', '10.000đ'], answer: '5.000đ', explanation: 'Chọn đúng mệnh giá 5.000đ.' },
         ],
         2: [
             { text: 'Tờ 10.000đ lớn hơn tờ nào?', options: ['20.000đ', '10.000đ', '5.000đ', '50.000đ'], answer: '5.000đ', explanation: '10.000đ lớn hơn 5.000đ.' },
@@ -62,7 +70,7 @@ function generateMoneyIdQuestion(level: number, skillId: string): Question {
         skillId,
         type: 'mcq',
         instruction: 'Chọn đáp án đúng:',
-        content: { text: item.text, options: item.options },
+        content: { text: item.text, options: uniqueOptions(item.options) },
         answer: item.answer,
         explanation: item.explanation,
     };
@@ -191,17 +199,17 @@ function generateShoppingQuestion(level: number, skillId: string): Question {
             1: [
                 { text: 'Bé có 20.000đ. Chọn cặp món nào mua vừa đủ?', options: ['Bút 5.000đ + vở 10.000đ', 'Sữa 10.000đ + bánh 10.000đ', 'Thước 3.000đ + bút 5.000đ', 'Kẹo 2.000đ + bánh 5.000đ'], answer: 'Sữa 10.000đ + bánh 10.000đ', explanation: '10.000 + 10.000 = 20.000.' },
                 { text: 'Món nào rẻ hơn?', options: ['Bút 8.000đ', 'Vở 12.000đ', 'Bằng nhau', 'Không biết'], answer: 'Bút 8.000đ', explanation: '8.000đ ít hơn 12.000đ.' },
-                { text: 'Bé có 25.000đ. Chọn cách mua tiết kiệm hơn.', options: ['Sách 20.000đ', 'Bút 5.000đ + thước 5.000đ', 'Đồ chơi 25.000đ', 'Sticker 15.000đ + kẹo 10.000đ'], answer: 'Bút 5.000đ + thước 5.000đ', explanation: '10.000đ là cách tiết kiệm hơn.' },
+                { text: 'Bé có 25.000đ. Cặp món nào có tổng tiền ít nhất?', options: ['Sách 20.000đ', 'Bút 5.000đ + thước 5.000đ', 'Đồ chơi 25.000đ', 'Sticker 15.000đ + kẹo 10.000đ'], answer: 'Bút 5.000đ + thước 5.000đ', explanation: '5.000đ + 5.000đ = 10.000đ, là tổng nhỏ nhất.' },
             ],
             2: [
                 { text: 'Bé có 30.000đ. Mua bút 8.000đ và vở 12.000đ thì còn bao nhiêu?', options: ['8.000đ', '10.000đ', '12.000đ', '15.000đ'], answer: '10.000đ', explanation: '30.000 - 8.000 - 12.000 = 10.000.' },
                 { text: 'Combo nào rẻ hơn?', options: ['Sữa 10.000đ + bánh 8.000đ', 'Vở 12.000đ + bút màu 10.000đ', 'Bằng nhau', 'Không biết'], answer: 'Sữa 10.000đ + bánh 8.000đ', explanation: '18.000đ rẻ hơn 22.000đ.' },
-                { text: 'Bé có 35.000đ. Chọn nhóm món hợp lý nhất để vẫn còn tiền.', options: ['Sách 20.000đ + bút 10.000đ', 'Đồ chơi 35.000đ', 'Sticker 18.000đ + bánh 15.000đ', 'Kem 20.000đ + game 20.000đ'], answer: 'Sách 20.000đ + bút 10.000đ', explanation: 'Bé chi 30.000đ và vẫn còn tiền.' },
+                { text: 'Bé có 35.000đ. Nhóm món nào mua xong vẫn còn 5.000đ?', options: ['Sách 20.000đ + bút 10.000đ', 'Đồ chơi 35.000đ', 'Sticker 18.000đ + bánh 15.000đ', 'Kem 20.000đ + game 20.000đ'], answer: 'Sách 20.000đ + bút 10.000đ', explanation: '20.000đ + 10.000đ = 30.000đ, còn 5.000đ.' },
             ],
             3: [
-                { text: 'Bé có 50.000đ. Combo nào vừa đủ hơn?', options: ['Sách 22.000đ + vở 12.000đ + bút 8.000đ', 'Bánh 15.000đ + nước 12.000đ + kẹo 10.000đ', 'Đồ chơi 35.000đ + snack 20.000đ', 'Sticker 10.000đ + game 45.000đ'], answer: 'Sách 22.000đ + vở 12.000đ + bút 8.000đ', explanation: '22.000 + 12.000 + 8.000 = 42.000, hợp lý nhất.' },
+                { text: 'Bé có 50.000đ. Combo nào có tổng tiền gần 50.000đ nhất mà không vượt quá?', options: ['Sách 22.000đ + vở 12.000đ + bút 8.000đ', 'Bánh 15.000đ + nước 12.000đ + kẹo 10.000đ', 'Đồ chơi 35.000đ + snack 20.000đ', 'Sticker 10.000đ + game 45.000đ'], answer: 'Sách 22.000đ + vở 12.000đ + bút 8.000đ', explanation: '22.000đ + 12.000đ + 8.000đ = 42.000đ, không vượt 50.000đ và gần nhất trong các lựa chọn đúng.' },
                 { text: 'Bé có 60.000đ. Mua sách 25.000đ, bút màu 15.000đ và thước 5.000đ. Còn bao nhiêu?', options: ['10.000đ', '15.000đ', '20.000đ', '25.000đ'], answer: '15.000đ', explanation: '60.000 - 25.000 - 15.000 - 5.000 = 15.000.' },
-                { text: 'Món nào nên bỏ ra để tiết kiệm hơn?', options: ['Vở học 10.000đ', 'Bút chì 5.000đ', 'Sticker 12.000đ', 'Thước 3.000đ'], answer: 'Sticker 12.000đ', explanation: 'Sticker là món muốn, không phải món cần.' },
+                { text: 'Món nào là món muốn, có thể bỏ ra trước để giảm tiền mua?', options: ['Vở học 10.000đ', 'Bút chì 5.000đ', 'Sticker 12.000đ', 'Thước 3.000đ'], answer: 'Sticker 12.000đ', explanation: 'Sticker là món muốn, không phải món cần.' },
             ],
         };
     } else {
@@ -231,7 +239,7 @@ function generateShoppingQuestion(level: number, skillId: string): Question {
         skillId,
         type: 'mcq',
         instruction: 'Tính tiền khi mua sắm:',
-        content: { text: item.text, options: item.options },
+        content: { text: item.text, options: uniqueOptions(item.options) },
         answer: item.answer,
         explanation: item.explanation,
     };
@@ -248,9 +256,9 @@ function generateSavingQuestion(level: number, skillId: string): Question {
                 { text: 'Heo đất giúp bé điều gì?', options: ['Giữ tiền tiết kiệm', 'Làm mất tiền', 'Tiêu tiền nhanh hơn', 'Không có ích'], answer: 'Giữ tiền tiết kiệm', explanation: 'Heo đất giúp giữ tiền an toàn.' },
             ],
             2: [
-                { text: 'Bé bỏ 2.000đ mỗi ngày vào heo đất. Sau 5 ngày bé có bao nhiêu?', options: ['6.000đ', '8.000đ', '10.000đ', '12.000đ'], answer: '10.000đ', explanation: '2.000 x 5 = 10.000.' },
+                { text: 'Bé bỏ 2.000đ mỗi ngày vào heo đất. Sau 5 ngày bé có bao nhiêu?', options: ['6.000đ', '8.000đ', '10.000đ', '12.000đ'], answer: '10.000đ', explanation: '2.000 × 5 = 10.000.' },
                 { text: 'Bé có 15.000đ trong heo đất và bỏ thêm 5.000đ. Bé có bao nhiêu?', options: ['15.000đ', '20.000đ', '25.000đ', '30.000đ'], answer: '20.000đ', explanation: '15.000 + 5.000 = 20.000.' },
-                { text: 'Khi muốn heo đất đầy nhanh hơn, bé nên làm gì?', options: ['Bỏ tiền tiết kiệm hàng tuần', 'Mua snack hàng ngày', 'Mua đồ chơi mới', 'Tiêu hết tiền mừng tuổi'], answer: 'Bỏ tiền tiết kiệm hàng tuần', explanation: 'Thói quen đều đặn giúp tiết kiệm tốt hơn.' },
+                { text: 'Khi muốn heo đất đầy nhanh hơn, bé nên làm gì?', options: ['Bỏ tiền tiết kiệm hằng tuần', 'Mua snack hằng ngày', 'Mua đồ chơi mới', 'Tiêu hết tiền mừng tuổi'], answer: 'Bỏ tiền tiết kiệm hằng tuần', explanation: 'Thói quen đều đặn giúp tiết kiệm tốt hơn.' },
             ],
             3: [
                 { text: 'Bé có 20.000đ trong heo đất và bỏ thêm 10.000đ mỗi tuần. Sau 2 tuần bé có bao nhiêu?', options: ['30.000đ', '35.000đ', '40.000đ', '45.000đ'], answer: '40.000đ', explanation: '20.000 + 10.000 + 10.000 = 40.000.' },
@@ -261,19 +269,19 @@ function generateSavingQuestion(level: number, skillId: string): Question {
     } else if (skillId === 'saving-goal') {
         pools = {
             1: [
-                { text: 'Bé muốn mua hộp bút 30.000đ. Mỗi tuần bé để dành 10.000đ. Sau 3 tuần bé có đủ chưa?', options: ['Đủ rồi', 'Chưa đủ', 'Thiếu 10.000đ', 'Thiếu 20.000đ'], answer: 'Đủ rồi', explanation: '10.000 x 3 = 30.000.' },
+                { text: 'Bé muốn mua hộp bút 30.000đ. Mỗi tuần bé để dành 10.000đ. Sau 3 tuần bé có đủ chưa?', options: ['Đủ rồi', 'Chưa đủ', 'Thiếu 10.000đ', 'Thiếu 20.000đ'], answer: 'Đủ rồi', explanation: '10.000 × 3 = 30.000.' },
                 { text: 'Để mua sách 25.000đ, bé đã có 15.000đ. Bé cần thêm bao nhiêu?', options: ['5.000đ', '10.000đ', '15.000đ', '20.000đ'], answer: '10.000đ', explanation: '25.000 - 15.000 = 10.000.' },
-                { text: 'Bé tiết kiệm 5.000đ mỗi ngày. Sau 4 ngày bé có bao nhiêu?', options: ['10.000đ', '15.000đ', '20.000đ', '25.000đ'], answer: '20.000đ', explanation: '5.000 x 4 = 20.000.' },
+                { text: 'Bé tiết kiệm 5.000đ mỗi ngày. Sau 4 ngày bé có bao nhiêu?', options: ['10.000đ', '15.000đ', '20.000đ', '25.000đ'], answer: '20.000đ', explanation: '5.000 × 4 = 20.000.' },
             ],
             2: [
                 { text: 'Bé có mục tiêu mua sách 40.000đ và đã có 25.000đ. Bé cần thêm bao nhiêu?', options: ['10.000đ', '15.000đ', '20.000đ', '25.000đ'], answer: '15.000đ', explanation: '40.000 - 25.000 = 15.000.' },
-                { text: 'Mỗi tuần bé để dành 12.000đ. Sau 3 tuần bé có bao nhiêu?', options: ['24.000đ', '30.000đ', '36.000đ', '42.000đ'], answer: '36.000đ', explanation: '12.000 x 3 = 36.000.' },
-                { text: 'Bé muốn mua cặp 60.000đ. Bé đã có 35.000đ. Nếu mỗi tuần để dành 5.000đ, sau 5 tuần bé đủ chưa?', options: ['Đủ rồi', 'Chưa đủ', 'Thiếu 5.000đ', 'Thiếu 10.000đ'], answer: 'Đủ rồi', explanation: '35.000 + 5.000 x 5 = 60.000.' },
+                { text: 'Mỗi tuần bé để dành 12.000đ. Sau 3 tuần bé có bao nhiêu?', options: ['24.000đ', '30.000đ', '36.000đ', '42.000đ'], answer: '36.000đ', explanation: '12.000 × 3 = 36.000.' },
+                { text: 'Bé muốn mua cặp 50.000đ. Bé đã có 35.000đ. Nếu mỗi tuần để dành 5.000đ, sau 3 tuần bé đủ chưa?', options: ['Đủ rồi', 'Chưa đủ', 'Thiếu 5.000đ', 'Thiếu 10.000đ'], answer: 'Đủ rồi', explanation: '35.000 + 5.000 × 3 = 50.000.' },
             ],
             3: [
-                { text: 'Bé có mục tiêu mua balo 120.000đ. Bé đã tiết kiệm được 40.000đ trong tháng đầu và 30.000đ trong tháng sau. Bé còn thiếu bao nhiêu?', options: ['40.000đ', '50.000đ', '60.000đ', '70.000đ'], answer: '50.000đ', explanation: '40.000 + 30.000 = 70.000, còn thiếu 50.000.' },
-                { text: 'Mỗi tuần bé để dành 15.000đ. Sau 4 tuần bé có bao nhiêu tiền tiết kiệm?', options: ['45.000đ', '50.000đ', '60.000đ', '75.000đ'], answer: '60.000đ', explanation: '15.000 x 4 = 60.000.' },
-                { text: 'Bé muốn mua xe đồ chơi 90.000đ. Bé có 30.000đ và để dành thêm 15.000đ mỗi tuần. Sau 4 tuần bé có đủ chưa?', options: ['Đủ rồi', 'Chưa đủ', 'Thiếu 5.000đ', 'Thiếu 10.000đ'], answer: 'Đủ rồi', explanation: '30.000 + 15.000 x 4 = 90.000.' },
+                { text: 'Bé có mục tiêu mua ba lô 50.000đ. Bé đã tiết kiệm được 20.000đ trong tháng đầu và 15.000đ trong tháng sau. Bé còn thiếu bao nhiêu?', options: ['10.000đ', '15.000đ', '20.000đ', '25.000đ'], answer: '15.000đ', explanation: '20.000 + 15.000 = 35.000, còn thiếu 15.000.' },
+                { text: 'Mỗi tuần bé để dành 10.000đ. Sau 5 tuần bé có bao nhiêu tiền tiết kiệm?', options: ['30.000đ', '40.000đ', '50.000đ', '60.000đ'], answer: '50.000đ', explanation: '10.000 × 5 = 50.000.' },
+                { text: 'Bé muốn mua xe đồ chơi 50.000đ. Bé có 20.000đ và để dành thêm 10.000đ mỗi tuần. Sau 3 tuần bé có đủ chưa?', options: ['Đủ rồi', 'Chưa đủ', 'Thiếu 5.000đ', 'Thiếu 10.000đ'], answer: 'Đủ rồi', explanation: '20.000 + 10.000 × 3 = 50.000.' },
             ],
         };
     } else {
@@ -290,8 +298,8 @@ function generateSavingQuestion(level: number, skillId: string): Question {
             ],
             3: [
                 { text: 'Cách nào giúp bé tiết kiệm tốt hơn?', options: ['Mua snack mỗi ngày', 'Ghi lại tiền đã chi', 'Tiêu hết tiền được cho', 'Mua đồ theo thích'], answer: 'Ghi lại tiền đã chi', explanation: 'Theo dõi chi tiêu giúp tiết kiệm tốt hơn.' },
-                { text: 'Nếu bé có 50.000đ và muốn tiết kiệm 60%, bé nên giữ lại bao nhiêu?', options: ['20.000đ', '25.000đ', '30.000đ', '35.000đ'], answer: '30.000đ', explanation: '60% của 50.000đ là 30.000đ.' },
-                { text: 'Muốn đạt mục tiêu tiết kiệm nhanh hơn, bé nên ưu tiên điều gì?', options: ['Giảm món muốn', 'Mua thêm đồ chơi', 'Mua quà ngay', 'Tiêu hết tiền được cho'], answer: 'Giảm món muốn', explanation: 'Giảm các món muốn giúp tiết kiệm nhanh hơn.' },
+                { text: 'Nếu bé có 40.000đ và muốn tiết kiệm một nửa, bé nên giữ lại bao nhiêu?', options: ['10.000đ', '15.000đ', '20.000đ', '25.000đ'], answer: '20.000đ', explanation: 'Một nửa của 40.000đ là 20.000đ.' },
+                { text: 'Muốn đạt mục tiêu tiết kiệm nhanh hơn, bé nên làm gì trước?', options: ['Giảm món muốn', 'Mua thêm đồ chơi', 'Mua quà ngay', 'Tiêu hết tiền được cho'], answer: 'Giảm món muốn', explanation: 'Giảm các món muốn giúp tiết kiệm nhanh hơn.' },
             ],
         };
     }
@@ -303,12 +311,11 @@ function generateSavingQuestion(level: number, skillId: string): Question {
         skillId,
         type: 'mcq',
         instruction: 'Chọn đáp án đúng:',
-        content: { text: item.text, options: item.options },
+        content: { text: item.text, options: uniqueOptions(item.options) },
         answer: item.answer,
         explanation: item.explanation,
     };
 }
-
 function generateBudgetQuestion(level: number, skillId: string): Question {
     const budgets = level === 1
         ? [
@@ -319,13 +326,13 @@ function generateBudgetQuestion(level: number, skillId: string): Question {
         : level === 2
           ? [
                 { total: 50000, spent: [10000, 15000] },
-                { total: 60000, spent: [10000, 20000] },
+                { total: 50000, spent: [10000, 20000] },
                 { total: 40000, spent: [5000, 10000, 5000] },
             ]
           : [
-                { total: 70000, spent: [10000, 15000, 20000] },
-                { total: 80000, spent: [15000, 20000, 10000] },
-                { total: 90000, spent: [20000, 15000, 10000] },
+                { total: 50000, spent: [10000, 15000, 15000] },
+                { total: 50000, spent: [15000, 10000, 10000] },
+                { total: 50000, spent: [20000, 10000, 10000] },
             ];
 
     const item = pickRandom(budgets);
@@ -355,20 +362,33 @@ function generateBudgetQuestion(level: number, skillId: string): Question {
     };
 }
 
-function generateJobValueQuestion(skillId: string): Question {
-    const item = pickRandom<McqSeed>([
-        { text: 'Ai là người thường dạy học cho học sinh?', options: ['Bác sĩ', 'Giáo viên', 'Đầu bếp', 'Phi công'], answer: 'Giáo viên', explanation: 'Giáo viên dạy học cho học sinh.' },
-        { text: 'Ai là người giúp chữa bệnh cho mọi người?', options: ['Bác sĩ', 'Nông dân', 'Thợ xây', 'Tài xế'], answer: 'Bác sĩ', explanation: 'Bác sĩ giúp chữa bệnh.' },
-        { text: 'Ai là người trồng rau và lúa?', options: ['Nông dân', 'Nhạc sĩ', 'Họa sĩ', 'Nhân viên bán hàng'], answer: 'Nông dân', explanation: 'Nông dân làm việc ngoài đồng ruộng.' },
-    ]);
+function generateJobValueQuestion(level: number, skillId: string): Question {
+    const pools: Record<number, McqSeed[]> = {
+        1: [
+            { text: 'Ai là người thường dạy học cho học sinh?', options: ['Bác sĩ', 'Giáo viên', 'Đầu bếp', 'Phi công'], answer: 'Giáo viên', explanation: 'Giáo viên dạy học cho học sinh.' },
+            { text: 'Ai là người giúp chữa bệnh cho mọi người?', options: ['Bác sĩ', 'Nông dân', 'Thợ xây', 'Tài xế'], answer: 'Bác sĩ', explanation: 'Bác sĩ giúp chữa bệnh.' },
+            { text: 'Ai là người trồng rau và lúa?', options: ['Nông dân', 'Nhạc sĩ', 'Họa sĩ', 'Nhân viên bán hàng'], answer: 'Nông dân', explanation: 'Nông dân làm việc ngoài đồng ruộng.' },
+        ],
+        2: [
+            { text: 'Vì sao mọi người cần đi làm?', options: ['Để kiếm tiền nuôi gia đình', 'Để chơi suốt ngày', 'Để tiêu hết tiền', 'Để không cần tiết kiệm'], answer: 'Để kiếm tiền nuôi gia đình', explanation: 'Lao động giúp kiếm thu nhập cho cuộc sống.' },
+            { text: 'Nghề nào thường làm trong bệnh viện?', options: ['Y tá', 'Thợ mộc', 'Lái xe', 'Đầu bếp'], answer: 'Y tá', explanation: 'Y tá chăm sóc bệnh nhân ở bệnh viện.' },
+            { text: 'Tiền lương là gì?', options: ['Tiền nhận được khi đi làm', 'Tiền mừng tuổi', 'Tiền thưởng chơi game', 'Tiền bạn cho'], answer: 'Tiền nhận được khi đi làm', explanation: 'Tiền lương là thu nhập từ công việc.' },
+        ],
+        3: [
+            { text: 'Tại sao học giỏi giúp bé kiếm tiền tốt hơn sau này?', options: ['Có nhiều nghề hay để chọn', 'Vì bé sẽ được thưởng tiền', 'Vì giáo viên sẽ cho tiền', 'Học không liên quan đến tiền'], answer: 'Có nhiều nghề hay để chọn', explanation: 'Học tốt mở ra nhiều cơ hội nghề nghiệp.' },
+            { text: 'Để trở thành bác sĩ, bé cần làm gì?', options: ['Học tập chăm chỉ nhiều năm', 'Chỉ cần muốn là được', 'Mua bộ đồ bác sĩ', 'Xem phim về bác sĩ'], answer: 'Học tập chăm chỉ nhiều năm', explanation: 'Nghề bác sĩ đòi hỏi nhiều năm học tập và rèn luyện.' },
+            { text: 'Công việc nào giúp ích cộng đồng nhiều nhất?', options: ['Tất cả đều quan trọng', 'Chỉ bác sĩ', 'Chỉ giáo viên', 'Chỉ công an'], answer: 'Tất cả đều quan trọng', explanation: 'Mỗi nghề đều đóng góp cho xã hội theo cách riêng.' },
+        ],
+    };
 
+    const item = pickRandom(pools[level]);
     return {
         id: `fin-job-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
         subjectId: 'finance',
         skillId,
         type: 'mcq',
         instruction: 'Hiểu về công việc và thu nhập:',
-        content: { text: item.text, options: item.options },
+        content: { text: item.text, options: uniqueOptions(item.options) },
         answer: item.answer,
         explanation: item.explanation,
     };
@@ -406,7 +426,7 @@ export function generateFinanceQuestion(skillId: string, level: number = 1): Que
     }
 
     if (skillId === 'job-value') {
-        return generateJobValueQuestion(skillId);
+        return generateJobValueQuestion(safeLevel, skillId);
     }
 
     return generateNeedWantQuestion(safeLevel, skillId);

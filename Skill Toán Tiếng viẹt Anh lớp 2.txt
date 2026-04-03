@@ -1,0 +1,44 @@
+Toán lớp 2
+
+A1 | Cấu tạo số & so sánh (≤1000)
+A2 | Cộng-trừ (≤1000)
+A3 | Điền số còn thiếu
+A4 | Nhân-chia bảng 2 & 5
+B1 | Lời văn 1 bước
+B2 | Lời văn 2 bước
+C1 | Độ dài & đường gấp khúc
+C2 | Thời gian (giờ/phút)
+D1 | Hình học (đếm đoạn/nhận biết)
+D2 | Biểu đồ tranh/bảng
+E1 | Quy luật dãy số
+E2 | Bảng ô số (hàng-cột)
+E3 | Tháp số
+Tiếng Việt lớp 2
+
+tv2-doc-hieu | Đọc hiểu văn bản ngắn (Lớp 2)
+tv2-tho | Đọc thơ & ca dao (Lớp 2)
+tv2-doc-dien-cam | Đọc diễn cảm (Thơ/Văn)
+tv2-tu-ngu | Từ chỉ sự vật, hoạt động, đặc điểm
+tv2-cau | Câu giới thiệu, câu nêu hoạt động
+tv2-dau-cau | Dấu chấm, phẩy, chấm hỏi
+tv2-chinh-ta | Phân biệt tr/ch, s/x, r/d/gi
+tv2-ke-chuyen | Viết: Kể chuyện theo tranh
+tv2-ta-nguoi | Viết: Tả người thân
+tv2-noi-nghe | Kể lại việc đã làm
+tv2-thuyet-trinh | Giới thiệu đồ vật/sách
+Tiếng Anh lớp 2
+
+eng-colors | Colors (Màu sắc)
+eng-animals | Animals (Động vật)
+eng-family | Family (Gia đình)
+eng-school | School (Trường học)
+eng-phonics-a | Letter A
+eng-phonics-b | Letter B
+eng-phonics-c | Letter C
+eng-hello | Greetings (Chào hỏi)
+eng-qa-name | What's your name?
+eng-qa-this-that | What's this/that?
+eng2-list | Listening: Colors & Numbers
+eng2-speak | Speaking: Introduce Yourself
+eng2-read | Reading: Short Sentences
+eng2-write | Writing: Simple Words

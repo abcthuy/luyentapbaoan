@@ -1,37 +1,15 @@
 ﻿"use client";
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { ProgressData, UserProfile, AppStorage, ParentAccount, ParentChildLink, AdminAccount, InventoryItem } from '@/lib/mastery';
+import { ProgressData, UserProfile, AppStorage, InventoryItem } from '@/lib/mastery';
 import { useAuth } from '@/hooks/use-auth';
 import { useProfile } from '@/hooks/use-profile';
-import { normalizeContentLibrary, setRuntimeContentLibrary } from '@/lib/content/library';
+import { setRuntimeContentLibrary } from '@/lib/content/library';
 import { syncSkillMap } from '@/lib/skills';
-
-const AVATARS = ['\u{1F436}', '\u{1F431}', '\u{1F42D}', '\u{1F439}', '\u{1F430}', '\u{1F98A}', '\u{1F43B}', '\u{1F43C}', '\u{1F428}', '\u{1F42F}', '\u{1F981}', '\u{1F42E}', '\u{1F437}', '\u{1F438}', '\u{1F435}', '\u{1F427}', '\u{1F426}', '\u{1F986}', '\u{1F42C}', '\u{1F433}', '\u{1F984}', '\u{1F98B}', '\u{1F98D}', '\u{1F43B}'];
-const getRandomAvatar = () => AVATARS[Math.floor(Math.random() * AVATARS.length)];
-const EMPTY_STORAGE: AppStorage = {
-    profiles: [],
-    activeProfileId: null,
-    lastActive: Date.now()
-};
-
-type LegacyParentRecord = {
-    id?: string;
-    name?: string;
-    pin?: string;
-    childrenIds?: string[];
-};
-
-type ParsedStorage = Partial<AppStorage> & {
-    parents?: LegacyParentRecord[];
-};
-
-type ParentDirectoryEntry = {
-    parent: ParentAccount;
-    childRefs: { childId: string; childSyncId: string }[];
-    sourceSyncIds: string[];
-    matchKey: string;
-};
+import { mergeAppStorage } from '@/lib/storage-merge';
+import { getDeviceId } from '@/lib/device';
+import { hashPinIfNeeded } from '@/lib/pin-hash';
+import { EMPTY_STORAGE, ParentDirectoryEntry, buildParentSummaries, normalizeStorage } from '@/lib/progress-storage';
 
 type ProgressContextType = {
     storage: AppStorage | null;
@@ -41,15 +19,15 @@ type ProgressContextType = {
     activeProfile: UserProfile | null;
     progress: ProgressData | null;
     addProfile: (name: string, pin?: string, avatar?: string, skipAutoLogin?: boolean) => void;
-    addParent: (name: string, pin: string) => void;
+    addParent: (name: string, pin: string) => Promise<void>;
     assignChildToParent: (parentId: string, childId: string) => void;
     processRewardApproval: (childId: string, itemId: string, action: 'approve' | 'reject') => void;
     switchProfile: (id: string) => Promise<boolean>;
     deleteProfile: (id: string) => void;
     updateProfilePin: (id: string, newPin?: string) => void;
     updateProfilePinBySource: (sourceSyncId: string, profileId: string, newPin?: string) => Promise<void>;
-    updateFamilyCredentials: (pin: string) => void;
-    upsertAdminAccount: (username: string, pin: string, displayName?: string) => void;
+    updateFamilyCredentials: (pin: string) => Promise<void>;
+    upsertAdminAccount: (username: string, pin: string, displayName?: string) => Promise<void>;
     updateProfileVisibility: (id: string, isPublic: boolean) => void;
     updateProfileGrade: (id: string, grade: number) => void;
     updateLocalProgress: (newProgress: ProgressData, immediate?: boolean) => void;
@@ -70,122 +48,7 @@ type ProgressContextType = {
 
 const ProgressContext = createContext<ProgressContextType | undefined>(undefined);
 
-const getDeviceId = (): string => {
-    let deviceId = localStorage.getItem('math_device_id');
-    if (!deviceId) {
-        deviceId = `DEV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        localStorage.setItem('math_device_id', deviceId);
-    }
-    return deviceId;
-};
 
-const parseRawStorage = (input: unknown): ParsedStorage => {
-    if (!input) return {};
-    if (typeof input === 'string') {
-        try {
-            const parsed = JSON.parse(input);
-            return typeof parsed === 'object' && parsed !== null ? parsed as ParsedStorage : {};
-        } catch {
-            return {};
-        }
-    }
-    return typeof input === 'object' && input !== null ? input as ParsedStorage : {};
-};
-
-const buildParentMatchKey = (parent: Pick<ParentAccount, 'name' | 'pin'>) => `${parent.name.trim().toLowerCase()}::${parent.pin.trim()}`;
-
-const buildParentSummaries = (storage: AppStorage, sourceSyncId: string): ParentDirectoryEntry[] => {
-    const links = storage.parentChildLinks || [];
-
-    return (storage.parentAccounts || []).map((parent) => ({
-        parent,
-        childRefs: links
-            .filter((link) => link.parentId === parent.id)
-            .map((link) => ({ childId: link.childId, childSyncId: link.childSyncId || sourceSyncId })),
-        sourceSyncIds: [sourceSyncId],
-        matchKey: buildParentMatchKey(parent),
-    }));
-};
-
-const normalizeStorage = (input: unknown): AppStorage => {
-    const parsed = parseRawStorage(input);
-    const profiles = (Array.isArray(parsed.profiles) ? parsed.profiles : []).filter(Boolean).map(profile => ({
-        ...profile,
-        grade: profile.grade || 2,
-        avatar: profile.avatar || getRandomAvatar()
-    }));
-
-    const profileIds = new Set(profiles.map(profile => profile.id));
-    const legacyParents = (Array.isArray(parsed.parents) ? parsed.parents : []).filter(Boolean).map(parent => ({
-        id: String(parent.id || '').trim(),
-        name: String(parent.name || '').trim(),
-        pin: String(parent.pin || '').trim(),
-        childrenIds: Array.isArray(parent.childrenIds)
-            ? parent.childrenIds.map((childId) => String(childId || '').trim()).filter((childId) => profileIds.has(childId))
-            : []
-    })).filter((parent) => parent.id && parent.name && parent.pin);
-
-    const parentAccounts = ((Array.isArray(parsed.parentAccounts) ? parsed.parentAccounts : []).filter(Boolean).map(parent => ({
-        ...parent,
-        id: String(parent.id || '').trim(),
-        name: String(parent.name || '').trim(),
-        pin: String(parent.pin || '').trim(),
-        displayOrder: typeof parent.displayOrder === 'number' ? parent.displayOrder : undefined,
-        status: parent.status === 'disabled' ? 'disabled' : 'active',
-        createdAt: parent.createdAt || undefined,
-        updatedAt: parent.updatedAt || undefined,
-    })) as ParentAccount[]).filter((parent) => parent.id && parent.name && parent.pin);
-
-    const normalizedParentAccounts = parentAccounts.length > 0
-        ? parentAccounts
-        : legacyParents.map((parent) => ({
-            id: parent.id,
-            name: parent.name,
-            pin: parent.pin,
-            status: 'active' as const,
-        }));
-
-    const validParentIds = new Set(normalizedParentAccounts.map((parent) => parent.id));
-    const parentChildLinks = ((Array.isArray(parsed.parentChildLinks) ? parsed.parentChildLinks : []).filter(Boolean).map((link) => ({
-        ...link,
-        id: String(link.id || '').trim(),
-        parentId: String(link.parentId || '').trim(),
-        childId: String(link.childId || '').trim(),
-        childSyncId: link.childSyncId ? String(link.childSyncId).trim() : undefined,
-        assignedAt: link.assignedAt || undefined,
-    })) as ParentChildLink[]).filter((link) => link.id && validParentIds.has(link.parentId) && link.childId);
-
-    const normalizedParentChildLinks = parentChildLinks.length > 0
-        ? parentChildLinks
-        : legacyParents.flatMap((parent) => parent.childrenIds.map((childId) => ({
-            id: `${parent.id}:${childId}`,
-            parentId: parent.id,
-            childId,
-        })));
-
-    const { parents: _legacyParents, ...rest } = parsed;
-
-    let adminAccount = parsed.adminAccount;
-    if (!adminAccount?.pin && parsed.familyCredentials?.pin) {
-        adminAccount = {
-            username: 'admin',
-            displayName: 'Quan tri vien',
-            pin: String(parsed.familyCredentials.pin),
-            updatedAt: new Date().toISOString()
-        } as AdminAccount;
-    }
-
-    return {
-        ...EMPTY_STORAGE,
-        ...rest,
-        profiles,
-        parentAccounts: normalizedParentAccounts,
-        parentChildLinks: normalizedParentChildLinks,
-        adminAccount,
-        activeProfileId: profiles.some(profile => profile.id === parsed.activeProfileId) ? parsed.activeProfileId || null : null,
-        customContentLibrary: normalizeContentLibrary(parsed.customContentLibrary)
-    };
-};
 
 export function ProgressProvider({ children }: { children: React.ReactNode }) {
     const [storage, setStorage] = useState<AppStorage | null>(null);
@@ -258,14 +121,7 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
             let appData = normalizeStorage(row.data);
 
             if (syncId && row.id === syncId && localData) {
-                const localTime = localData.lastActive || 0;
-                const remoteTime = appData.lastActive || 0;
-                const localScore = localData.profiles.reduce((acc, p) => acc + (p.progress?.totalScore || 0), 0);
-                const remoteScore = appData.profiles.reduce((acc, p) => acc + (p.progress?.totalScore || 0), 0);
-
-                if (localScore > remoteScore || (localScore === remoteScore && localTime >= remoteTime)) {
-                    appData = localData;
-                }
+                appData = mergeAppStorage(appData, localData);
             }
 
             appData.profiles.forEach((profile) => {
@@ -339,9 +195,19 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
                 body: JSON.stringify({ syncId, storage: normalized })
             });
 
+            const payload = await response.json().catch(() => ({})) as {
+                storage?: AppStorage;
+                error?: string;
+            };
+
             if (!response.ok) {
-                const payload = await response.json().catch(() => ({}));
                 throw new Error(typeof payload?.error === 'string' ? payload.error : 'Cloud sync failed');
+            }
+
+            if (payload.storage) {
+                const merged = normalizeStorage(payload.storage);
+                setStorage(merged);
+                save(merged);
             }
         } catch (e) {
             console.error('Cloud sync failed:', e);
@@ -364,47 +230,34 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
                 row?: { data: unknown; updated_at?: string };
             };
 
+            const local = localStorage.getItem('math_progress_multi');
+            let localStorageData: AppStorage | null = null;
+            if (local) {
+                try {
+                    localStorageData = normalizeStorage(JSON.parse(local) as AppStorage);
+                } catch {
+                    localStorageData = null;
+                }
+            }
+
             if (response.ok && payload.row) {
                 const remoteStorage = normalizeStorage(payload.row.data);
-                const remoteUpdatedAt = payload.row.updated_at ? new Date(payload.row.updated_at).getTime() : 0;
-                const local = localStorage.getItem('math_progress_multi');
-                let localIsNewerOrEqual = false;
-                if (local) {
-                    try {
-                        const parsedLocal = normalizeStorage(JSON.parse(local) as AppStorage);
-                        const localTime = parsedLocal.lastActive || 0;
-                        const remoteTime = Math.max(remoteStorage.lastActive || 0, remoteUpdatedAt);
-                        const localScore = parsedLocal.profiles.reduce((acc, p) => acc + (p.progress?.totalScore || 0), 0);
-                        const remoteScore = remoteStorage.profiles.reduce((acc, p) => acc + (p.progress?.totalScore || 0), 0);
+                const mergedStorage = localStorageData
+                    ? normalizeStorage(mergeAppStorage(remoteStorage, localStorageData))
+                    : remoteStorage;
 
-                        if (localScore > remoteScore) {
-                            localIsNewerOrEqual = true;
-                            syncToCloud(parsedLocal);
-                        } else if (remoteScore > localScore) {
-                            localIsNewerOrEqual = false;
-                        } else {
-                            if (localTime >= remoteTime) {
-                                localIsNewerOrEqual = true;
-                            }
-                            if (localTime > remoteTime) {
-                                syncToCloud(parsedLocal);
-                            }
-                        }
-                    } catch { }
-                }
+                setStorage(mergedStorage);
+                save(mergedStorage);
 
-                if (!localIsNewerOrEqual) {
-                    setStorage(remoteStorage);
-                    localStorage.setItem('math_progress_multi', JSON.stringify(remoteStorage));
+                const remoteJson = JSON.stringify(remoteStorage);
+                const mergedJson = JSON.stringify(mergedStorage);
+                if (mergedJson !== remoteJson) {
+                    syncToCloud(mergedStorage);
                 }
-            } else {
-                const local = localStorage.getItem('math_progress_multi');
-                if (local) {
-                    try {
-                        const parsedLocal = normalizeStorage(JSON.parse(local) as AppStorage);
-                        syncToCloud(parsedLocal);
-                    } catch { }
-                }
+            } else if (localStorageData) {
+                setStorage(localStorageData);
+                save(localStorageData);
+                syncToCloud(localStorageData);
             }
         } catch (e) {
             console.error('Initial sync/load failed:', e);
@@ -439,15 +292,17 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
         syncToCloud(newStorage);
     };
 
-    const addParent = (name: string, pin: string) => {
+    const addParent = async (name: string, pin: string) => {
         if (!storage) return;
+        const hashedPin = await hashPinIfNeeded(pin);
+        if (!hashedPin) return;
         const newParentId = `pr-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
         const updated = normalizeStorage({
             ...storage,
             parentAccounts: [...(storage.parentAccounts || []), {
                 id: newParentId,
                 name,
-                pin,
+                pin: hashedPin,
                 status: "active",
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
@@ -637,6 +492,14 @@ export const useProgress = () => {
     if (!context) throw new Error('useProgress must be used within ProgressProvider');
     return context;
 };
+
+
+
+
+
+
+
+
 
 
 

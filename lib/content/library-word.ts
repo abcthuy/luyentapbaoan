@@ -25,6 +25,8 @@ export type ImportedQuestionRow = {
     skillId: string;
     level: number;
     question: Question;
+    stage?: 'foundation' | 'core' | 'mixed' | 'challenge' | null;
+    qualityStatus?: 'draft' | 'approved' | 'disabled';
 };
 
 export type ImportedLibraryWord = {
@@ -64,7 +66,12 @@ function encodeCell(value: string | number | undefined): string {
 
 function createTextRun(text: string, bold = false) {
     const safeText = escapeXml(text || ' ');
-    return `<w:r>${bold ? '<w:rPr><w:b/></w:rPr>' : ''}<w:t xml:space="preserve">${safeText}</w:t></w:r>`;
+    const runProperties = [
+        '<w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:eastAsia="Arial" w:cs="Arial"/>',
+        '<w:lang w:val="vi-VN" w:eastAsia="vi-VN" w:bidi="vi-VN"/>',
+        bold ? '<w:b/>' : '',
+    ].filter(Boolean).join('');
+    return `<w:r><w:rPr>${runProperties}</w:rPr><w:t xml:space="preserve">${safeText}</w:t></w:r>`;
 }
 
 function createParagraph(text: string, bold = false) {
@@ -397,7 +404,45 @@ function extractCellText(cell: Element) {
         .trim();
 }
 
+function decodeXmlEntities(value: string) {
+    return value
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&apos;', "'")
+        .replaceAll('&amp;', '&');
+}
+
+function extractTextFromXmlChunk(xml: string) {
+    return decodeXmlEntities(
+        xml
+            .replace(/<w:br\b[^/>]*\/>/g, '\n')
+            .replace(/<\/w:p>/g, '\n')
+            .replace(/<[^>]+>/g, '')
+            .replace(/\u00a0/g, ' ')
+    )
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .join('\n')
+        .trim();
+}
+
+function extractTablesFromDocumentXmlFallback(documentXml: string) {
+    const tableMatches = Array.from(documentXml.matchAll(/<w:tbl\b[\s\S]*?<\/w:tbl>/g));
+    return tableMatches.map((tableMatch) => {
+        const rowMatches = Array.from(tableMatch[0].matchAll(/<w:tr\b[\s\S]*?<\/w:tr>/g));
+        return rowMatches.map((rowMatch) => {
+            const cellMatches = Array.from(rowMatch[0].matchAll(/<w:tc\b[\s\S]*?<\/w:tc>/g));
+            return cellMatches.map((cellMatch) => extractTextFromXmlChunk(cellMatch[0]));
+        });
+    });
+}
+
 function extractTablesFromDocumentXml(documentXml: string) {
+    if (typeof DOMParser === 'undefined') {
+        return extractTablesFromDocumentXmlFallback(documentXml);
+    }
     const parser = new DOMParser();
     const document = parser.parseFromString(documentXml, 'application/xml');
     return Array.from(document.getElementsByTagNameNS(WORD_NS, 'tbl')).map((table) =>
@@ -451,6 +496,8 @@ function parseRowsToLibrary(skillsRows: string[][], questionsRows: string[][]): 
         });
     });
 
+    const skillContextById = new Map(skills.map((item) => [item.skill.id, item]));
+
     questionsRows.slice(1).forEach((row, index) => {
         const skillId = (row[0] || '').trim();
         const level = Math.max(1, Number(row[1]) || 1);
@@ -481,12 +528,14 @@ function parseRowsToLibrary(skillsRows: string[][], questionsRows: string[][]): 
             .map((item) => item.trim())
             .filter(Boolean);
 
+        const skillContext = skillContextById.get(skillId);
+
         questions.push({
             skillId,
             level,
             question: {
                 id: `imported-${skillId}-${level}-${index + 1}-${Date.now()}`,
-                subjectId: 'math',
+                subjectId: skillContext?.subjectId || 'math',
                 skillId,
                 type,
                 instruction: instruction || 'Làm bài tập sau:',
@@ -573,55 +622,142 @@ export function buildLibraryWordDocument(payload: LibraryExportPayload) {
     });
 
     return buildDocxBlob(
-        'Thư viện nội dung Math Mastery',
+        'Thư viện nội dung SuperKids',
         [
             'Đây là bản xuất toàn bộ thư viện nội dung.',
-            `Ngày xuất: ${payload.exportedAt} | Tổng môn: ${payload.summary.totalCourses} | Tổng skill: ${payload.summary.totalSkills} | Tổng câu hỏi: ${payload.summary.totalQuestions}`,
+            'Ngày xuất: ' + payload.exportedAt + ' | Tổng môn: ' + payload.summary.totalCourses + ' | Tổng skill: ' + payload.summary.totalSkills + ' | Tổng câu hỏi: ' + payload.summary.totalQuestions,
             'File này dùng để xem, đối soát và lưu trữ. Để nhập thêm nội dung mới, hãy dùng file mẫu .docx của hệ thống.',
         ],
         skillRows,
         questionRows
     );
 }
+export type LibraryTemplateContext = {
+    subjectId?: SubjectId;
+    skillId?: string;
+    skillName?: string;
+    topicId?: string;
+    topicName?: string;
+    questionTypes?: string[];
+    levelMin?: number;
+    levelMax?: number;
+    skills?: Array<{
+        skillId: string;
+        skillName: string;
+        topicId?: string;
+        topicName?: string;
+        questionTypes?: string[];
+        levelMin?: number;
+        levelMax?: number;
+    }>;
+};
 
-export function buildLibraryTemplateWordDocument() {
+export function buildLibraryTemplateWordDocument(context?: LibraryTemplateContext) {
+    const subjectId = context?.subjectId || 'math';
+    const fallbackSkillId = subjectId === 'english' ? 'eng-hello' : subjectId === 'vietnamese' ? 'tv2-tu-ngu' : subjectId === 'finance' ? 'C3' : 'A1';
+    const fallbackSkillName = subjectId === 'english' ? 'Greetings (Chào hỏi)' : subjectId === 'vietnamese' ? 'Từ chỉ sự vật, hoạt động, đặc điểm' : subjectId === 'finance' ? 'Nhận biết tiền Việt Nam' : 'Cấu tạo số và so sánh';
+    const templateSkills = context?.skills?.length ? context.skills : [{
+        skillId: context?.skillId || fallbackSkillId,
+        skillName: context?.skillName || fallbackSkillName,
+        topicId: context?.topicId || 'default-topic',
+        topicName: context?.topicName || 'Chủ đề đang chọn',
+        questionTypes: ['mcq', 'input'],
+        levelMin: 1,
+        levelMax: 3,
+    }];
+
+    const skillRows = templateSkills.map((skill) => [
+        subjectId,
+        skill.topicId || 'default-topic',
+        skill.topicName || 'Chủ đề đang chọn',
+        skill.skillId,
+        skill.skillName,
+        'Skill trong môn đang chọn để nhập câu hỏi theo file Word.',
+        '1',
+        '2',
+        '1',
+        'Nhập câu hỏi cho đúng skill này.',
+    ]);
+
+    const questionRows = templateSkills.flatMap((skill) =>
+        buildTemplateExampleRows({
+            subjectId,
+            skillId: skill.skillId,
+            skillName: skill.skillName,
+            topicId: skill.topicId,
+            topicName: skill.topicName,
+            questionTypes: skill.questionTypes,
+            levelMin: skill.levelMin,
+            levelMax: skill.levelMax,
+        })
+    );
+
     return buildDocxBlob(
-        'Mẫu nhập thư viện Math Mastery',
+        'Mẫu nhập ngân hàng câu hỏi theo môn',
         [
-            'Hướng dẫn dùng file mẫu .docx',
-            '1. Nhập thêm dòng mới trong bảng skill nếu bạn muốn tạo skill custom.',
-            '2. Nhập bảng câu hỏi để thêm câu hỏi vào skill đã có hoặc skill custom vừa tạo.',
-            '3. Nếu câu hỏi là mcq hoặc listening, cột Options viết theo dạng: Lựa chọn 1 | Lựa chọn 2 | Lựa chọn 3.',
-            '4. Cột Extra JSON chỉ dùng khi cần thêm trường nâng cao như image, audio, pairs, items, targets.',
-            '5. Sau khi sửa trong Word, hãy giữ định dạng .docx rồi tải lên lại tại trang admin.',
+            'Hướng dẫn dùng file mẫu .docx cho cả môn học',
+            '1. File này chứa tất cả skill của môn đang chọn. Mỗi skill đã có sẵn 3 dòng mẫu cho mức 1, 2, 3.',
+            '2. Bạn chỉ cần sửa nội dung trên các dòng mẫu hoặc nhân bản thêm dòng mới để nhập nhiều câu hỏi hơn.',
+            '3. Cột Level dùng số 1, 2, 3 để biểu thị mức độ cơ bản, chuẩn, nâng cao.',
+            '4. Nếu câu hỏi là mcq hoặc listening, cột Options viết theo dạng: Lựa chọn 1 | Lựa chọn 2 | Lựa chọn 3.',
+            '5. Hãy giữ nguyên cấu trúc cột và lưu lại dưới dạng .docx trước khi tải lên admin.',
         ],
-        [[
-            'english',
-            'custom-speaking',
-            'Bổ sung giao tiếp',
-            'eng2-greet-custom',
-            'Hỏi đáp chào hỏi',
-            'Skill custom cho bé luyện câu chào hỏi cơ bản',
-            '1',
-            '2',
-            '1',
-            'Tập trung vào mẫu câu ngắn, dễ hiểu.',
-        ]],
-        [[
-            'eng2-greet-custom',
-            '1',
-            'mcq',
-            'Chọn câu trả lời đúng.',
-            'Teacher says: "Good morning!" What should you say?',
-            'Good morning!',
-            'Good morning! | Goodbye! | Thank you!',
-            'Nhớ chọn câu chào phù hợp.',
-            'Good morning! là câu chào phù hợp vào buổi sáng.',
-            '',
-        ]]
+        skillRows,
+        questionRows
     );
 }
 
+function buildTemplateExampleRows(context?: LibraryTemplateContext) {
+    const subjectId = context?.subjectId || 'math';
+    const skillId = context?.skillId || (subjectId === 'english' ? 'eng-hello' : subjectId === 'vietnamese' ? 'tv2-tu-ngu' : subjectId === 'finance' ? 'C3' : 'A1');
+    const allowedTypes = (context?.questionTypes?.length ? context.questionTypes : (subjectId === 'english'
+        ? ['mcq', 'input', 'reading']
+        : subjectId === 'vietnamese'
+            ? ['mcq', 'input', 'reading']
+            : subjectId === 'finance'
+                ? ['mcq', 'input']
+                : ['mcq', 'input'])).map((item) => String(item));
+    const levelMin = Math.max(1, Number(context?.levelMin || 1));
+    const levelMax = Math.max(levelMin, Number(context?.levelMax || Math.max(levelMin, 3)));
+
+    const pickType = (preferred: string, fallback = 'mcq') => {
+        if (allowedTypes.includes(preferred)) return preferred;
+        if (allowedTypes.includes(fallback)) return fallback;
+        return allowedTypes[0] || fallback;
+    };
+
+    const exampleLevels = [levelMin, Math.min(levelMin + 1, levelMax), Math.min(levelMin + 2, levelMax)];
+
+    if (subjectId === 'english') {
+        return [
+            [skillId, String(exampleLevels[0]), pickType('mcq'), 'Choose the correct answer.', 'Which word says a color: red, run, or book?', 'red', 'red | run | book', 'Pick the color word.', 'red is a color word.', ''],
+            [skillId, String(exampleLevels[1]), pickType('input', 'mcq'), 'Fill in the blank.', 'Complete: My name is ____.', 'Lan', pickType('input', 'mcq') === 'mcq' ? 'Lan | cat | blue' : '', 'Use a simple name.', 'This is a basic self-introduction sentence.', ''],
+            [skillId, String(exampleLevels[2]), pickType('reading', 'mcq'), 'Read and answer.', 'Nam says: Hello, teacher.', 'Hello', pickType('reading', 'mcq') === 'mcq' ? 'Hello | Goodbye | Thank you' : '', 'Find the greeting.', 'The greeting word is Hello.', pickType('reading', 'mcq') === 'reading' ? '{"answerMode":"keyword"}' : ''],
+        ];
+    }
+
+    if (subjectId === 'vietnamese') {
+        return [
+            [skillId, String(exampleLevels[0]), pickType('mcq'), 'Chọn đáp án đúng.', 'Từ nào chỉ hoạt động: chạy, cây, bàn?', 'chạy', 'chạy | cây | bàn', 'Tìm từ chỉ hoạt động.', 'Chạy là từ chỉ hoạt động.', ''],
+            [skillId, String(exampleLevels[1]), pickType('input', 'mcq'), 'Điền từ thích hợp.', 'Con mèo đang ____.', 'ngủ', pickType('input', 'mcq') === 'mcq' ? 'ngủ | đỏ | bàn' : '', 'Chọn từ phù hợp với con mèo.', 'Câu cần một từ chỉ hoạt động phù hợp.', ''],
+            [skillId, String(exampleLevels[2]), pickType('reading', 'mcq'), 'Đọc và trả lời.', 'Bé Lan tưới cây hoa hồng.', 'hoa hồng', pickType('reading', 'mcq') === 'mcq' ? 'hoa hồng | bút chì | cái bàn' : '', 'Trả lời ngắn gọn.', 'Cụm từ cần tìm là hoa hồng.', pickType('reading', 'mcq') === 'reading' ? '{"answerMode":"phrase"}' : ''],
+        ];
+    }
+
+    if (subjectId === 'finance') {
+        return [
+            [skillId, String(exampleLevels[0]), pickType('mcq'), 'Chọn đáp án đúng.', 'Tờ tiền nào lớn hơn: 2000 đồng hay 5000 đồng?', '5000', '2000 | 5000 | 1000', 'So sánh giá trị tiền.', '5000 đồng lớn hơn 2000 đồng.', ''],
+            [skillId, String(exampleLevels[1]), pickType('input', 'mcq'), 'Tính số tiền.', 'Lan có 2000 đồng và 5000 đồng. Lan có tất cả bao nhiêu đồng?', '7000', pickType('input', 'mcq') === 'mcq' ? '6000 | 7000 | 8000' : '', 'Cộng hai số tiền lại.', '2000 + 5000 = 7000.', '{"unit":"dong"}'],
+            [skillId, String(exampleLevels[2]), pickType('mcq'), 'Chọn đáp án hợp lý.', 'Món nào là nhu cầu cần thiết cho việc học?', 'vở học sinh', 'kẹo | đồ chơi | vở học sinh', 'Phân biệt cần và muốn.', 'Vở học sinh là đồ dùng cần thiết cho việc học.', '{"category":"need-vs-want"}'],
+        ];
+    }
+
+    return [
+        [skillId, String(exampleLevels[0]), pickType('mcq'), 'Chọn đáp án đúng.', 'Số nào lớn hơn: 36 hay 48?', '48', '36 | 48 | 27', 'So sánh các số.', '48 lớn hơn 36 và 27.', ''],
+        [skillId, String(exampleLevels[1]), pickType('input', 'mcq'), 'Điền đáp án.', '36 + 12 = ?', '48', pickType('input', 'mcq') === 'mcq' ? '46 | 48 | 50' : '', 'Cộng hai số.', '36 cộng 12 bằng 48.', ''],
+        [skillId, String(exampleLevels[2]), pickType('mcq'), 'Chọn đáp án đúng.', 'Lan có 25 viên bi, cho bạn 7 viên. Lan còn lại bao nhiêu viên?', '18', '16 | 18 | 20', 'Lấy số ban đầu trừ số đã cho.', '25 trừ 7 bằng 18.', '{"skillType":"word-problem"}'],
+    ];
+}
 export async function parseLibraryWordDocument(rawContent: ArrayBuffer | string): Promise<ImportedLibraryWord> {
     if (typeof rawContent === 'string') {
         return parseHtmlLibraryDocument(rawContent);

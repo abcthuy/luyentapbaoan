@@ -13,6 +13,8 @@ type ParsedAppStorage = Partial<AppStorage> & {
 
 export const EMPTY_APP_STORAGE: AppStorage = {
     profiles: [],
+    deletedProfileIds: [],
+    deletedParentKeys: [],
     activeProfileId: null,
     lastActive: Date.now(),
 };
@@ -124,6 +126,12 @@ export function sanitizeStorage(storage: unknown): AppStorage {
         ...EMPTY_APP_STORAGE,
         ...rest,
         profiles,
+        deletedProfileIds: Array.isArray(parsed.deletedProfileIds)
+            ? Array.from(new Set(parsed.deletedProfileIds.map((id) => String(id || "").trim()).filter(Boolean)))
+            : [],
+        deletedParentKeys: Array.isArray(parsed.deletedParentKeys)
+            ? Array.from(new Set(parsed.deletedParentKeys.map((key) => String(key || "").trim().toLowerCase()).filter(Boolean)))
+            : [],
         parentAccounts,
         parentChildLinks,
         adminAccount,
@@ -132,4 +140,5 @@ export function sanitizeStorage(storage: unknown): AppStorage {
             : null,
     };
 }
+
 

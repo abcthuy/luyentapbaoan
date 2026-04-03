@@ -1,4 +1,5 @@
-import type { AppStorage } from "@/lib/mastery";
+﻿import type { AppStorage } from "@/lib/mastery";
+import { hashPinIfNeeded, isPinHashed, verifyPinInput } from "@/lib/pin-hash";
 import { sanitizeStorage } from "@/lib/server/app-storage";
 import { getServerSupabase } from "@/lib/server/supabase-admin";
 
@@ -22,6 +23,34 @@ export async function verifyAdminCredentials(credentials: AdminCredentials) {
     const admin = storage.adminAccount;
     if (!admin?.pin) return false;
 
-    return admin.username.trim().toLowerCase() === credentials.username.trim().toLowerCase()
-        && String(admin.pin).trim() === credentials.pin.trim();
+    const usernameMatches = admin.username.trim().toLowerCase() === credentials.username.trim().toLowerCase();
+    if (!usernameMatches) return false;
+
+    const storedPin = String(admin.pin).trim();
+    const isValidPin = await verifyPinInput(credentials.pin, storedPin);
+    if (!isValidPin) return false;
+
+    if (!isPinHashed(storedPin)) {
+        const hashedPin = await hashPinIfNeeded(credentials.pin);
+        if (hashedPin) {
+            const nextStorage: AppStorage = {
+                ...storage,
+                adminAccount: {
+                    ...admin,
+                    pin: hashedPin,
+                    updatedAt: new Date().toISOString(),
+                },
+            };
+
+            await supabase
+                .from("math_progress")
+                .update({
+                    data: nextStorage,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq("id", credentials.syncId);
+        }
+    }
+
+    return true;
 }

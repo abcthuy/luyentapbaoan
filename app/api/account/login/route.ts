@@ -1,8 +1,12 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
+import type { AppStorage } from "@/lib/mastery";
+import { hashPinIfNeeded, isPinHashed, verifyPinInput } from "@/lib/pin-hash";
 import { sanitizeStorage } from "@/lib/server/app-storage";
 import { getServerSupabase } from "@/lib/server/supabase-admin";
 
 const SESSION_LOCK_TIMEOUT_MS = 30 * 60 * 1000;
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOGIN_LOCK_WINDOW_MS = 10 * 60 * 1000;
 
 export async function POST(req: NextRequest) {
     try {
@@ -32,14 +36,60 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Ten dang nhap khong ton tai." }, { status: 404 });
         }
 
-        const storage = sanitizeStorage(data.data);
+        const storage = sanitizeStorage(data.data as AppStorage);
+        const now = Date.now();
+        const currentSecurity = storage.loginSecurity || { failedAttempts: 0, lockedUntil: null, lastFailedAt: null };
+        const lockedUntil = currentSecurity.lockedUntil || null;
+
+        if (lockedUntil && lockedUntil > now) {
+            const waitMinutes = Math.max(1, Math.ceil((lockedUntil - now) / 60000));
+            return NextResponse.json(
+                { error: `Tai khoan tam khoa do nhap sai nhieu lan. Vui long thu lai sau ${waitMinutes} phut.` },
+                { status: 429 }
+            );
+        }
+
         const storedPin = storage.familyCredentials?.pin ? String(storage.familyCredentials.pin).trim() : "";
-        if (!storedPin || storedPin !== pin) {
-            return NextResponse.json({ error: "Ma PIN khong dung." }, { status: 401 });
+        const isValidPin = storedPin ? await verifyPinInput(pin, storedPin) : false;
+        if (!isValidPin) {
+            const nextFailedAttempts = (currentSecurity.failedAttempts || 0) + 1;
+            const nextLockedUntil = nextFailedAttempts >= MAX_LOGIN_ATTEMPTS ? now + LOGIN_LOCK_WINDOW_MS : null;
+            const nextStorage: AppStorage = {
+                ...storage,
+                loginSecurity: {
+                    failedAttempts: nextFailedAttempts,
+                    lockedUntil: nextLockedUntil,
+                    lastFailedAt: now,
+                },
+                lastActive: Math.max(storage.lastActive || 0, now),
+            };
+
+            const { error: updateError } = await supabase
+                .from("math_progress")
+                .update({
+                    data: nextStorage,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq("id", syncId);
+
+            if (updateError) throw updateError;
+
+            if (nextLockedUntil) {
+                return NextResponse.json(
+                    { error: "Nhap sai qua nhieu lan. Tai khoan da bi tam khoa trong 10 phut." },
+                    { status: 429 }
+                );
+            }
+
+            const remainingAttempts = Math.max(0, MAX_LOGIN_ATTEMPTS - nextFailedAttempts);
+            return NextResponse.json(
+                { error: `Ma PIN khong dung. Con ${remainingAttempts} lan thu truoc khi bi tam khoa.` },
+                { status: 401 }
+            );
         }
 
         if (storage.activeSession) {
-            const timeSinceLastSeen = Date.now() - storage.activeSession.lastSeen;
+            const timeSinceLastSeen = now - storage.activeSession.lastSeen;
             if (storage.activeSession.deviceId !== deviceId && timeSinceLastSeen < SESSION_LOCK_TIMEOUT_MS) {
                 const minutesAgo = Math.round(timeSinceLastSeen / 60000);
                 return NextResponse.json(
@@ -49,13 +99,24 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        const nextStorage = {
+        const nextStorage: AppStorage = {
             ...storage,
+            familyCredentials: storage.familyCredentials
+                ? {
+                    ...storage.familyCredentials,
+                    pin: isPinHashed(storedPin) ? storedPin : (await hashPinIfNeeded(pin)) || storedPin,
+                }
+                : storage.familyCredentials,
             activeSession: {
                 deviceId,
-                lastSeen: Date.now(),
+                lastSeen: now,
             },
-            lastActive: Date.now(),
+            loginSecurity: {
+                failedAttempts: 0,
+                lockedUntil: null,
+                lastFailedAt: currentSecurity.lastFailedAt || null,
+            },
+            lastActive: now,
         };
 
         const { error: updateError } = await supabase

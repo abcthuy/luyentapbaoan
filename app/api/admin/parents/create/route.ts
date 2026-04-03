@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import type { ParentAccount } from "@/lib/mastery";
+import { hashPinIfNeeded } from "@/lib/pin-hash";
 import { verifyAdminCredentials } from "@/lib/server/admin-auth";
 import {
     addParentToStorage,
@@ -32,6 +33,11 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "PIN must have at least 4 digits" }, { status: 400 });
         }
 
+        const hashedParentPin = await hashPinIfNeeded(parentPin);
+        if (!hashedParentPin) {
+            return NextResponse.json({ error: "Invalid parent PIN" }, { status: 400 });
+        }
+
         const isAuthorized = await verifyAdminCredentials({ syncId, username, pin });
         if (!isAuthorized) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -41,7 +47,7 @@ export async function POST(req: NextRequest) {
         const parent: ParentAccount = {
             id: buildParentId(),
             name,
-            pin: parentPin,
+            pin: hashedParentPin,
             status: "active",
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),

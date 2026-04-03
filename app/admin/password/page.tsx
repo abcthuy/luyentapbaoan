@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -6,6 +6,7 @@ import { useProgress } from '@/components/progress-provider';
 import { ArrowLeft, ShieldAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clearAdminSession, hasActiveAdminSession, touchAdminSession } from '@/lib/admin-session';
+import { verifyPin } from '@/lib/pin-hash';
 
 export default function AdminPasswordPage() {
     const { storage, upsertAdminAccount, isInitialized } = useProgress();
@@ -37,11 +38,11 @@ export default function AdminPasswordPage() {
         );
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setMessage(null);
 
-        if (currentPin !== storage?.adminAccount?.pin) {
+        if (!storage?.adminAccount?.pin || !(await verifyPin(currentPin, storage.adminAccount.pin))) {
             setMessage({ type: 'error', text: 'Mật khẩu hiện tại không đúng!' });
             return;
         }
@@ -56,7 +57,7 @@ export default function AdminPasswordPage() {
             return;
         }
 
-        upsertAdminAccount(storage?.adminAccount?.username || 'admin', newPin, storage?.adminAccount?.displayName);
+        await upsertAdminAccount(storage?.adminAccount?.username || 'admin', newPin, storage?.adminAccount?.displayName);
         touchAdminSession();
         setMessage({ type: 'success', text: 'Đổi mật khẩu thành công!' });
 
@@ -159,3 +160,6 @@ export default function AdminPasswordPage() {
         </div>
     );
 }
+
+
+

@@ -1,6 +1,7 @@
 
 import { getAllCourses, SubjectId } from './content/registry';
 import { Skill as CoreSkill } from './content/types';
+import { resolveContentGrade } from './grades';
 
 // We derive the map from the Registry to ensure Single Source of Truth
 // This allows adding new subjects/courses without touching this file.
@@ -12,9 +13,14 @@ export interface Skill extends CoreSkill {
     subjectId: SubjectId;
 }
 
-export function isSkillAvailableForGrade(skill: Pick<CoreSkill, 'grade'>, grade?: number): boolean {
+export function isSkillAvailableForGrade(
+    skill: Pick<CoreSkill, 'grade'> & Partial<Pick<Skill, 'subjectId'>>,
+    grade?: number
+): boolean {
     if (!grade) return true;
-    return skill.grade <= grade;
+
+    const targetGrade = skill.subjectId ? resolveContentGrade(skill.subjectId, grade) : grade;
+    return skill.grade === targetGrade;
 }
 
 export function filterSkillsByGrade<T extends Pick<CoreSkill, 'grade'>>(skills: T[], grade?: number): T[] {

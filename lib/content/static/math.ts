@@ -1,4 +1,4 @@
-import { Question } from '../types';
+﻿import { Question } from '../types';
 
 export const mathStaticQuestions: Record<string, Record<number, Question[]>> = {
     "A4": {
@@ -1582,16 +1582,16 @@ export const mathStaticQuestions: Record<string, Record<number, Question[]>> = {
                 "type": "mcq",
                 "instruction": "Đọc kỹ đề toán đố!",
                 "content": {
-                    "text": "Một cửa hàng có 51kg gạo. Buổi sáng bán được 25kg, buổi chiều bán được 27kg. Hỏi cửa hàng còn lại bao nhiêu ki-lô-gam gạo?",
+                    "text": "Một cửa hàng có 53kg gạo. Buổi sáng bán được 25kg, buổi chiều bán được 27kg. Hỏi cửa hàng còn lại bao nhiêu ki-lô-gam gạo?",
                     "options": [
-                        "-1",
+                        "1",
                         "24",
                         "26",
                         "40"
                     ]
                 },
-                "answer": "-1",
-                "explanation": "Số gạo đã bán: 25 + 27 = 52kg. Số gạo còn lại: 51 - 52 = -1kg."
+                "answer": "1",
+                "explanation": "Số gạo đã bán: 25 + 27 = 52kg. Số gạo còn lại: 53 - 52 = 1kg."
             },
             {
                 "id": "stat-m-b2-3-8",

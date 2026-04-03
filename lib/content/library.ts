@@ -17,6 +17,7 @@ export interface ContentLibrary {
     updatedAt?: string;
 }
 
+// Legacy runtime content overlay kept only for compatibility during migration to DB-backed question_bank.
 let runtimeContentLibrary: ContentLibrary = { skills: [], updatedAt: undefined };
 
 function cloneQuestion(question: Question): Question {

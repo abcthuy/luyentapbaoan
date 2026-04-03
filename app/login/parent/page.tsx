@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useProgress } from '@/components/progress-provider';
 import { ParentAccount } from '@/lib/mastery';
+import { verifyPin } from '@/lib/pin-hash';
 import { UserCircle, ShieldCheck, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -43,7 +44,8 @@ export default function ParentLoginPage() {
 
         const { parent, sourceSyncIds, matchKey } = selectedParent;
 
-        if (pin !== String(parent.pin)) {
+        const isValidPin = await verifyPin(pin, String(parent.pin));
+        if (!isValidPin) {
             setError('Ma PIN khong chinh xac!');
             setPin('');
             return;
@@ -186,4 +188,6 @@ export default function ParentLoginPage() {
         </div>
     );
 }
+
+
 

@@ -10,6 +10,11 @@ import { useProgress } from '@/components/progress-provider';
 import { UserMenu } from '@/components/user-menu';
 import { WalletButton } from '@/components/ui/wallet-button';
 import { mathCourse } from '@/lib/content/courses/math';
+import { BackButton } from '@/components/ui/back-button';
+import { getTheme } from '@/lib/theme';
+import { normalizeDisplayText } from '@/lib/text';
+import { GradeContentNotice } from '@/components/grade-content-notice';
+import { resolveContentGrade } from '@/lib/grades';
 
 const ZONE_NAMES = [
     { name: "Rừng Số Học", color: "from-emerald-400 to-green-600", icon: Calculator },
@@ -17,15 +22,12 @@ const ZONE_NAMES = [
     { name: "Đỉnh Núi Tư Duy", color: "from-purple-400 to-pink-600", icon: Zap },
 ];
 
-import { BackButton } from '@/components/ui/back-button';
-import { getTheme } from '@/lib/theme';
-import { isSkillAvailableForGrade } from '@/lib/skills';
-
 export default function MathPage() {
     const router = useRouter();
     const { progress, activeProfile } = useProgress();
     const theme = getTheme('math');
     const currentGrade = activeProfile?.grade || 2;
+    const contentGrade = resolveContentGrade('math', currentGrade);
 
     const getSkillProgress = (skillId: string) => {
         if (!progress || !progress.skills) return { mastery: 0, stars: 0 };
@@ -39,7 +41,6 @@ export default function MathPage() {
 
     return (
         <div className={`min-h-screen ${theme.colors.light} relative overflow-hidden font-sans selection:${theme.colors.primary}/30`}>
-            {/* Header */}
             <div className="relative z-10 pt-8 pb-12 px-4 text-center">
                 <div className="absolute top-6 left-6 flex items-center gap-3">
                     <BackButton href="/today?subject=math" theme={theme} />
@@ -47,7 +48,6 @@ export default function MathPage() {
 
                 <div className="absolute top-6 right-6 flex items-center gap-3">
                     <WalletButton />
-                    {/* Only show UserMenu on mobile here, as desktop has it in sidebar */}
                     <div className="md:hidden">
                         <UserMenu theme={theme} />
                     </div>
@@ -70,16 +70,14 @@ export default function MathPage() {
                 </p>
             </div>
 
-            {/* Main Map Content */}
             <div className="max-w-6xl mx-auto px-4 pb-20 relative z-20 space-y-24">
+                <GradeContentNotice subjectId="math" grade={currentGrade} />
                 {mathCourse.topics.map((topic, index) => {
                     const zone = ZONE_NAMES[index] || ZONE_NAMES[0];
                     const ZoneIcon = zone.icon;
 
                     return (
                         <div key={topic.id} className="relative flex flex-col">
-
-                            {/* Zone Title */}
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 whileInView={{ opacity: 1, y: 0 }}
@@ -91,13 +89,12 @@ export default function MathPage() {
                                 </div>
                                 <div>
                                     <div className="text-slate-400 text-xs font-black uppercase tracking-widest">Khu vực {index + 1}</div>
-                                    <h2 className="text-3xl font-black text-slate-900">{zone.name}</h2>
+                                    <h2 className="text-3xl font-black text-slate-900">{normalizeDisplayText(zone.name)}</h2>
                                 </div>
                             </motion.div>
 
-                            {/* Skills / Nodes Grid */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-                                {topic.skills.filter((skill) => isSkillAvailableForGrade(skill, currentGrade)).map((skill, skillIndex) => {
+                                {topic.skills.filter((skill) => skill.grade === contentGrade).map((skill, skillIndex) => {
                                     const { mastery, stars } = getSkillProgress(skill.id);
 
                                     return (
@@ -113,7 +110,6 @@ export default function MathPage() {
                                             className="group relative h-full text-left"
                                         >
                                             <div className="h-full bg-white rounded-[32px] p-6 border-2 border-slate-100 shadow-xl shadow-slate-200/50 group-hover:border-blue-500/30 group-hover:shadow-blue-500/10 transition-all duration-300 relative overflow-hidden">
-
                                                 <div className="flex justify-between items-start mb-6">
                                                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-black ${mastery >= 100 ? 'bg-yellow-100 text-yellow-600' : 'bg-slate-100 text-slate-500'}`}>
                                                         {skillIndex + 1}
@@ -130,7 +126,7 @@ export default function MathPage() {
                                                 </div>
 
                                                 <h3 className="text-xl font-bold text-slate-800 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                                                    {skill.name}
+                                                    {normalizeDisplayText(skill.name)}
                                                 </h3>
 
                                                 <div className="mt-4">

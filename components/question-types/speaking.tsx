@@ -3,11 +3,12 @@ import React, { useState } from 'react';
 import { Lightbulb, Mic, Square, Play, RefreshCw, Volume2, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRecording } from '@/hooks/use-recording';
+import { normalizeDisplayText } from '@/lib/text';
 
 interface SpeakingQuestionProps {
-    text?: string;       // Content to read
-    topic?: string;      // Topic to discuss
-    hint?: string;       // Dynamic hint/outline
+    text?: string;
+    topic?: string;
+    hint?: string;
     mode: 'reading' | 'speaking';
     onSubmitResponse?: (payload: { audioBlob?: Blob; textAnswer?: string }) => void;
     disabled?: boolean;
@@ -19,11 +20,16 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
     hint,
     mode,
     disabled,
-    onSubmitResponse
+    onSubmitResponse,
 }) => {
     const [showHint, setShowHint] = useState(false);
     const [textFallback, setTextFallback] = useState('');
     const recorder = useRecording();
+
+    const safeText = normalizeDisplayText(text);
+    const safeTopic = normalizeDisplayText(topic || text);
+    const safeHint = normalizeDisplayText(hint);
+    const safeStartError = normalizeDisplayText(recorder.startError);
 
     const handleSubmit = () => {
         if (recorder.audioBlob) {
@@ -33,14 +39,12 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
 
     return (
         <div className="w-full max-w-4xl mx-auto flex flex-col gap-8">
-            {/* 1. Context / Stage Area */}
             <div className="bg-white rounded-[40px] shadow-xl border-4 border-slate-100 overflow-hidden relative">
-                {/* Content Body */}
                 <div className="p-6 md:p-8 pb-8">
                     {mode === 'reading' && (
                         <div className="space-y-6">
                             <p className="text-2xl md:text-4xl font-black text-slate-800 leading-normal text-center whitespace-pre-line">
-                                {text}
+                                {safeText}
                             </p>
                         </div>
                     )}
@@ -48,12 +52,11 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
                     {mode === 'speaking' && (
                         <div className="space-y-6">
                             <div className="p-8 bg-amber-50 rounded-3xl border-2 border-amber-100 text-center">
-                                <p className="text-2xl md:text-3xl font-black text-amber-800 leading-tight">
-                                    {topic || text}
+                                <p className="text-2xl md:text-3xl font-black text-amber-800 leading-tight whitespace-pre-line">
+                                    {safeTopic}
                                 </p>
                             </div>
 
-                            {/* Scaffolding / Hints */}
                             <div className="flex flex-col items-center">
                                 <button
                                     onClick={() => setShowHint(!showHint)}
@@ -72,18 +75,24 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
                                             className="overflow-hidden w-full max-w-lg"
                                         >
                                             <div className="mt-4 p-6 bg-white rounded-2xl border-2 border-slate-100 text-slate-600 space-y-2 whitespace-pre-line text-left leading-relaxed">
-                                                {hint ? (
-                                                    <p>{hint}</p>
+                                                {safeHint ? (
+                                                    <p>{safeHint}</p>
                                                 ) : (
                                                     <>
-                                                        <p><strong className="text-indigo-600">1. Mở bài:</strong> Giới thiệu vấn đề và quan điểm của con.</p>
-                                                        <p><strong className="text-indigo-600">2. Thân bài:</strong></p>
+                                                        <p>
+                                                            <strong className="text-indigo-600">1. Mở bài:</strong> Giới thiệu vấn đề và quan điểm của con.
+                                                        </p>
+                                                        <p>
+                                                            <strong className="text-indigo-600">2. Thân bài:</strong>
+                                                        </p>
                                                         <ul className="list-disc list-inside pl-4 space-y-1 text-sm">
                                                             <li>Lý do thứ nhất...</li>
                                                             <li>Lý do thứ hai...</li>
                                                             <li>Ví dụ minh họa...</li>
                                                         </ul>
-                                                        <p><strong className="text-indigo-600">3. Kết luận:</strong> Khẳng định lại ý kiến và lời khuyên.</p>
+                                                        <p>
+                                                            <strong className="text-indigo-600">3. Kết luận:</strong> Khẳng định lại ý kiến và lời khuyên.
+                                                        </p>
                                                     </>
                                                 )}
                                             </div>
@@ -95,13 +104,13 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
                     )}
                 </div>
 
-                {/* Recording Controls Area - Integrated */}
                 <div className="bg-slate-50 p-8 border-t-2 border-slate-100 flex flex-col items-center gap-6">
                     {recorder.startError && (
                         <div className="w-full max-w-2xl rounded-2xl border-2 border-rose-200 bg-rose-50 px-5 py-4 text-sm font-bold text-rose-700 text-center">
-                            {recorder.startError}
+                            {safeStartError}
                         </div>
                     )}
+
                     {!recorder.hasRecorded ? (
                         <div className="flex flex-col items-center gap-4">
                             <motion.button
@@ -126,7 +135,6 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
                         </div>
                     ) : (
                         <div className="flex flex-col items-center gap-6 w-full max-w-md">
-                            {/* Playback Card */}
                             <div className="w-full bg-white rounded-2xl p-4 border-2 border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
                                     <button
@@ -149,12 +157,10 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
                                 </button>
                             </div>
 
-                            {/* Instruction text */}
                             <div className="text-center text-sm text-slate-500 font-medium px-4">
-                                🎧 Bé hãy nghe lại bản ghi âm. Nếu hài lòng, nhấn <strong className="text-emerald-600">Gửi Bài Chấm</strong>. Chưa ưng thì nhấn ↻ để ghi lại nhé!
+                                Bé hãy nghe lại bản ghi âm. Nếu hài lòng, nhấn <strong className="text-emerald-600">Gửi Bài Chấm</strong>. Chưa ưng thì nhấn ↻ để ghi lại nhé!
                             </div>
 
-                            {/* Submit Button */}
                             <motion.button
                                 whileHover={{ scale: 1.03 }}
                                 whileTap={{ scale: 0.97 }}
@@ -176,7 +182,11 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
                             value={textFallback}
                             onChange={(e) => setTextFallback(e.target.value)}
                             disabled={disabled}
-                            placeholder={mode === 'reading' ? 'Con có thể gõ lại phần con đã đọc hoặc ghi chú nội dung chính...' : 'Con gõ nhanh ý chính hoặc bài nói của con vào đây...'}
+                            placeholder={
+                                mode === 'reading'
+                                    ? 'Con có thể gõ lại phần con đã đọc hoặc ghi chú nội dung chính...'
+                                    : 'Con gõ nhanh ý chính hoặc bài nói của con vào đây...'
+                            }
                             className="min-h-[120px] w-full resize-y rounded-2xl border-2 border-slate-200 bg-slate-50 px-4 py-3 text-base font-medium text-slate-700 outline-none transition-all focus:border-indigo-400 focus:bg-white"
                         />
                         <button

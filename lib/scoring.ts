@@ -85,4 +85,3 @@ export const calculateReward = (skillId: string, quality?: string, level: number
 
     return { amount, bonusReason };
 };
-

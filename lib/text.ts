@@ -16,13 +16,19 @@ export function normalizeDisplayText(value: string | undefined | null): string {
         );
     }
 
-    if (!MOJIBAKE_PATTERN.test(normalized)) return normalized;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+        if (!MOJIBAKE_PATTERN.test(normalized)) break;
 
-    try {
-        const bytes = Uint8Array.from(Array.from(normalized).map((char) => char.charCodeAt(0) & 0xff));
-        const decoded = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
-        return scoreVietnameseText(decoded) >= scoreVietnameseText(normalized) ? decoded : normalized;
-    } catch {
-        return normalized;
+        try {
+            const bytes = Uint8Array.from(Array.from(normalized).map((char) => char.charCodeAt(0) & 0xff));
+            const decoded = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+            if (scoreVietnameseText(decoded) < scoreVietnameseText(normalized)) break;
+            if (decoded === normalized) break;
+            normalized = decoded;
+        } catch {
+            break;
+        }
     }
+
+    return normalized;
 }

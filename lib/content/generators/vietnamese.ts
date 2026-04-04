@@ -745,35 +745,35 @@ const EXTRA_SPEAKING_TOPICS_L3 = [
 
 const SPEAKING_PROMPTS_BY_SKILL: Record<string, { instruction: string; prompts: { topic: string; hint: string }[] }> = {
     'tv2-noi-nghe': {
-        instruction: 'ðŸŽ™ï¸ BÃ© hÃ£y ká»ƒ láº¡i rÃµ rÃ ng, Ä‘á»§ Ã½ vá» ná»™i dung sau:',
+        instruction: 'Bé hãy kể lại rõ ràng, đủ ý về nội dung sau:',
         prompts: [
-            { topic: "Ká»ƒ láº¡i má»™t viá»‡c em Ä‘Ã£ lÃ m sau giá» há»c.", hint: "DÃ n Ã½:\n1. Em lÃ m viá»‡c Ä‘Ã³ khi nÃ o.\n2. Em Ä‘Ã£ lÃ m nhá»¯ng gÃ¬.\n3. Em tháº¥y viá»‡c Ä‘Ã³ cÃ³ Ã­ch ra sao." },
-            { topic: "Ká»ƒ láº¡i buá»•i sÃ¡ng em chuáº©n bá»‹ Ä‘i há»c.", hint: "DÃ n Ã½:\n1. Em thá»©c dáº­y lÃºc nÃ o.\n2. Em lÃ m nhá»¯ng viá»‡c gÃ¬ trÆ°á»›c khi Ä‘áº¿n trÆ°á»ng.\n3. TÃ¢m tráº¡ng cá»§a em khi Ä‘i há»c." },
-            { topic: "Ká»ƒ láº¡i má»™t láº§n em giÃºp Ä‘á»¡ ngÆ°á»i thÃ¢n.", hint: "DÃ n Ã½:\n1. Em Ä‘Ã£ giÃºp ai.\n2. Em giÃºp viá»‡c gÃ¬.\n3. Má»i ngÆ°á»i cáº£m tháº¥y tháº¿ nÃ o." },
+            { topic: "Kể lại một việc em đã làm sau giờ học.", hint: "Dàn ý:\n1. Em làm việc đó khi nào.\n2. Em đã làm những gì.\n3. Em thấy việc đó có ích ra sao." },
+            { topic: "Kể lại buổi sáng em chuẩn bị đi học.", hint: "Dàn ý:\n1. Em thức dậy lúc nào.\n2. Em làm những việc gì trước khi đến trường.\n3. Tâm trạng của em khi đi học." },
+            { topic: "Kể lại một lần em giúp đỡ người thân.", hint: "Dàn ý:\n1. Em đã giúp ai.\n2. Em giúp việc gì.\n3. Mọi người cảm thấy thế nào." },
         ],
     },
     'tv2-thuyet-trinh': {
-        instruction: 'ðŸŽ™ï¸ BÃ© hÃ£y giá»›i thiá»‡u ngáº¯n gá»n, rÃµ rÃ ng vá» ná»™i dung sau:',
+        instruction: 'Bé hãy giới thiệu ngắn gọn, rõ ràng về nội dung sau:',
         prompts: [
-            { topic: "Giá»›i thiá»‡u má»™t quyá»ƒn sÃ¡ch hoáº·c bÃ i Ä‘á»c em thÃ­ch trong lá»›p.", hint: "DÃ n Ã½:\n1. TÃªn sÃ¡ch hoáº·c bÃ i Ä‘á»c lÃ  gÃ¬.\n2. Ná»™i dung chÃ­nh nÃ³i vá» Ä‘iá»u gÃ¬.\n3. VÃ¬ sao em thÃ­ch." },
-            { topic: "Giá»›i thiá»‡u chiáº¿c cáº·p hoáº·c há»™p bÃºt cá»§a em.", hint: "DÃ n Ã½:\n1. Äá»“ váº­t Ä‘Ã³ tÃªn lÃ  gÃ¬.\n2. HÃ¬nh dÃ¡ng, mÃ u sáº¯c ra sao.\n3. CÃ´ng dá»¥ng vÃ  cÃ¡ch em giá»¯ gÃ¬n." },
-            { topic: "Giá»›i thiá»‡u gÃ³c há»c táº­p cá»§a em.", hint: "DÃ n Ã½:\n1. GÃ³c há»c táº­p á»Ÿ Ä‘Ã¢u.\n2. CÃ³ nhá»¯ng Ä‘á»“ dÃ¹ng gÃ¬.\n3. VÃ¬ sao em thÃ­ch gÃ³c há»c táº­p Ä‘Ã³." },
+            { topic: "Giới thiệu một quyển sách hoặc bài đọc em thích trong lớp.", hint: "Dàn ý:\n1. Tên sách hoặc bài đọc là gì.\n2. Nội dung chính nói về điều gì.\n3. Vì sao em thích." },
+            { topic: "Giới thiệu chiếc cặp hoặc hộp bút của em.", hint: "Dàn ý:\n1. Đồ vật đó tên là gì.\n2. Hình dáng, màu sắc ra sao.\n3. Công dụng và cách em giữ gìn." },
+            { topic: "Giới thiệu góc học tập của em.", hint: "Dàn ý:\n1. Góc học tập ở đâu.\n2. Có những đồ dùng gì.\n3. Vì sao em thích góc học tập đó." },
         ],
     },
     'tv3-thao-luan': {
-        instruction: 'ðŸŽ™ï¸ BÃ© hÃ£y nÃªu Ã½ kiáº¿n vÃ  giáº£i thÃ­ch ngáº¯n gá»n vá» ná»™i dung sau:',
+        instruction: 'Bé hãy nêu ý kiến và giải thích ngắn gọn về nội dung sau:',
         prompts: [
-            { topic: "Theo em, há»c sinh cÃ³ nÃªn xáº¿p hÃ ng vÃ  giá»¯ tráº­t tá»± khi ra vÃ o lá»›p khÃ´ng?", hint: "DÃ n Ã½:\n1. Tráº£ lá»i cÃ³ hay khÃ´ng.\n2. NÃªu 2 lÃ­ do.\n3. Äiá»u em sáº½ thá»±c hiá»‡n." },
-            { topic: "Theo em, vÃ¬ sao chÃºng ta cáº§n giá»¯ vá»‡ sinh lá»›p há»c?", hint: "DÃ n Ã½:\n1. NÃªu Ã½ kiáº¿n.\n2. Ká»ƒ 2 viá»‡c nÃªn lÃ m Ä‘á»ƒ giá»¯ vá»‡ sinh.\n3. Lá»i nháº¯n vá»›i cÃ¡c báº¡n." },
-            { topic: "Theo em, Ä‘á»c sÃ¡ch má»—i ngÃ y cÃ³ Ã­ch gÃ¬?", hint: "DÃ n Ã½:\n1. NÃªu Ã½ kiáº¿n.\n2. Ká»ƒ 2 lá»£i Ã­ch cá»§a viá»‡c Ä‘á»c sÃ¡ch.\n3. ThÃ³i quen em muá»‘n duy trÃ¬." },
+            { topic: "Theo em, học sinh có nên xếp hàng và giữ trật tự khi ra vào lớp không?", hint: "Dàn ý:\n1. Trả lời có hay không.\n2. Nêu 2 lí do.\n3. Điều em sẽ thực hiện." },
+            { topic: "Theo em, vì sao chúng ta cần giữ vệ sinh lớp học?", hint: "Dàn ý:\n1. Nêu ý kiến.\n2. Kể 2 việc nên làm để giữ vệ sinh.\n3. Lời nhắn với các bạn." },
+            { topic: "Theo em, đọc sách mỗi ngày có ích gì?", hint: "Dàn ý:\n1. Nêu ý kiến.\n2. Kể 2 lợi ích của việc đọc sách.\n3. Thói quen em muốn duy trì." },
         ],
     },
     'tv3-hung-bien': {
-        instruction: 'ðŸŽ™ï¸ BÃ© hÃ£y trÃ¬nh bÃ y Ã½ kiáº¿n ngáº¯n gá»n, rÃµ rÃ ng vá» ná»™i dung sau:',
+        instruction: 'Bé hãy trình bày ý kiến ngắn gọn, rõ ràng về nội dung sau:',
         prompts: [
-            { topic: "Theo em, há»c sinh cÃ³ nÃªn tá»± giÃ¡c lÃ m bÃ i táº­p á»Ÿ nhÃ  khÃ´ng? VÃ¬ sao?", hint: "DÃ n Ã½:\n1. NÃªu Ã½ kiáº¿n Ä‘á»“ng Ã½ hay khÃ´ng.\n2. TrÃ¬nh bÃ y 2 lÃ­ do gáº§n gÅ©i.\n3. Äiá»u em sáº½ cá»‘ gáº¯ng thá»±c hiá»‡n." },
-            { topic: "Theo em, giá»¯ lá»i há»©a vá»›i báº¡n bÃ¨ vÃ  ngÆ°á»i thÃ¢n cÃ³ quan trá»ng khÃ´ng?", hint: "DÃ n Ã½:\n1. NÃªu Ã½ kiáº¿n cá»§a em.\n2. ÄÆ°a ra 2 lÃ­ do hoáº·c vÃ­ dá»¥ Ä‘Æ¡n giáº£n.\n3. BÃ i há»c em rÃºt ra." },
-            { topic: "Theo em, há»c sinh nÃªn lÃ m gÃ¬ Ä‘á»ƒ trÆ°á»ng lá»›p sáº¡ch Ä‘áº¹p hÆ¡n?", hint: "DÃ n Ã½:\n1. NÃªu váº¥n Ä‘á».\n2. TrÃ¬nh bÃ y 2 hoáº·c 3 viá»‡c nÃªn lÃ m.\n3. Lá»i kÃªu gá»i cÃ¡c báº¡n cÃ¹ng thá»±c hiá»‡n." },
+            { topic: "Theo em, học sinh có nên tự giác làm bài tập ở nhà không? Vì sao?", hint: "Dàn ý:\n1. Nêu ý kiến đồng ý hay không.\n2. Trình bày 2 lí do gần gũi.\n3. Điều em sẽ cố gắng thực hiện." },
+            { topic: "Theo em, giữ lời hứa với bạn bè và người thân có quan trọng không?", hint: "Dàn ý:\n1. Nêu ý kiến của em.\n2. Đưa ra 2 lí do hoặc ví dụ đơn giản.\n3. Bài học em rút ra." },
+            { topic: "Theo em, học sinh nên làm gì để trường lớp sạch đẹp hơn?", hint: "Dàn ý:\n1. Nêu vấn đề.\n2. Trình bày 2 hoặc 3 việc nên làm.\n3. Lời kêu gọi các bạn cùng thực hiện." },
         ],
     },
 };
@@ -793,7 +793,7 @@ export const generateSpeakingQuestion = (skillId: string, level: number = 1): Qu
             content: {
                 text: passage.text,
             },
-            answer: "ÄÃ£ Ä‘á»c"
+            answer: "Đã đọc"
         };
     }
 
@@ -810,7 +810,7 @@ export const generateSpeakingQuestion = (skillId: string, level: number = 1): Qu
                 text: selectedPrompt.topic
             },
             hint: selectedPrompt.hint,
-            answer: "ÄÃ£ nÃ³i"
+            answer: "Đã nói"
         };
     }
 
@@ -834,12 +834,12 @@ export const generateSpeakingQuestion = (skillId: string, level: number = 1): Qu
         subjectId: 'vietnamese',
         skillId,
         type: 'speaking',
-        instruction: 'ðŸŽ™ï¸ BÃ© hÃ£y suy nghÄ© dÃ n Ã½ vÃ  hÃ¹ng biá»‡n vá» chá»§ Ä‘á» sau:',
+        instruction: 'Bé hãy suy nghĩ dàn ý và hùng biện về chủ đề sau:',
         content: {
             text: selectedTopic.topic
         },
         hint: selectedTopic.hint,
-        answer: "ÄÃ£ nÃ³i"
+        answer: "Đã nói"
     };
 }
 

@@ -10,13 +10,13 @@ export interface SubjectTheme {
     icon: LucideIcon;
     bgIcon: LucideIcon;
     colors: {
-        primary: string;      // Main brand color (e.g., bg-blue-600)
-        secondary: string;    // Lighter shade (e.g., bg-blue-100)
-        accent: string;       // Text color (e.g., text-blue-600)
-        gradient: string;     // Gradient for backgrounds
-        shadow: string;       // Shadow color
-        border: string;       // Border color
-        light: string;        // Very light background (e.g., bg-blue-50)
+        primary: string;
+        secondary: string;
+        accent: string;
+        gradient: string;
+        shadow: string;
+        border: string;
+        light: string;
     };
 }
 
@@ -74,7 +74,7 @@ export const SUBJECT_THEMES: Record<string, SubjectTheme> = {
         colors: {
             primary: 'bg-yellow-500',
             secondary: 'bg-yellow-100',
-            accent: 'text-yellow-700', // Yellow text is hard to read, darkening it
+            accent: 'text-yellow-700',
             gradient: 'from-yellow-400 to-amber-500',
             shadow: 'shadow-yellow-500/30',
             border: 'border-yellow-200',

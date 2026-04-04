@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -19,6 +19,7 @@ import { addToReviewQueue } from '@/lib/spaced-repetition';
 import { checkNewBadges, applyNewBadges } from '@/lib/badges';
 import { BadgeDisplay } from '@/components/BadgeDisplay';
 import { isAnswerCorrect } from '@/lib/answer-check';
+import { normalizeDisplayText } from '@/lib/text';
 
 export default function PracticeClient() {
     type EvaluationFeedback = Feedback & { quality?: string };
@@ -51,7 +52,7 @@ export default function PracticeClient() {
     const [sessionTotal, setSessionTotal] = useState(0);
     const [streak, setStreak] = useState(0);
     const [showHint, setShowHint] = useState(false);
-    const [sessionEarnings, setSessionEarnings] = useState(0); // Tích lũy tiền trong phiên
+    const [sessionEarnings, setSessionEarnings] = useState(0); // TÃ­ch lÅ©y tiá»n trong phiÃªn
 
     // Track initial mastery
     const [startMastery, setStartMastery] = useState(0);
@@ -80,11 +81,11 @@ export default function PracticeClient() {
 
         setIsLoadingQuestion(true);
 
-        // === ADAPTIVE DIFFICULTY: Tăng độ khó theo tiến độ phiên học ===
+        // === ADAPTIVE DIFFICULTY: TÄƒng Ä‘á»™ khÃ³ theo tiáº¿n Ä‘á»™ phiÃªn há»c ===
         let skillLevel = progress.skills?.[skillId]?.level || 1;
-        // Tăng 1 level sau mỗi 3 câu hỏi để khuyến khích vận dụng
+        // TÄƒng 1 level sau má»—i 3 cÃ¢u há»i Ä‘á»ƒ khuyáº¿n khÃ­ch váº­n dá»¥ng
         const sessionLevelBonus = Math.floor(sessionTotal / 3);
-        skillLevel = Math.min(skillLevel + sessionLevelBonus, 5); // Tối đa Level 5
+        skillLevel = Math.min(skillLevel + sessionLevelBonus, 5); // Tá»‘i Ä‘a Level 5
 
         const skillInfo = SKILL_MAP[skillId];
         if (!skillInfo || !isSkillAvailableForGrade(skillInfo, currentGrade)) {
@@ -119,7 +120,7 @@ export default function PracticeClient() {
                     skillId,
                     type: 'mcq',
                     instruction: 'Đang tải...',
-                    content: { text: 'Hệ thống đang bận, bé thử lại sau nhé! 🌈' },
+                    content: { text: 'Hệ thống đang bận, bé thử lại sau nhé!' },
                     answer: '0'
                 });
             }
@@ -183,19 +184,19 @@ export default function PracticeClient() {
         setSessionTotal(prev => prev + 1);
 
         // === HYBRID EVALUATION ===
-        // Bước 1: Feedback LOCAL tức thì
+        // Bước 1: Feedback local tức thì
         const localFeedback = {
             isCorrect,
             explain: isCorrect
-                ? (currentQuestion?.explanation || 'Chính xác! Giỏi lắm! 🌟')
-                : `Chưa đúng rồi. Đáp án là: ${currentQuestion?.answer}. ${currentQuestion?.explanation || ''}`,
-            microLesson: !isCorrect ? (currentQuestion?.hint || '') : ''
+                ? normalizeDisplayText(currentQuestion?.explanation || 'Chính xác! Giỏi lắm!')
+                : normalizeDisplayText(`Chưa đúng rồi. Đáp án là: ${currentQuestion?.answer}. ${currentQuestion?.explanation || ''}`),
+            microLesson: !isCorrect ? normalizeDisplayText(currentQuestion?.hint || '') : ''
         };
 
         let quality = ''; // Store quality for reward
 
         if (isSpeakingOrReading) {
-            // Bài nói/viết: BẮT BUỘC gọi AI (cần phân tích audio/nội dung)
+            // BÃ i nÃ³i/viáº¿t: Báº®T BUá»˜C gá»i AI (cáº§n phÃ¢n tÃ­ch audio/ná»™i dung)
             try {
                 const body: {
                     prompt?: string;
@@ -236,13 +237,13 @@ export default function PracticeClient() {
                     quality = aiResponse.quality;
                 }
 
-                setFeedback(aiResponse || localFeedback);
+                setFeedback(aiResponse ? { ...aiResponse, explain: normalizeDisplayText(aiResponse.explain || localFeedback.explain), microLesson: normalizeDisplayText(aiResponse.microLesson || '') } : localFeedback);
             } catch (e) {
                 console.error('AI evaluate failed for speaking:', e);
                 setFeedback(localFeedback);
             }
         } else {
-            // Bài thường (MCQ, Input, Drag-drop): Feedback local ngay
+            // BÃ i thÆ°á»ng (MCQ, Input, Drag-drop): Feedback local ngay
             setFeedback(localFeedback);
         }
 
@@ -276,7 +277,7 @@ export default function PracticeClient() {
 
             const updatedSkill = updateMastery(currentSkillState, isCorrect);
 
-            // Spaced Repetition: thêm câu sai vào hàng đợi ôn tập
+            // Spaced Repetition: thÃªm cÃ¢u sai vÃ o hÃ ng Ä‘á»£i Ã´n táº­p
             let updatedProgress = {
                 ...progress,
                 skills: { ...(progress.skills || {}), [currentQuestion.skillId]: updatedSkill }
@@ -291,7 +292,7 @@ export default function PracticeClient() {
                 );
             }
 
-            // Tích lũy tiền thưởng (chưa cộng vào ví)
+            // TÃ­ch lÅ©y tiá»n thÆ°á»Ÿng (chÆ°a cá»™ng vÃ o vÃ­)
             let earnedAmount = 0;
             if (isCorrect) {
                 const currentSkillLevel = progress.skills?.[skillId]?.level || 1;
@@ -299,7 +300,7 @@ export default function PracticeClient() {
                 earnedAmount = reward.amount;
             }
 
-            // Streak Bonuses (dùng session streak)
+            // Streak Bonuses (dÃ¹ng session streak)
             if (isCorrect) {
                 if (streak + 1 === 10) {
                     earnedAmount += 1000;
@@ -318,10 +319,10 @@ export default function PracticeClient() {
 
             setSessionEarnings(prev => prev + earnedAmount);
 
-            // Chỉ cập nhật mastery + SR queue (chưa cộng tiền)
+            // Chá»‰ cáº­p nháº­t mastery + SR queue (chÆ°a cá»™ng tiá»n)
             updateLocalProgress(updatedProgress);
 
-            // Nếu hoàn thành vòng 10 → CỘ TIỀN + STREAK + BADGES
+            // Náº¿u hoÃ n thÃ nh vÃ²ng 10 â†’ Cá»˜ TIá»€N + STREAK + BADGES
             if (sessionTotal + 1 === 10) {
                 const finalEarnings = sessionEarnings + earnedAmount;
                 let finalProgress = {
@@ -353,7 +354,7 @@ export default function PracticeClient() {
     if (!progress || !skillId || !SKILL_MAP[skillId]) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center p-4 text-center">
-                <h2 className="text-2xl font-black text-slate-400 mb-4">Không tìm thấy bài học này 🤔</h2>
+                <h2 className="text-2xl font-black text-slate-400 mb-4">Không tìm thấy bài học này</h2>
                 <button
                     onClick={() => router.push('/subjects')}
                     className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-colors"
@@ -410,7 +411,7 @@ export default function PracticeClient() {
                     {/* New Badges Display */}
                     {newBadgeIds.length > 0 && (
                         <div className="mb-8">
-                            <div className="text-sm font-black text-orange-400 uppercase tracking-widest mb-4">🏆 Huy hiệu mới nhận!</div>
+                            <div className="text-sm font-black text-orange-400 uppercase tracking-widest mb-4">Huy hiệu mới nhận!</div>
                             <BadgeDisplay progress={progress} newBadgeIds={newBadgeIds} />
                         </div>
                     )}
@@ -528,11 +529,11 @@ export default function PracticeClient() {
 
                                     <div className="flex-1 overflow-y-auto mb-4">
                                         <p className="text-lg font-bold text-slate-700 leading-relaxed mb-4">
-                                            {feedback.explain}
+                                            {normalizeDisplayText(feedback.explain)}
                                         </p>
                                         {!feedback.isCorrect && feedback.microLesson && (
                                             <div className="bg-white/60 p-4 rounded-xl border border-rose-200">
-                                                <p className="text-sm text-rose-800 italic">{feedback.microLesson}</p>
+                                                <p className="text-sm text-rose-800 italic">{normalizeDisplayText(feedback.microLesson)}</p>
                                             </div>
                                         )}
                                     </div>
@@ -556,18 +557,18 @@ export default function PracticeClient() {
                                 >
                                     {showHint ? (
                                         <div className="bg-amber-100 p-6 rounded-2xl border-2 border-amber-200 w-full animate-in fade-in zoom-in">
-                                            <span className="text-4xl mb-2 block">💡</span>
-                                            <p className="text-amber-900 font-bold text-lg">{currentQuestion?.hint}</p>
+                                            <span className="text-4xl mb-2 block">?</span>
+                                            <p className="text-amber-900 font-bold text-lg">{normalizeDisplayText(currentQuestion?.hint)}</p>
                                         </div>
                                     ) : (
                                         <div className="opacity-50">
-                                            <div className="text-6xl mb-4">🤔</div>
-                                            <p className="font-bold text-slate-400">Đang chờ câu trả lời...</p>
+                                            <div className="text-6xl mb-4">...</div>
+                                            <p className="font-bold text-slate-400">Dang cho cau tra loi...</p>
                                             <button
                                                 onClick={() => setShowHint(true)}
                                                 className="mt-6 text-blue-500 font-black hover:text-blue-700 underline decoration-2 underline-offset-4"
                                             >
-                                                Cần gợi ý?
+                                                Can goi y?
                                             </button>
                                         </div>
                                     )}

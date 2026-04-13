@@ -2,24 +2,28 @@ const fs = require('fs');
 const path = require('path');
 
 function reverseMojibake(filePath) {
-    console.log(`Processing: ${filePath}`);
+    console.log(`Đang xử lý: ${filePath}`);
     try {
-        const text = fs.readFileSync(filePath, 'utf8');
-        // This reverses double-encoded UTF-8 (UTF-8 interpreted as Latin1 and saved as UTF-8)
-        const fixed = Buffer.from(text, 'binary').toString('utf8');
+        // Đọc trực tiếp Buffer (mã nhị phân) để tránh mất dấu
+        const buffer = fs.readFileSync(filePath);
         
-        fs.writeFileSync(filePath, fixed, 'utf8');
-        console.log(`Success: Fixed encoding for ${filePath}`);
+        // Chuyển đổi từ định dạng lỗi (đang bị hiểu nhầm là mã nhị phân) sang UTF-8 chuản
+        const fixed = buffer.toString('utf8');
+        
+        // Kiểm tra nếu file có ký tự lạ đầu file (BOM) thì xóa đi
+        const cleanText = fixed.replace(/^\uFEFF/, '');
+        
+        fs.writeFileSync(filePath, cleanText, 'utf8');
+        console.log(`Thành công: Đã sửa lỗi font cho ${filePath}`);
     } catch (err) {
-        console.error(`Error processing ${filePath}:`, err);
+        console.error(`Lỗi khi xử lý ${filePath}:`, err);
     }
 }
 
-// Add the corrupted files here
 const filesToFix = [
     path.join(__dirname, 'lib', 'content', 'generators', 'vietnamese.ts'),
     path.join(__dirname, 'lib', 'content', 'generators', 'english.ts')
 ];
 
 filesToFix.forEach(reverseMojibake);
-console.log('Done!');
+console.log('Hoàn tất! Bây giờ bạn hãy thử chạy: npm run build để kiểm tra.');

@@ -1,4 +1,4 @@
-﻿import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 import { SKILL_MAP, SkillId } from "@/lib/skills";
 import { getStaticQuestion } from "@/lib/content/static";
@@ -140,17 +140,17 @@ export async function POST(req: Request) {
                 const isEnglish = subjectId === "english" || skillId.startsWith("eng");
                 const isVietnameseSpeaking = VIETNAMESE_SPEAKING_SKILLS.has(skillId);
                 const prompt = `
-Đóng vai trò: Giáo viên ${course?.name || (subjectId === "math" ? "Toán" : "Tiếng Việt")} lớp ${skill?.grade || "2-3"} cực kỳ tâm lý và sáng tạo.
+Đóng vai trò: Giáo viên ${course?.name || (subjectId === "math" ? "Toán" : subjectId === "english" ? "Tiếng Anh" : subjectId === "finance" ? "Tài chính" : "Tiếng Việt")} lớp ${skill?.grade || "2-3"} cực kỳ tâm lý và sáng tạo.
 Nhiệm vụ: Tạo 1 câu hỏi bài tập cho học sinh tiểu học.
 
 YÊU CẦU BẮT BUỘC:
-1. Câu hỏi PHẢI thuộc môn: ${course?.name || (subjectId === "math" ? "Toán" : "Tiếng Việt")}. Tuyệt đối không nhầm lẫn sang môn khác.
+1. Câu hỏi PHẢI thuộc môn: ${course?.name || (subjectId === "math" ? "Toán" : subjectId === "english" ? "Tiếng Anh" : subjectId === "finance" ? "Tài chính" : "Tiếng Việt")}. Tuyệt đối không nhầm lẫn sang môn khác.
 2. Nếu môn Toán, ưu tiên số liệu thực tế; nếu môn Tiếng Việt, câu văn phải trong sáng, cảm xúc.
 3. Nếu skill là đọc diễn cảm, trả về type='reading', content.text là đoạn thơ/văn để bé đọc, answer ngắn gọn như 'Đã đọc'.
 4. Nếu skill là nói, thuyết trình, hùng biện, trả về type='speaking', content.text là chủ đề rõ ràng, hint là dàn ý ngắn giúp bé nói.
 
 Thông tin chi tiết:
-- Môn: ${course?.name || (subjectId === "math" ? "Toán" : "Tiếng Việt")}
+- Môn: ${course?.name || (subjectId === "math" ? "Toán" : subjectId === "english" ? "Tiếng Anh" : subjectId === "finance" ? "Tài chính" : "Tiếng Việt")}
 - Chủ đề: ${skill?.name}
 - Lớp: ${skill?.grade || 2}
 - Độ khó: Level ${level} (1=Cơ bản, 5=Nâng cao)

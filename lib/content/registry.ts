@@ -411,8 +411,8 @@ export async function generateQuestion(subjectId: SubjectId, skillId: string, le
                 subjectId,
                 skillId,
                 type: 'mcq',
-                instruction: 'Dang tai...',
-                content: { text: 'Cau hoi nay chua san sang. Be thu cau khac nhe!' },
+                instruction: subjectId === 'english' ? 'Loading...' : 'Đang tải...',
+                content: { text: subjectId === 'english' ? 'This question is not ready yet. Please try another one!' : 'Câu hỏi này chưa sẵn sàng. Bé thử câu khác nhé!' },
                 answer: '0'
             };
         }
@@ -510,8 +510,8 @@ export async function generateQuestion(subjectId: SubjectId, skillId: string, le
         subjectId,
         skillId,
         type: 'mcq',
-        instruction: 'Dang tai...',
-        content: { text: 'He thong AI dang ban hoac mang yeu. Be hay thu lai sau giay lat nhe! (Ma loi: AI-BUSY)' },
+        instruction: subjectId === 'english' ? 'Loading...' : 'Đang tải...',
+        content: { text: subjectId === 'english' ? 'The AI system is busy or network is slow. Please try again! (AI-BUSY)' : 'Hệ thống AI đang bận hoặc mạng yếu. Bé hãy thử lại sau giây lát nhé! (Mã lỗi: AI-BUSY)' },
         answer: '0'
     };
 }

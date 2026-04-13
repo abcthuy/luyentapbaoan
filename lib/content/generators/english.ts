@@ -1,4 +1,4 @@
-﻿import { Question } from '../types';
+�import { Question } from '../types';
 
 type McqSeed = {
     text: string;
@@ -60,34 +60,34 @@ const EXTRA_LISTENING_SEEDS: Record<string, McqSeed[]> = {
 
 const EXTRA_READ_ALOUD_SEEDS: Record<string, PassageSeed[]> = {
     'eng2-speak-1': [
-        { instruction: 'Äá»c to cÃ¢u sau:', text: 'This is my happy family.' },
-        { instruction: 'Äá»c to cÃ¢u sau:', text: 'I see a big yellow sun.' },
-        { instruction: 'Äá»c to cÃ¢u sau:', text: 'My friend has a small dog.' },
+        { instruction: 'Đọc to câu sau:', text: 'This is my happy family.' },
+        { instruction: 'Đọc to câu sau:', text: 'I see a big yellow sun.' },
+        { instruction: 'Đọc to câu sau:', text: 'My friend has a small dog.' },
     ],
     'eng2-speak-2': [
-        { instruction: 'Äá»c rÃµ tá»«ng cÃ¢u:', text: 'I go to school at seven. I carry a blue bag.' },
-        { instruction: 'Äá»c to vÃ  Ä‘Ãºng Ã¢m:', text: 'My brother likes milk. He drinks it every day.' },
-        { instruction: 'Äá»c rÃµ tá»«ng cÃ¢u:', text: 'The bird is in the tree. It sings in the morning.' },
+        { instruction: 'Đọc rõ từng câu:', text: 'I go to school at seven. I carry a blue bag.' },
+        { instruction: 'Đọc to và �úng âm:', text: 'My brother likes milk. He drinks it every day.' },
+        { instruction: 'Đọc rõ từng câu:', text: 'The bird is in the tree. It sings in the morning.' },
     ],
     'eng2-speak-3': [
-        { instruction: 'Äá»c diá»…n cáº£m Ä‘oáº¡n ngáº¯n:', text: 'It is a beautiful day. We play in the garden and laugh together.' },
-        { instruction: 'Äá»c diá»…n cáº£m Ä‘oáº¡n ngáº¯n:', text: 'My classroom is clean and bright. I feel happy when I study there.' },
-        { instruction: 'Äá»c diá»…n cáº£m Ä‘oáº¡n ngáº¯n:', text: 'After dinner, I help my mother and listen to a bedtime story.' },
+        { instruction: 'Đọc di�&n cảm �oạn ngắn:', text: 'It is a beautiful day. We play in the garden and laugh together.' },
+        { instruction: 'Đọc di�&n cảm �oạn ngắn:', text: 'My classroom is clean and bright. I feel happy when I study there.' },
+        { instruction: 'Đọc di�&n cảm �oạn ngắn:', text: 'After dinner, I help my mother and listen to a bedtime story.' },
     ],
     'eng3-speak-1': [
-        { instruction: 'Äá»c to Ä‘oáº¡n ngáº¯n:', text: 'I usually get up early, brush my teeth, and help my mother set the table.' },
-        { instruction: 'Äá»c to Ä‘oáº¡n ngáº¯n:', text: 'My favorite subject is English because I like songs, stories, and new words.' },
-        { instruction: 'Äá»c to Ä‘oáº¡n ngáº¯n:', text: 'There is a small garden behind my house with flowers and two tall trees.' },
+        { instruction: 'Đọc to �oạn ngắn:', text: 'I usually get up early, brush my teeth, and help my mother set the table.' },
+        { instruction: 'Đọc to �oạn ngắn:', text: 'My favorite subject is English because I like songs, stories, and new words.' },
+        { instruction: 'Đọc to �oạn ngắn:', text: 'There is a small garden behind my house with flowers and two tall trees.' },
     ],
     'eng3-speak-2': [
-        { instruction: 'Äá»c diá»…n cáº£m Ä‘oáº¡n ngáº¯n:', text: 'On rainy days, I stay at home, finish my homework, and play board games with my brother.' },
-        { instruction: 'Äá»c diá»…n cáº£m Ä‘oáº¡n ngáº¯n:', text: 'Every Saturday, my father takes me to the library, and I choose two new books to read.' },
-        { instruction: 'Äá»c diá»…n cáº£m Ä‘oáº¡n ngáº¯n:', text: 'Our class plants flowers in the school garden, waters them carefully, and watches them grow.' },
+        { instruction: 'Đọc di�&n cảm �oạn ngắn:', text: 'On rainy days, I stay at home, finish my homework, and play board games with my brother.' },
+        { instruction: 'Đọc di�&n cảm �oạn ngắn:', text: 'Every Saturday, my father takes me to the library, and I choose two new books to read.' },
+        { instruction: 'Đọc di�&n cảm �oạn ngắn:', text: 'Our class plants flowers in the school garden, waters them carefully, and watches them grow.' },
     ],
     'eng3-speak-3': [
-        { instruction: 'Äá»c diá»…n cáº£m Ä‘oáº¡n ngáº¯n:', text: 'In the future, I want to visit many places, meet kind people, and learn new things.' },
-        { instruction: 'Äá»c diá»…n cáº£m Ä‘oáº¡n ngáº¯n:', text: 'When we work together in class, we can help each other and finish faster.' },
-        { instruction: 'Äá»c diá»…n cáº£m Ä‘oáº¡n ngáº¯n:', text: 'Good habits are important because they make us strong and ready to learn every day.' },
+        { instruction: 'Đọc di�&n cảm �oạn ngắn:', text: 'In the future, I want to visit many places, meet kind people, and learn new things.' },
+        { instruction: 'Đọc di�&n cảm �oạn ngắn:', text: 'When we work together in class, we can help each other and finish faster.' },
+        { instruction: 'Đọc di�&n cảm �oạn ngắn:', text: 'Good habits are important because they make us strong and ready to learn every day.' },
     ],
 };
 
@@ -124,12 +124,12 @@ const EXTRA_READING_SEEDS: Record<string, McqSeed[]> = {
     ],
     'eng3-read-1': [
         { text: 'Read: "My aunt works in a cake shop. She makes bread and cakes every morning."\n\nQuestion: What does my aunt make?', options: ['Soup and rice', 'Bread and cakes', 'Pizza and milk', 'Salad and fish'], answer: 'Bread and cakes' },
-        { text: 'Read: "There is a map on the wall and a computer on the teacherâ€™s desk."\n\nQuestion: Where is the computer?', options: ['On the wall', 'On the teacherâ€™s desk', 'Under the chair', 'Near the door'], answer: 'On the teacherâ€™s desk' },
+        { text: 'Read: "There is a map on the wall and a computer on the teacher�"s desk."\n\nQuestion: Where is the computer?', options: ['On the wall', 'On the teacher�"s desk', 'Under the chair', 'Near the door'], answer: 'On the teacher�"s desk' },
         { text: 'Read: "We have English on Tuesday and Music on Friday."\n\nQuestion: When do we have Music?', options: ['On Monday', 'On Tuesday', 'On Thursday', 'On Friday'], answer: 'On Friday' },
     ],
     'eng3-read-2': [
         { text: 'Read: "After doing his homework, Jack helps his little sister read a short story."\n\nQuestion: Who does Jack help?', options: ['His brother', 'His cousin', 'His little sister', 'His teacher'], answer: 'His little sister' },
-        { text: 'Read: "The zoo opens at nine oâ€™clock, so we leave home at half past eight."\n\nQuestion: When do we leave home?', options: ['At eight', 'At half past eight', 'At nine', 'At half past nine'], answer: 'At half past eight' },
+        { text: 'Read: "The zoo opens at nine o�"clock, so we leave home at half past eight."\n\nQuestion: When do we leave home?', options: ['At eight', 'At half past eight', 'At nine', 'At half past nine'], answer: 'At half past eight' },
         { text: 'Read: "My grandfather likes growing flowers because it keeps him busy and happy."\n\nQuestion: Why does my grandfather like growing flowers?', options: ['It is easy', 'It keeps him busy and happy', 'He sells them', 'He eats them at school'], answer: 'It keeps him busy and happy' },
     ],
     'eng3-read-3': [
@@ -152,7 +152,7 @@ const EXTRA_WRITING_SEEDS: Record<string, WritingSeed[]> = {
     ],
     'eng2-write-3': [
         { text: 'Write one short sentence about your favorite toy.', answer: 'My favorite toy is a robot.', hint: 'Use My favorite toy is ...' },
-        { text: 'Write one short sentence about todayâ€™s weather.', answer: 'It is sunny today.', hint: 'Use It is ... today.' },
+        { text: 'Write one short sentence about today�"s weather.', answer: 'It is sunny today.', hint: 'Use It is ... today.' },
         { text: 'Write one short sentence about your best friend.', answer: 'My best friend is funny.', hint: 'Use My best friend ...' },
     ],
     'eng3-write-1': [
@@ -287,7 +287,7 @@ function getListeningSeeds(skillId: string, level: number): McqSeed[] {
             { text: 'It is rainy today, so I take my umbrella to school.', options: ['Umbrella', 'Hat', 'Shoes', 'Notebook'], answer: 'Umbrella' },
             { text: 'My father cooks noodles, eggs, and soup for dinner.', options: ['Rice', 'Soup', 'Fish', 'Bread'], answer: 'Soup' },
             { text: 'The library is next to the classroom and near the yard.', options: ['Near the yard', 'In the house', 'On the bus', 'At the zoo'], answer: 'Near the yard' },
-            { text: 'Mai gets up at six oâ€™clock and brushes her teeth first.', options: ['At five', 'At six', 'At seven', 'At eight'], answer: 'At six' },
+            { text: 'Mai gets up at six o�"clock and brushes her teeth first.', options: ['At five', 'At six', 'At seven', 'At eight'], answer: 'At six' },
             ...EXTRA_LISTENING_SEEDS['eng2-list-3'],
         ];
     }
@@ -327,52 +327,52 @@ function getReadAloudSeeds(skillId: string, level: number): PassageSeed[] {
     if (isGrade2) {
         if (level === 1) {
             return [
-                { instruction: 'Äá»c to cÃ¢u sau:', text: 'Hello. My name is Ben.' },
-                { instruction: 'Äá»c to cÃ¢u sau:', text: 'I have two red books.' },
-                { instruction: 'Äá»c to cÃ¢u sau:', text: 'The cat is on the chair.' },
+                { instruction: 'Đọc to câu sau:', text: 'Hello. My name is Ben.' },
+                { instruction: 'Đọc to câu sau:', text: 'I have two red books.' },
+                { instruction: 'Đọc to câu sau:', text: 'The cat is on the chair.' },
                 ...EXTRA_READ_ALOUD_SEEDS['eng2-speak-1'],
             ];
         }
 
         if (level === 2) {
             return [
-                { instruction: 'Äá»c rÃµ tá»«ng cÃ¢u:', text: 'My house is small. It has a blue door.' },
-                { instruction: 'Äá»c to vÃ  rÃµ rÃ ng:', text: 'I go to school by bike. My friend walks with me.' },
-                { instruction: 'Äá»c cháº­m vÃ  Ä‘Ãºng Ã¢m:', text: 'We play in the park after school. We are happy.' },
+                { instruction: 'Đọc rõ từng câu:', text: 'My house is small. It has a blue door.' },
+                { instruction: 'Đọc to và rõ ràng:', text: 'I go to school by bike. My friend walks with me.' },
+                { instruction: 'Đọc chậm và �úng âm:', text: 'We play in the park after school. We are happy.' },
                 ...EXTRA_READ_ALOUD_SEEDS['eng2-speak-2'],
             ];
         }
 
         return [
-            { instruction: 'Äá»c diá»…n cáº£m Ä‘oáº¡n ngáº¯n:', text: 'Today is sunny. I wear my yellow hat and play with my dog in the yard.' },
-            { instruction: 'Äá»c diá»…n cáº£m Ä‘oáº¡n ngáº¯n:', text: 'My family has dinner at seven oâ€™clock. We eat rice, fish, and soup together.' },
-            { instruction: 'Äá»c diá»…n cáº£m Ä‘oáº¡n ngáº¯n:', text: 'Lan loves books. She reads a short story before she goes to bed.' },
+            { instruction: 'Đọc di�&n cảm �oạn ngắn:', text: 'Today is sunny. I wear my yellow hat and play with my dog in the yard.' },
+            { instruction: 'Đọc di�&n cảm �oạn ngắn:', text: 'My family has dinner at seven o�"clock. We eat rice, fish, and soup together.' },
+            { instruction: 'Đọc di�&n cảm �oạn ngắn:', text: 'Lan loves books. She reads a short story before she goes to bed.' },
             ...EXTRA_READ_ALOUD_SEEDS['eng2-speak-3'],
         ];
     }
 
     if (level === 1) {
         return [
-            { instruction: 'Äá»c to Ä‘oáº¡n ngáº¯n:', text: 'My favorite room is the living room. I watch cartoons there.' },
-            { instruction: 'Äá»c to Ä‘oáº¡n ngáº¯n:', text: 'Every morning, I make my bed and brush my teeth.' },
-            { instruction: 'Äá»c to Ä‘oáº¡n ngáº¯n:', text: 'My sister wears a pink dress and white shoes today.' },
+            { instruction: 'Đọc to �oạn ngắn:', text: 'My favorite room is the living room. I watch cartoons there.' },
+            { instruction: 'Đọc to �oạn ngắn:', text: 'Every morning, I make my bed and brush my teeth.' },
+            { instruction: 'Đọc to �oạn ngắn:', text: 'My sister wears a pink dress and white shoes today.' },
             ...EXTRA_READ_ALOUD_SEEDS['eng3-speak-1'],
         ];
     }
 
     if (level === 2) {
         return [
-            { instruction: 'Äá»c diá»…n cáº£m Ä‘oáº¡n ngáº¯n:', text: 'After school, Minh helps his mother water the plants and feed the chickens.' },
-            { instruction: 'Äá»c diá»…n cáº£m Ä‘oáº¡n ngáº¯n:', text: 'On Saturday, my family goes to the supermarket and buys fruit, milk, and bread.' },
-            { instruction: 'Äá»c diá»…n cáº£m Ä‘oáº¡n ngáº¯n:', text: 'There is a big tree behind my house. Birds sing in it every morning.' },
+            { instruction: 'Đọc di�&n cảm �oạn ngắn:', text: 'After school, Minh helps his mother water the plants and feed the chickens.' },
+            { instruction: 'Đọc di�&n cảm �oạn ngắn:', text: 'On Saturday, my family goes to the supermarket and buys fruit, milk, and bread.' },
+            { instruction: 'Đọc di�&n cảm �oạn ngắn:', text: 'There is a big tree behind my house. Birds sing in it every morning.' },
             ...EXTRA_READ_ALOUD_SEEDS['eng3-speak-2'],
         ];
     }
 
     return [
-        { instruction: 'Äá»c diá»…n cáº£m Ä‘oáº¡n ngáº¯n:', text: 'Last weekend, we visited the zoo. I saw monkeys, elephants, and a very tall giraffe.' },
-        { instruction: 'Äá»c diá»…n cáº£m Ä‘oáº¡n ngáº¯n:', text: 'My dream job is to be a teacher because I want to help children learn new things.' },
-        { instruction: 'Äá»c diá»…n cáº£m Ä‘oáº¡n ngáº¯n:', text: 'When it rains, I stay inside, read comics, and listen to music with my brother.' },
+        { instruction: 'Đọc di�&n cảm �oạn ngắn:', text: 'Last weekend, we visited the zoo. I saw monkeys, elephants, and a very tall giraffe.' },
+        { instruction: 'Đọc di�&n cảm �oạn ngắn:', text: 'My dream job is to be a teacher because I want to help children learn new things.' },
+        { instruction: 'Đọc di�&n cảm �oạn ngắn:', text: 'When it rains, I stay inside, read comics, and listen to music with my brother.' },
         ...EXTRA_READ_ALOUD_SEEDS['eng3-speak-3'],
     ];
 }
@@ -403,7 +403,7 @@ function getReadingSeeds(skillId: string, level: number): McqSeed[] {
         return [
             { text: 'Story: "Hoa saves ten thousand dong every week because she wants a new backpack. After five weeks, she has enough money and feels very proud."\n\nQuestion: Why does Hoa save money?', options: ['To buy candy', 'To buy a backpack', 'To buy a bike', 'To buy shoes'], answer: 'To buy a backpack' },
             { text: 'Story: "During the class picnic, Minh shares his water with a friend who forgets a bottle. The teacher praises Minh for being kind and thoughtful."\n\nQuestion: Why does the teacher praise Minh?', options: ['He runs fast', 'He sings well', 'He shares his water', 'He brings a ball'], answer: 'He shares his water' },
-            { text: 'Story: "Lan reads a notice about the school fair. It says students should arrive at eight oâ€™clock and bring small change for games."\n\nQuestion: What should students bring?', options: ['A big bag', 'Small change', 'A raincoat', 'A pencil case'], answer: 'Small change' },
+            { text: 'Story: "Lan reads a notice about the school fair. It says students should arrive at eight o�"clock and bring small change for games."\n\nQuestion: What should students bring?', options: ['A big bag', 'Small change', 'A raincoat', 'A pencil case'], answer: 'Small change' },
             ...EXTRA_READING_SEEDS['eng-story-quest-3'],
         ];
     }
@@ -524,7 +524,7 @@ export function generateEnglishListeningQuestion(skillId: string, level: number 
         subjectId: 'english',
         skillId,
         type: 'listening',
-        instruction: 'Nghe ká»¹ vÃ  chá»n Ä‘Ã¡p Ã¡n Ä‘Ãºng nháº¥t:',
+        instruction: 'Nghe kỹ và chọn �áp án �úng nhất:',
         content: {
             text: item.text,
             options: item.options,
@@ -545,7 +545,7 @@ export function generateEnglishSpeakingQuestion(skillId: string, level: number =
         content: {
             text: item.text,
         },
-        answer: 'ÄÃ£ Ä‘á»c',
+        answer: 'Đã �ọc',
     };
 }
 
@@ -556,13 +556,13 @@ export function generateEnglishReadingQuestion(skillId: string, level: number = 
         subjectId: 'english',
         skillId,
         type: 'mcq',
-        instruction: 'Äá»c vÃ  tráº£ lá»i cÃ¢u há»i:',
+        instruction: 'Đọc và trả lời câu hỏi:',
         content: {
             text: item.text,
             options: item.options,
         },
         answer: item.answer,
-        explanation: 'ÄÃ¡p Ã¡n náº±m trong Ä‘oáº¡n Ä‘á»c.',
+        explanation: 'Đáp án nằm trong �oạn �ọc.',
     };
 }
 
@@ -573,7 +573,7 @@ export function generateEnglishWritingQuestion(skillId: string, level: number = 
         subjectId: 'english',
         skillId,
         type: 'input',
-        instruction: 'Viáº¿t cÃ¢u tráº£ lá»i ngáº¯n:',
+        instruction: 'Viết câu trả lời ngắn:',
         content: {
             text: item.text,
         },

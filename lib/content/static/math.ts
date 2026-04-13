@@ -1,4 +1,4 @@
-﻿import { Question } from '../types';
+import { Question } from '../types';
 
 export const mathStaticQuestions: Record<string, Record<number, Question[]>> = {
     "A4": {

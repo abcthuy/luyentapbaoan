@@ -1,5 +1,4 @@
-
-import { Question } from '../types';
+import { Question } from '../types';
 import { financeStaticQuestions } from './finance';
 import { mathStaticQuestions } from './math';
 import { vietnameseStaticQuestions } from './vietnamese';

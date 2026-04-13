@@ -1,4 +1,3 @@
-
 import { Question } from '../types';
 
 export function generateNumberStructureComparison(skillId: string, level: number = 1): Question {
@@ -319,7 +318,7 @@ export function generateLength(skillId: string, level: number = 1): Question {
         instruction: `Tính tổng độ dài đường gấp khúc gồm ${segments} đoạn:`,
         content: { text: lengths.join(` ${unit}, `) + ` ${unit}` },
         answer: total.toString(), explanation: `${lengths.join(' + ')} = ${total} ${unit}`,
-        hint: 'Cộng lần lượt các đoạn thẳng với nhau.'
+        hint: 'Cộng lần lượt các đoạn thẳng with nhau.'
     };
 }
 
@@ -541,7 +540,7 @@ export function generateChart(skillId: string, level: number = 1): Question {
             id: `local-math-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`, subjectId: 'math', skillId, type: 'mcq',
             instruction: 'Loại quả nào nhiều nhất?',
             content: { text: tableRows, options: opts },
-            answer: maxFruit, explanation: `${maxFruit} nhiều nhất với ${max} quả.`
+            answer: maxFruit, explanation: `${maxFruit} nhiều nhất with ${max} quả.`
         };
     }
 }
@@ -611,7 +610,7 @@ export function generateNumberTower(skillId: string, level: number = 1): Questio
     };
 }
 
-// === m3-thong-ke: Làm quen với Thống kê ===
+// === m3-thong-ke: Làm quen with Thống kê ===
 export function generateStatistics(skillId: string, level: number = 1): Question {
     const count = level <= 2 ? 5 : level <= 3 ? 7 : 10;
     const maxVal = level <= 2 ? 10 : level <= 3 ? 50 : 100;

@@ -271,7 +271,7 @@ export default function TodayPage() {
 
         return {
             id: `review-${reviewItem.skillId}-${Date.now()}`,
-            subjectId: reviewSkill.subjectId,
+            subjectId: reviewSkill.subjectId || 'vietnamese',
             skillId: reviewItem.skillId,
             type: 'input',
             instruction: normalizeDisplayText('Ôn lại câu con đã từng làm sai:'),
@@ -336,7 +336,7 @@ export default function TodayPage() {
 
         let finalLevel = getAdaptiveQuestionLevel({
             skillId,
-            subjectId: skillInfo.subjectId,
+            subjectId: skillInfo.subjectId || 'vietnamese',
             progress,
             grade: currentGrade,
         });
@@ -349,7 +349,7 @@ export default function TodayPage() {
         setFeedback(null);
 
         try {
-            const newQ = await generateQuestion(skillInfo.subjectId, skillId, finalLevel);
+            const newQ = await generateQuestion((skillInfo.subjectId || 'vietnamese') as 'math' | 'english' | 'vietnamese' | 'finance', skillId, finalLevel);
             setCurrentQuestion(newQ);
         } finally {
             setIsLoadingQuestion(false);

@@ -16,10 +16,11 @@ export default function PracticeListingPage() {
     // Group skills by Category
     const categories: Record<string, SkillId[]> = {};
     Object.values(SKILL_MAP).filter((skill) => isSkillAvailableForGrade(skill, currentGrade)).forEach(skill => {
-        if (!categories[skill.category]) {
-            categories[skill.category] = [];
+        const cat = skill.category || 'Khác';
+        if (!categories[cat]) {
+            categories[cat] = [];
         }
-        categories[skill.category].push(skill.id);
+        categories[cat].push(skill.id);
     });
 
     const getSkillLevel = (id: SkillId) => {

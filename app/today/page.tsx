@@ -8,7 +8,7 @@ import { selectNextSkill } from '@/lib/selector';
 import { buildCurriculumSelectionContext, CurriculumSelectionContext } from '@/lib/curriculum';
 import { updateMastery, getOverallRank, updateDailyStreak } from '@/lib/mastery';
 import { isSkillAvailableForGrade, SkillId, SKILL_MAP } from '@/lib/skills';
-import { getTheme } from '@/lib/theme';
+import { getTheme, SubjectTheme } from '@/lib/theme';
 import {
     CheckCircle2, XCircle, Trophy,
     Zap, Star, Clock, ArrowLeft
@@ -580,7 +580,7 @@ export default function TodayPage() {
 
     // --- RENDER ---
 
-    const theme = lockedSubjectId
+    const theme: SubjectTheme = lockedSubjectId
         ? getTheme(lockedSubjectId)
         : {
             id: 'general',
@@ -593,6 +593,7 @@ export default function TodayPage() {
                 accent: 'text-blue-600',
                 gradient: 'from-slate-800 to-slate-900',
                 shadow: 'shadow-slate-500/20',
+                border: 'border-slate-200',
                 light: 'bg-slate-50'
             }
         };

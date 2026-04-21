@@ -108,7 +108,7 @@ export default function PracticeClient() {
         skillLevel = Math.min(skillLevel, getRequestedLevelCap(skillId));
 
         try {
-            const newQ = await generateQuestion(skillInfo.subjectId, skillId, skillLevel);
+            const newQ = await generateQuestion(skillInfo.subjectId as string, skillId, skillLevel);
             if (!isMountedRef.current) return;
 
             if (newQ && newQ.content?.text && !newQ.id.startsWith('err-')) {

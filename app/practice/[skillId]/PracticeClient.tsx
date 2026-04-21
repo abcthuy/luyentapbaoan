@@ -20,6 +20,7 @@ import { checkNewBadges, applyNewBadges } from '@/lib/badges';
 import { BadgeDisplay } from '@/components/BadgeDisplay';
 import { isAnswerCorrect } from '@/lib/answer-check';
 import { normalizeDisplayText } from '@/lib/text';
+import { EvaluatorPersona, evaluateReadingLocally } from '@/lib/mock-evaluator';
 
 export default function PracticeClient() {
     type EvaluationFeedback = Feedback & { quality?: string };
@@ -174,9 +175,10 @@ export default function PracticeClient() {
         });
     };
 
-    const submitAnswer = async (selectedAnswer?: string, audioBlob?: Blob) => {
+    const submitAnswer = async (selectedAnswer?: string, audioBlob?: Blob, transcript?: string, selectedTutorId?: string, recordingDuration?: number) => {
         const finalAnswer = selectedAnswer !== undefined ? selectedAnswer : answer;
-        if (!finalAnswer || evaluating || feedback) return;
+        if (!finalAnswer && !transcript && !audioBlob) return;
+        if (evaluating || feedback) return;
 
         setEvaluating(true);
 
@@ -215,13 +217,31 @@ export default function PracticeClient() {
         let quality = '';
 
         if (isSpeakingOrReading) {
-            try {
-                const body: any = {
-                    prompt: currentQuestion?.content.text,
-                    studentAnswer: finalAnswer,
-                    correctAnswer: currentQuestion?.answer,
-                    skillId: currentQuestion?.skillId,
-                };
+            const actualTutorId = selectedTutorId || 'ai';
+            if (actualTutorId !== 'ai') {
+                // Local Heuristic Evaluation (Không dùng AI)
+                const expectedText = currentQuestion?.content?.text || currentQuestion?.content?.audio || '';
+                const actualDuration = recordingDuration || Math.max(3, (transcript || finalAnswer).split(' ').length / 1.5);
+                
+                const localRes = evaluateReadingLocally(actualTutorId as EvaluatorPersona, transcript || finalAnswer, expectedText, actualDuration);
+                
+                isCorrect = localRes.isCorrect;
+                quality = localRes.quality;
+                
+                setFeedback({
+                    ...localRes,
+                    explain: normalizeDisplayText(localRes.explain),
+                    microLesson: normalizeDisplayText(localRes.microLesson)
+                });
+            } else {
+                // AI Evaluation
+                try {
+                    const body: any = {
+                        prompt: currentQuestion?.content.text,
+                        studentAnswer: finalAnswer,
+                        correctAnswer: currentQuestion?.answer,
+                        skillId: currentQuestion?.skillId,
+                    };
 
                 if (audioBlob) {
                     body.audioData = await blobToBase64(audioBlob);
@@ -248,9 +268,10 @@ export default function PracticeClient() {
                 console.error('AI evaluate failed:', e);
                 if (isMountedRef.current && !isFinished) setFeedback(localFeedback);
             }
-        } else {
-            setFeedback(localFeedback);
         }
+    } else {
+        setFeedback(localFeedback);
+    }
 
         if (isSpeakingOrReading && isMountedRef.current && !isFinished) {
             if (isCorrect) {
@@ -449,7 +470,7 @@ export default function PracticeClient() {
                             question={currentQuestion}
                             answer={answer}
                             setAnswer={setAnswer}
-                            submitAnswer={(val?: string, blob?: Blob) => { submitAnswer(val, blob); }}
+                            submitAnswer={submitAnswer}
                             evaluating={evaluating}
                             feedback={feedback}
                             streak={streak}

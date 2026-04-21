@@ -15,7 +15,7 @@ interface QuestionCardProps {
     question: Question;
     answer: string;
     setAnswer: (val: string) => void;
-    submitAnswer: (val?: string, audioBlob?: Blob) => void;
+    submitAnswer: (val?: string, audioBlob?: Blob, transcript?: string, tutorId?: string, duration?: number) => void;
     evaluating: boolean;
     feedback: Feedback | null;
     play: (sound: SoundType) => void;
@@ -497,10 +497,10 @@ export function QuestionCard({
                                     topic={question.content.text}
                                     hint={question.hint}
                                     mode={question.type as 'speaking' | 'reading'}
-                                    onSubmitResponse={({ audioBlob, textAnswer }) => {
-                                        const finalAnswer = textAnswer?.trim() || 'Da ghi am thanh cong';
+                                    onSubmitResponse={({ audioBlob, textAnswer, transcript, tutorId, duration }) => {
+                                        const finalAnswer = textAnswer?.trim() || transcript || 'Da ghi am thanh cong';
                                         setAnswer(finalAnswer);
-                                        submitAnswer(finalAnswer, audioBlob);
+                                        submitAnswer(finalAnswer, audioBlob, transcript, tutorId, duration);
                                     }}
                                     disabled={evaluating || !!feedback}
                                 />

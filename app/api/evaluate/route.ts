@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
                 const genAI = new GoogleGenerativeAI(selectedKey);
                 const useDetailedAudioPrompt = Boolean(audioData) && shouldUseDetailedAudioPrompt(skillId);
                 const model = genAI.getGenerativeModel({
-                    model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
+                    model: 'gemini-1.5-flash',
                     generationConfig: {
                         temperature: 0.1,
                         maxOutputTokens: useDetailedAudioPrompt ? 220 : 160,
@@ -170,7 +170,7 @@ export async function POST(req: NextRequest) {
                 }
 
                 const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Gemini API timeout')), 10000)
+                    setTimeout(() => reject(new Error('Gemini API timeout')), 20000)
                 );
                 
                 const result = await Promise.race([

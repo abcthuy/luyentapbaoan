@@ -15,7 +15,7 @@ export interface GameProps {
     question: Question;
     answer: string;
     setAnswer: (value: string) => void;
-    submitAnswer: (value?: string) => void;
+    submitAnswer: (value?: string, audioBlob?: Blob, transcript?: string, tutorId?: string, duration?: number) => void;
     feedback: Feedback | null;
     streak: number;
     lives?: number;

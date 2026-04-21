@@ -12,6 +12,15 @@ export interface UseRecordingReturn {
     resetRecording: () => void;
     playRecording: () => void;
     audioBlob: Blob | null;
+    transcript: string;
+}
+
+// Thêm type declarations cho SpeechRecognition
+declare global {
+    interface Window {
+        SpeechRecognition: any;
+        webkitSpeechRecognition: any;
+    }
 }
 
 export const useRecording = (): UseRecordingReturn => {
@@ -22,8 +31,10 @@ export const useRecording = (): UseRecordingReturn => {
     const [audioUrl, setAudioUrl] = useState<string | null>(null);
     const [startError, setStartError] = useState<string | null>(null);
     const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+    const [transcript, setTranscript] = useState('');
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const recognitionRef = useRef<any>(null);
     const audioChunksRef = useRef<Blob[]>([]);
     const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -31,6 +42,11 @@ export const useRecording = (): UseRecordingReturn => {
     const stopMicrophone = () => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
             mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+        }
+        if (recognitionRef.current) {
+            try {
+                recognitionRef.current.stop();
+            } catch(e) {}
         }
     };
 
@@ -59,6 +75,35 @@ export const useRecording = (): UseRecordingReturn => {
             const mediaRecorder = new MediaRecorder(stream);
             mediaRecorderRef.current = mediaRecorder;
             audioChunksRef.current = [];
+            setTranscript('');
+
+            // Setup Speech Recognition
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRecognition) {
+                const recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.lang = 'vi-VN'; // Mặc định nhận diện tiếng Việt
+
+                recognition.onresult = (event: any) => {
+                    let currentTranscript = '';
+                    for (let i = 0; i < event.results.length; ++i) {
+                        currentTranscript += event.results[i][0].transcript;
+                    }
+                    setTranscript(currentTranscript);
+                };
+
+                recognition.onerror = (event: any) => {
+                    console.warn("Speech recognition error", event.error);
+                };
+
+                recognitionRef.current = recognition;
+                try {
+                    recognition.start();
+                } catch(e) {
+                    console.warn("Could not start speech recognition", e);
+                }
+            }
 
             mediaRecorder.ondataavailable = (event) => {
                 if (event.data.size > 0) {
@@ -106,6 +151,11 @@ export const useRecording = (): UseRecordingReturn => {
                 clearInterval(timerRef.current);
                 timerRef.current = null;
             }
+            if (recognitionRef.current) {
+                try {
+                    recognitionRef.current.stop();
+                } catch(e) {}
+            }
         }
     };
 
@@ -117,6 +167,7 @@ export const useRecording = (): UseRecordingReturn => {
         setDuration(0);
         setStartError(null);
         setIsPlayingBack(false);
+        setTranscript('');
     };
 
     const playRecording = () => {
@@ -144,6 +195,7 @@ export const useRecording = (): UseRecordingReturn => {
         stopRecording,
         resetRecording,
         playRecording,
-        audioBlob
+        audioBlob,
+        transcript
     };
 };

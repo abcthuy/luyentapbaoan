@@ -10,7 +10,7 @@ interface SpeakingQuestionProps {
     topic?: string;
     hint?: string;
     mode: 'reading' | 'speaking';
-    onSubmitResponse?: (payload: { audioBlob?: Blob; textAnswer?: string }) => void;
+    onSubmitResponse?: (payload: { audioBlob?: Blob; textAnswer?: string; transcript?: string; tutorId?: string; duration?: number }) => void;
     disabled?: boolean;
 }
 
@@ -24,6 +24,7 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
 }) => {
     const [showHint, setShowHint] = useState(false);
     const [textFallback, setTextFallback] = useState('');
+    const [tutorId, setTutorId] = useState<'ai' | 'tutor-1' | 'tutor-2'>('ai');
     const recorder = useRecording();
 
     const safeText = normalizeDisplayText(text);
@@ -33,7 +34,12 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
 
     const handleSubmit = () => {
         if (recorder.audioBlob) {
-            onSubmitResponse?.({ audioBlob: recorder.audioBlob });
+            onSubmitResponse?.({ 
+                audioBlob: recorder.audioBlob,
+                transcript: recorder.transcript,
+                tutorId,
+                duration: recorder.duration
+            });
         }
     };
 
@@ -158,7 +164,31 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
                             </div>
 
                             <div className="text-center text-sm text-slate-500 font-medium px-4">
-                                Bé hãy nghe lại bản ghi âm. Nếu hài lòng, nhấn <strong className="text-emerald-600">Gửi Bài Chấm</strong>. Chưa ưng thì nhấn ↻ để ghi lại nhé!
+                                Bé hãy nghe lại bản ghi âm. Nếu hài lòng, chọn người chấm và nhấn <strong className="text-emerald-600">Gửi Bài Chấm</strong>. Chưa ưng thì nhấn ↻ để ghi lại nhé!
+                            </div>
+
+                            <div className="bg-white rounded-xl shadow-sm border-2 border-slate-200 p-1 flex items-center justify-center my-2">
+                                <span className="text-xs font-black text-slate-400 px-3 uppercase hidden sm:inline-block">{normalizeDisplayText('Chọn người chấm:')}</span>
+                                <div className="flex gap-1">
+                                    <button
+                                        onClick={() => setTutorId('ai')}
+                                        className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${tutorId === 'ai' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100'}`}
+                                    >
+                                        Gia sư AI
+                                    </button>
+                                    <button
+                                        onClick={() => setTutorId('tutor-1')}
+                                        className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${tutorId === 'tutor-1' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100'}`}
+                                    >
+                                        Gia sư 1
+                                    </button>
+                                    <button
+                                        onClick={() => setTutorId('tutor-2')}
+                                        className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${tutorId === 'tutor-2' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100'}`}
+                                    >
+                                        Gia sư 2
+                                    </button>
+                                </div>
                             </div>
 
                             <motion.button
@@ -191,7 +221,7 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
                         />
                         <button
                             type="button"
-                            onClick={() => onSubmitResponse?.({ textAnswer: textFallback.trim() })}
+                            onClick={() => onSubmitResponse?.({ textAnswer: textFallback.trim(), tutorId })}
                             disabled={disabled || !textFallback.trim()}
                             className="mt-4 w-full rounded-[32px] bg-slate-900 px-5 py-3 text-base font-black text-white transition-all hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
                         >

@@ -29,6 +29,7 @@ import { Feedback } from '@/lib/types/game';
 import { ReviewItem } from '@/lib/mastery';
 import { isAnswerCorrect } from '@/lib/answer-check';
 import { normalizeDisplayText } from '@/lib/text';
+import { EvaluatorPersona, evaluateReadingLocally } from '@/lib/mock-evaluator';
 
 const VALID_SUBJECT_IDS = new Set(['math', 'vietnamese', 'english', 'finance']);
 
@@ -355,9 +356,10 @@ export default function TodayPage() {
         }
     }, [buildReviewQuestion, count, currentGrade, curriculumContext, finishSession, gameMode, isLoadingQuestion, progress, sessionCorrect, sessionHistory, lockedSubjectId]);
 
-    const submitAnswer = async (selectedAnswer?: string, audioBlob?: Blob) => {
+    const submitAnswer = async (selectedAnswer?: string, audioBlob?: Blob, transcript?: string, selectedTutorId?: string, recordingDuration?: number) => {
         const finalAnswer = selectedAnswer !== undefined ? selectedAnswer : answer;
-        if (!finalAnswer || evaluating || feedback) return;
+        if (!finalAnswer && !transcript && !audioBlob) return;
+        if (evaluating || feedback) return;
 
         setEvaluating(true);
         const isSpeakingOrReading = currentQuestion?.type === 'speaking' || (currentQuestion?.type as string) === 'reading';
@@ -391,53 +393,67 @@ export default function TodayPage() {
         };
 
         if (isSpeakingOrReading) {
-            try {
-                const blobToBase64 = (blob: Blob): Promise<string> => {
-                    return new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                            const base64String = reader.result as string;
-                            const base64Data = base64String.split(',')[1];
-                            resolve(base64Data);
-                        };
-                        reader.onerror = reject;
-                        reader.readAsDataURL(blob);
-                    });
-                };
-
-                const body: {
-                    prompt?: string;
-                    studentAnswer: string;
-                    correctAnswer?: string;
-                    skillId?: string;
-                    audioData?: string;
-                    mimeType?: string;
-                } = {
-                    prompt: currentQuestion?.content.text,
-                    studentAnswer: finalAnswer,
-                    correctAnswer: currentQuestion?.answer,
-                    skillId: currentQuestion?.skillId,
-                };
-
-                if (audioBlob) {
-                    const audioBase64 = await blobToBase64(audioBlob);
-                    body.audioData = audioBase64;
-                    body.mimeType = audioBlob.type || 'audio/wav';
-                }
-
-                const res = await fetch('/api/evaluate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body),
+            const actualTutorId = selectedTutorId || 'ai';
+            if (actualTutorId !== 'ai') {
+                const expectedText = currentQuestion?.content?.text || currentQuestion?.content?.audio || '';
+                const actualDuration = recordingDuration || Math.max(3, (transcript || finalAnswer).split(' ').length / 1.5);
+                const localRes = evaluateReadingLocally(actualTutorId as EvaluatorPersona, transcript || finalAnswer, expectedText, actualDuration);
+                
+                isCorrect = localRes.isCorrect;
+                setFeedback({
+                    ...localRes,
+                    explain: normalizeDisplayText(localRes.explain),
+                    microLesson: normalizeDisplayText(localRes.microLesson)
                 });
-                const aiResponse = await res.json();
-                if (typeof aiResponse?.isCorrect === 'boolean') {
-                    isCorrect = aiResponse.isCorrect;
+            } else {
+                try {
+                    const blobToBase64 = (blob: Blob): Promise<string> => {
+                        return new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                                const base64String = reader.result as string;
+                                const base64Data = base64String.split(',')[1];
+                                resolve(base64Data);
+                            };
+                            reader.onerror = reject;
+                            reader.readAsDataURL(blob);
+                        });
+                    };
+
+                    const body: {
+                        prompt?: string;
+                        studentAnswer: string;
+                        correctAnswer?: string;
+                        skillId?: string;
+                        audioData?: string;
+                        mimeType?: string;
+                    } = {
+                        prompt: currentQuestion?.content.text,
+                        studentAnswer: finalAnswer,
+                        correctAnswer: currentQuestion?.answer,
+                        skillId: currentQuestion?.skillId,
+                    };
+
+                    if (audioBlob) {
+                        const audioBase64 = await blobToBase64(audioBlob);
+                        body.audioData = audioBase64;
+                        body.mimeType = audioBlob.type || 'audio/wav';
+                    }
+
+                    const res = await fetch('/api/evaluate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body),
+                    });
+                    const aiResponse = await res.json();
+                    if (typeof aiResponse?.isCorrect === 'boolean') {
+                        isCorrect = aiResponse.isCorrect;
+                    }
+                    setFeedback(aiResponse || localFeedback);
+                } catch (e) {
+                    console.error('Lỗi khi gọi AI đánh giá bài nói:', e);
+                    setFeedback(localFeedback);
                 }
-                setFeedback(aiResponse || localFeedback);
-            } catch (e) {
-                console.error('Lỗi khi gọi AI đánh giá bài nói:', e);
-                setFeedback(localFeedback);
             }
         } else {
             setFeedback(localFeedback);
@@ -827,7 +843,9 @@ export default function TodayPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
                 <div className="lg:col-span-8 flex flex-col">
                     <div className="mb-6 flex justify-between items-end">
-                        <h1 className="text-2xl md:text-3xl font-black text-slate-800">{pageTitle}</h1>
+                        <div>
+                            <h1 className="text-2xl md:text-3xl font-black text-slate-800">{pageTitle}</h1>
+                        </div>
                         <div className="px-4 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-black uppercase tracking-widest">
                             {gameMode?.total} {normalizeDisplayText('câu hỏi')}
                         </div>
@@ -839,7 +857,7 @@ export default function TodayPage() {
                                 question={currentQuestion}
                                 answer={answer}
                                 setAnswer={setAnswer}
-                                submitAnswer={(val, blob) => submitAnswer(val, blob)}
+                                submitAnswer={submitAnswer}
                                 evaluating={evaluating}
                                 feedback={feedback}
                                 play={play}

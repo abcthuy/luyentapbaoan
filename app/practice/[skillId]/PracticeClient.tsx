@@ -124,7 +124,7 @@ export default function PracticeClient() {
             } else {
                 setCurrentQuestion({
                     id: `err-${Date.now()}`,
-                    subjectId: skillInfo.subjectId,
+                    subjectId: skillInfo.subjectId || 'vietnamese',
                     skillId,
                     type: 'mcq',
                     instruction: 'Đang tải...',

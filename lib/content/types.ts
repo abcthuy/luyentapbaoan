@@ -1,4 +1,4 @@
-﻿import type { SupportedGrade } from '../grades';
+import type { SupportedGrade } from '../grades';
 
 export type SubjectId = 'math' | 'english' | 'vietnamese' | 'finance';
 
@@ -37,9 +37,11 @@ export interface Skill {
     description?: string;
     tier: 1 | 2 | 3; // Basic vs Advanced vs Expert
     grade: SupportedGrade; // Lop duoc ho tro trong he thong
-    semester?: 1 | 2; // Há»c ká»³ 1 hoáº·c 2
+    semester?: 1 | 2; // Há» c ká»³ 1 hoáº·c 2
     order?: number;
     instructions?: string;
+    subjectId?: SubjectId; // Added for decoupling
+    category?: string; // Added for decoupling
 }
 
 export interface Topic {
@@ -56,4 +58,3 @@ export interface Course {
     icon?: React.ReactNode;
     color?: string; // Main theme color for this subject
 }
-

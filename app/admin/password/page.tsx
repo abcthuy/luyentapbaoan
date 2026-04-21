@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -7,6 +7,7 @@ import { ArrowLeft, ShieldAlert } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clearAdminSession, hasActiveAdminSession, touchAdminSession } from '@/lib/admin-session';
 import { verifyPin } from '@/lib/pin-hash';
+import { normalizeDisplayText } from '@/lib/text';
 
 export default function AdminPasswordPage() {
     const { storage, upsertAdminAccount, isInitialized } = useProgress();
@@ -33,7 +34,7 @@ export default function AdminPasswordPage() {
     if (!isInitialized) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-50">
-                <div className="animate-spin text-slate-400">Đang tải dữ liệu...</div>
+                <div className="animate-spin text-slate-400">{normalizeDisplayText('Đang tải dữ liệu...')}</div>
             </div>
         );
     }
@@ -43,23 +44,23 @@ export default function AdminPasswordPage() {
         setMessage(null);
 
         if (!storage?.adminAccount?.pin || !(await verifyPin(currentPin, storage.adminAccount.pin))) {
-            setMessage({ type: 'error', text: 'Mật khẩu hiện tại không đúng!' });
+            setMessage({ type: 'error', text: normalizeDisplayText('Mật khẩu hiện tại không đúng!') });
             return;
         }
 
         if (newPin.length < 4) {
-            setMessage({ type: 'error', text: 'Mật khẩu mới phải có ít nhất 4 số!' });
+            setMessage({ type: 'error', text: normalizeDisplayText('Mật khẩu mới phải có ít nhất 4 số!') });
             return;
         }
 
         if (newPin !== confirmPin) {
-            setMessage({ type: 'error', text: 'Mật khẩu xác nhận không khớp!' });
+            setMessage({ type: 'error', text: normalizeDisplayText('Mật khẩu xác nhận không khớp!') });
             return;
         }
 
         await upsertAdminAccount(storage?.adminAccount?.username || 'admin', newPin, storage?.adminAccount?.displayName);
         touchAdminSession();
-        setMessage({ type: 'success', text: 'Đổi mật khẩu thành công!' });
+        setMessage({ type: 'success', text: normalizeDisplayText('Đổi mật khẩu thành công!') });
 
         setCurrentPin('');
         setNewPin('');
@@ -85,14 +86,14 @@ export default function AdminPasswordPage() {
                         <ArrowLeft size={20} className="text-slate-600" />
                     </button>
                     <div>
-                        <h1 className="text-xl font-black text-slate-900">Đổi mật khẩu admin</h1>
-                        <p className="text-slate-500 text-xs font-medium">Bảo vệ quyền quản trị của bạn</p>
+                        <h1 className="text-xl font-black text-slate-900">{normalizeDisplayText('Đổi mật khẩu admin')}</h1>
+                        <p className="text-slate-500 text-xs font-medium">{normalizeDisplayText('Bảo vệ quyền quản trị của bạn')}</p>
                     </div>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Mật khẩu hiện tại</label>
+                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{normalizeDisplayText('Mật khẩu hiện tại')}</label>
                         <div className="relative">
                             <input
                                 type="password"
@@ -100,7 +101,7 @@ export default function AdminPasswordPage() {
                                 pattern="[0-9]*"
                                 value={currentPin}
                                 onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                                className="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-200 text-slate-900 font-bold focus:border-indigo-500 focus:outline-none transition-all tracking-widest text-lg"
+                                className="w-full px-4 py-3 rounded-[32px] bg-slate-50 border-2 border-slate-200 text-slate-900 font-bold focus:border-indigo-500 focus:outline-none transition-all tracking-widest text-lg"
                                 placeholder="...."
                                 required
                             />
@@ -109,28 +110,28 @@ export default function AdminPasswordPage() {
                     </div>
 
                     <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Mật khẩu mới</label>
+                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{normalizeDisplayText('Mật khẩu mới')}</label>
                         <input
                             type="password"
                             inputMode="numeric"
                             pattern="[0-9]*"
                             value={newPin}
                             onChange={(e) => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-200 text-slate-900 font-bold focus:border-indigo-500 focus:outline-none transition-all tracking-widest text-lg"
+                            className="w-full px-4 py-3 rounded-[32px] bg-slate-50 border-2 border-slate-200 text-slate-900 font-bold focus:border-indigo-500 focus:outline-none transition-all tracking-widest text-lg"
                             placeholder="...."
                             required
                         />
                     </div>
 
                     <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Nhập lại mật khẩu mới</label>
+                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{normalizeDisplayText('Nhập lại mật khẩu mới')}</label>
                         <input
                             type="password"
                             inputMode="numeric"
                             pattern="[0-9]*"
                             value={confirmPin}
                             onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border-2 border-slate-200 text-slate-900 font-bold focus:border-indigo-500 focus:outline-none transition-all tracking-widest text-lg"
+                            className="w-full px-4 py-3 rounded-[32px] bg-slate-50 border-2 border-slate-200 text-slate-900 font-bold focus:border-indigo-500 focus:outline-none transition-all tracking-widest text-lg"
                             placeholder="...."
                             required
                         />
@@ -151,9 +152,9 @@ export default function AdminPasswordPage() {
 
                     <button
                         type="submit"
-                        className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold shadow-lg shadow-slate-200 hover:bg-slate-800 active:scale-95 transition-all mt-4"
+                        className="w-full bg-slate-900 text-white py-4 rounded-[32px] font-bold shadow-lg shadow-slate-200 hover:bg-slate-800 active:scale-95 transition-all mt-4"
                     >
-                        Lưu thay đổi
+                        {normalizeDisplayText('Lưu thay đổi')}
                     </button>
                 </form>
             </motion.div>

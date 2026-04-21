@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Reorder } from 'framer-motion';
+import { normalizeDisplayText } from '@/lib/text';
 
 interface DragDropQuestionProps {
     items: { id: string; content: string }[];
@@ -28,7 +29,7 @@ export function DragDropQuestion({ items, onReorder, disabled }: DragDropQuestio
                 {orderedItems.map((item) => (
                     <Reorder.Item key={item.id} value={item}>
                         <div className={`
-                            bg-white border-4 border-slate-100 rounded-2xl p-4 flex items-center gap-4 cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md transition-all
+                            bg-white border-4 border-slate-100 rounded-[32px] p-4 flex items-center gap-4 cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md transition-all
                             ${disabled ? 'opacity-80 pointer-events-none' : 'hover:border-blue-200'}
                         `}>
                             <div className="text-slate-300">
@@ -46,7 +47,7 @@ export function DragDropQuestion({ items, onReorder, disabled }: DragDropQuestio
                     </Reorder.Item>
                 ))}
             </Reorder.Group>
-            <p className="text-center text-slate-400 text-sm mt-4 font-medium">Kéo thả để sắp xếp</p>
+            <p className="text-center text-slate-400 text-sm mt-4 font-medium">{normalizeDisplayText('Kéo thả để sắp xếp')}</p>
         </div>
     );
 }

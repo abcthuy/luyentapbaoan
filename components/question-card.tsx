@@ -42,9 +42,9 @@ function StoryListener({
     const [selectedVoiceIdx, setSelectedVoiceIdx] = useState(0);
     const [speed, setSpeed] = useState(0.85);
     const speedOptions = [
-        { label: 'Cham', value: 0.6 },
-        { label: 'Thuong', value: 0.85 },
-        { label: 'Nhanh', value: 1.1 },
+        { label: normalizeDisplayText('Chậm'), value: 0.6 },
+        { label: normalizeDisplayText('Thường'), value: 0.85 },
+        { label: normalizeDisplayText('Nhanh'), value: 1.1 },
     ];
 
     useEffect(() => {
@@ -164,19 +164,19 @@ function StoryListener({
                             transition={{ duration: 2, repeat: Infinity }}
                             className="text-lg font-black text-blue-600"
                         >
-                            Dang doc truyen... Be lang nghe nhe!
+                            {normalizeDisplayText('Đang đọc truyện... Bé lắng nghe nhé!')}
                         </motion.p>
                     ) : isPaused ? (
                         <p className="text-lg font-black text-amber-600">
-                            Da dung. Bam &quot;Nghe tiep&quot; khi be san sang!
+                            {normalizeDisplayText('Đã dừng. Bấm "Nghe tiếp" khi bé sẵn sàng!')}
                         </p>
                     ) : hasListened ? (
                         <p className="text-lg font-black text-emerald-600">
-                            Da nghe xong! Be tra loi cau hoi ben duoi nhe!
+                            {normalizeDisplayText('Đã nghe xong! Bé trả lời câu hỏi bên dưới nhé!')}
                         </p>
                     ) : (
                         <p className="text-lg font-bold text-slate-500">
-                            Bam nut ben duoi khi be san sang nghe truyen!
+                            {normalizeDisplayText('Bấm nút bên dưới khi bé sẵn sàng nghe truyện!')}
                         </p>
                     )}
                 </div>
@@ -187,7 +187,7 @@ function StoryListener({
                             onClick={() => setShowSettings(!showSettings)}
                             className="flex items-center gap-2 mx-auto px-4 py-2 rounded-xl bg-slate-50 text-slate-500 text-xs font-bold hover:bg-slate-100 transition-all"
                         >
-                            {showSettings ? 'An cai dat' : 'Giong doc va toc do'}
+                            {showSettings ? normalizeDisplayText('Ẩn cài đặt') : normalizeDisplayText('Giọng đọc và tốc độ')}
                         </button>
                         <AnimatePresence>
                             {showSettings && (
@@ -201,7 +201,7 @@ function StoryListener({
                                         {voices.length > 0 && (
                                             <div>
                                                 <label className="text-xs font-black text-slate-400 uppercase tracking-wider mb-1 block">
-                                                    Giong doc
+                                                    {normalizeDisplayText('Giọng đọc')}
                                                 </label>
                                                 <select
                                                     value={selectedVoiceIdx}
@@ -218,7 +218,7 @@ function StoryListener({
                                         )}
                                         <div>
                                             <label className="text-xs font-black text-slate-400 uppercase tracking-wider mb-2 block">
-                                                Toc do
+                                                {normalizeDisplayText('Tốc độ')}
                                             </label>
                                             <div className="flex gap-2">
                                                 {speedOptions.map((opt) => (
@@ -249,16 +249,16 @@ function StoryListener({
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={speak}
-                            className="flex items-center gap-3 px-8 py-4 rounded-3xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-black text-lg shadow-xl hover:shadow-2xl transition-all"
+                            className="flex items-center gap-3 px-8 py-4 rounded-[32px] bg-gradient-to-r from-blue-500 to-purple-600 text-white font-black text-lg shadow-xl hover:shadow-2xl transition-all"
                         >
-                            <Play size={24} fill="white" /> San sang nghe
+                            <Play size={24} fill="white" /> {normalizeDisplayText('Sẵn sàng nghe')}
                         </motion.button>
                     ) : isSpeaking ? (
                         <button
                             onClick={pauseSpeaking}
                             className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-amber-100 text-amber-700 font-black text-sm hover:bg-amber-200 transition-all active:scale-95"
                         >
-                            <VolumeX size={18} /> Dung lai
+                            <VolumeX size={18} /> {normalizeDisplayText('Dừng lại')}
                         </button>
                     ) : isPaused ? (
                         <>
@@ -266,7 +266,7 @@ function StoryListener({
                                 onClick={resumeSpeaking}
                                 className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-emerald-100 text-emerald-700 font-black text-sm hover:bg-emerald-200 transition-all active:scale-95"
                             >
-                                <Play size={18} /> Nghe tiep
+                                <Play size={18} /> {normalizeDisplayText('Nghe tiếp')}
                             </button>
                             <button
                                 onClick={() => {
@@ -275,7 +275,7 @@ function StoryListener({
                                 }}
                                 className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-100 text-blue-600 font-black text-sm hover:bg-blue-200 transition-all active:scale-95"
                             >
-                                <RotateCcw size={18} /> Nghe lai tu dau
+                                <RotateCcw size={18} /> {normalizeDisplayText('Nghe lại từ đầu')}
                             </button>
                         </>
                     ) : (
@@ -283,7 +283,7 @@ function StoryListener({
                             onClick={speak}
                             className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-100 text-blue-600 font-black text-sm hover:bg-blue-200 transition-all active:scale-95"
                         >
-                            <RotateCcw size={18} /> Nghe lai
+                            <RotateCcw size={18} /> {normalizeDisplayText('Nghe lại')}
                         </button>
                     )}
                     <button
@@ -291,7 +291,7 @@ function StoryListener({
                         className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-slate-100 text-slate-600 font-black text-sm hover:bg-slate-200 transition-all active:scale-95"
                     >
                         {showText ? <EyeOff size={18} /> : <Eye size={18} />}
-                        {showText ? 'An truyen' : 'Xem truyen'}
+                        {showText ? normalizeDisplayText('Ẩn truyện') : normalizeDisplayText('Xem truyện')}
                     </button>
                 </div>
 
@@ -303,7 +303,7 @@ function StoryListener({
                             exit={{ height: 0, opacity: 0 }}
                             className="w-full overflow-hidden"
                         >
-                            <div className="mt-2 p-6 bg-blue-50 rounded-3xl border-2 border-blue-100 text-left">
+                            <div className="mt-2 p-6 bg-blue-50 rounded-[32px] border-2 border-blue-100 text-left">
                                 <p className="text-base md:text-lg font-bold text-slate-700 whitespace-pre-line leading-relaxed">
                                     {normalizeDisplayText(storyText)}
                                 </p>
@@ -406,7 +406,7 @@ export function QuestionCard({
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 1.05 }}
-                className="bg-white rounded-[40px] border-4 border-slate-100 p-6 md:p-12 shadow-2xl flex-1 flex flex-col justify-center min-h-[500px] relative overflow-hidden"
+                className="bg-white rounded-[32px] border-4 border-slate-100 p-6 md:p-12 shadow-2xl flex-1 flex flex-col justify-center min-h-[500px] relative overflow-hidden"
             >
                 <div className="absolute top-4 right-4 flex gap-2 z-40">
                     <button
@@ -463,7 +463,7 @@ export function QuestionCard({
                                             submitAnswer(opt);
                                         }}
                                         disabled={evaluating || !!feedback}
-                                        className={`rounded-2xl border-4 p-6 text-xl md:text-3xl font-black transition-all transform hover:-translate-y-1 hover:shadow-lg active:translate-y-0 ${
+                                        className={`rounded-[32px] border-4 p-6 text-xl md:text-3xl font-black transition-all transform hover:-translate-y-1 hover:shadow-lg active:translate-y-0 ${
                                             feedback && opt === question.answer
                                                 ? 'border-emerald-500 bg-emerald-100 text-emerald-700 shadow-emerald-200'
                                                 : feedback && opt === answer && opt !== question.answer
@@ -485,9 +485,9 @@ export function QuestionCard({
                                 <button
                                     onClick={() => submitAnswer()}
                                     disabled={!answer || evaluating}
-                                    className="rounded-3xl bg-slate-900 px-12 py-4 text-xl font-black text-white shadow-xl hover:bg-blue-600 hover:shadow-blue-200 active:scale-95 transition-all mt-4"
+                                    className="rounded-[32px] bg-slate-900 px-12 py-4 text-xl font-black text-white shadow-xl hover:bg-blue-600 hover:shadow-blue-200 active:scale-95 transition-all mt-4"
                                 >
-                                    Chot dap an
+                                    {normalizeDisplayText('Chốt đáp án')}
                                 </button>
                             </div>
                         ) : (question.type as string) === 'speaking' || (question.type as string) === 'reading' ? (
@@ -517,9 +517,9 @@ export function QuestionCard({
                                 <button
                                     onClick={() => submitAnswer()}
                                     disabled={!answer || evaluating}
-                                    className="rounded-3xl bg-slate-900 px-12 py-4 text-xl font-black text-white shadow-xl hover:bg-blue-600 hover:shadow-blue-200 active:scale-95 transition-all mt-4"
+                                    className="rounded-[32px] bg-slate-900 px-12 py-4 text-xl font-black text-white shadow-xl hover:bg-blue-600 hover:shadow-blue-200 active:scale-95 transition-all mt-4"
                                 >
-                                    Nop bai
+                                    {normalizeDisplayText('Nộp bài')}
                                 </button>
                             </div>
                         ) : question.type === 'drawing' ? (
@@ -533,9 +533,9 @@ export function QuestionCard({
                                 <button
                                     onClick={() => submitAnswer()}
                                     disabled={!answer || evaluating}
-                                    className="rounded-3xl bg-slate-900 px-12 py-4 text-xl font-black text-white shadow-xl hover:bg-blue-600 hover:shadow-blue-200 active:scale-95 transition-all mt-4"
+                                    className="rounded-[32px] bg-slate-900 px-12 py-4 text-xl font-black text-white shadow-xl hover:bg-blue-600 hover:shadow-blue-200 active:scale-95 transition-all mt-4"
                                 >
-                                    Hoan thanh
+                                    {normalizeDisplayText('Hoàn thành')}
                                 </button>
                             </div>
                         ) : (
@@ -553,7 +553,7 @@ export function QuestionCard({
                                         autoCorrect="off"
                                         autoCapitalize="off"
                                         spellCheck={false}
-                                        className="w-full rounded-3xl border-4 border-slate-200 bg-slate-50 p-6 text-center text-5xl md:text-7xl font-black outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all text-slate-800 placeholder-slate-300"
+                                        className="w-full rounded-[32px] border-4 border-slate-200 bg-slate-50 p-6 text-center text-5xl md:text-7xl font-black outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all text-slate-800 placeholder-slate-300"
                                         placeholder="?"
                                         autoFocus
                                     />
@@ -563,9 +563,9 @@ export function QuestionCard({
                                     <button
                                         onClick={() => submitAnswer()}
                                         disabled={!answer || evaluating}
-                                        className="rounded-3xl bg-slate-900 p-6 text-2xl font-black text-white shadow-xl hover:bg-blue-600 hover:shadow-blue-200 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="rounded-[32px] bg-slate-900 p-6 text-2xl font-black text-white shadow-xl hover:bg-blue-600 hover:shadow-blue-200 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        Tra loi
+                                        {normalizeDisplayText('Trả lời')}
                                     </button>
                                 )}
                             </div>
@@ -576,7 +576,7 @@ export function QuestionCard({
                 {evaluating && (
                     <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center z-10">
                         <Loader2 size={60} className="text-blue-600 animate-spin mb-4" />
-                        <p className="text-xl font-black text-blue-800 animate-pulse">Dang cham bai...</p>
+                        <p className="text-xl font-black text-blue-800 animate-pulse">{normalizeDisplayText('Đang chấm bài...')}</p>
                     </div>
                 )}
             </motion.div>

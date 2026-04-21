@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useProgress } from '@/components/progress-provider';
@@ -29,6 +29,7 @@ import { Feedback } from '@/lib/types/game';
 import { ReviewItem } from '@/lib/mastery';
 import { isAnswerCorrect } from '@/lib/answer-check';
 import { normalizeDisplayText } from '@/lib/text';
+
 const VALID_SUBJECT_IDS = new Set(['math', 'vietnamese', 'english', 'finance']);
 
 function getSubjectMasteryAverage(subjectId: string | undefined, progress: any, grade: number) {
@@ -71,33 +72,51 @@ export default function TodayPage() {
     const normalizedUrlSubjectId = urlSubjectId && VALID_SUBJECT_IDS.has(urlSubjectId) ? urlSubjectId : null;
     const lockedSubjectId = normalizedUrlSubjectId || undefined;
 
-    // Game State
-    const [sessionHistory, setSessionHistory] = useState<SkillId[]>([]);
-
-    const currentQuestionSubjectId = useMemo(() => {
-        if (sessionHistory.length > 0) {
-            const firstSkill = SKILL_MAP[sessionHistory[0]];
-            if (firstSkill) return firstSkill.subjectId;
-        }
-        return undefined;
-    }, [sessionHistory]);
-
-    // Title Logic
-    const getTitle = () => {
-        if (!lockedSubjectId) return "Đấu Trường Trí Tuệ";
-        const map: Record<string, string> = {
-            'math': 'Nhà Toán Học Nhí',
-            'vietnamese': 'Nhà Văn Nhí',
-            'english': 'Nhà Ngôn Ngữ Học',
-            'finance': 'Nhà Đầu Tư Nhí'
-        };
-        return map[lockedSubjectId] || "Đấu Trường Trí Tuệ";
-    };
-    const pageTitle = getTitle();
-
     const { progress, updateLocalProgress, activeProfile } = useProgress();
     const { play } = useSound();
     const currentGrade = activeProfile?.grade || 2;
+
+    // Game State
+    const [sessionHistory, setSessionHistory] = useState<SkillId[]>([]);
+    const [sessionActive, setSessionActive] = useState(false);
+    const [gameMode, setGameMode] = useState<{ total: number, time: number, level: number } | null>(null);
+
+    const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
+    const [answer, setAnswer] = useState('');
+    const [feedback, setFeedback] = useState<EvaluationFeedback | null>(null);
+    const [evaluating, setEvaluating] = useState(false);
+    const [isLoadingQuestion, setIsLoadingQuestion] = useState(false);
+
+    const [count, setCount] = useState(0);
+    const [correctCount, setCorrectCount] = useState(0);
+
+    // Timer
+    const [timeLeft, setTimeLeft] = useState(0);
+    const [timeInSeconds, setTimeInSeconds] = useState(0);
+
+    const [isFinished, setIsFinished] = useState(false);
+    const [aiSummary, setAiSummary] = useState<string>('');
+
+    // Internal logic for question selection
+    const [, setCurrentBucket] = useState<string>('mixed');
+    const [sessionCorrect, setSessionCorrect] = useState(0);
+    const [sessionStreak, setSessionStreak] = useState(0);
+    const [sessionEarnings, setSessionEarnings] = useState(0);
+    const [currentReviewItem, setCurrentReviewItem] = useState<ReviewItem | null>(null);
+    const [curriculumContext, setCurriculumContext] = useState<CurriculumSelectionContext | null>(null);
+
+    // Title Logic
+    const getTitle = () => {
+        if (!lockedSubjectId) return normalizeDisplayText("Đấu Trường Trí Tuệ");
+        const map: Record<string, string> = {
+            'math': normalizeDisplayText('Nhà Toán Học Nhí'),
+            'vietnamese': normalizeDisplayText('Nhà Văn Nhí'),
+            'english': normalizeDisplayText('Nhà Ngôn Ngữ Học'),
+            'finance': normalizeDisplayText('Nhà Đầu Tư Nhí')
+        };
+        return map[lockedSubjectId] || normalizeDisplayText("Đấu Trường Trí Tuệ");
+    };
+    const pageTitle = getTitle();
 
     // Subject Lock: Prevent direct URL access to locked subjects (mastery-based)
     useEffect(() => {
@@ -106,7 +125,7 @@ export default function TodayPage() {
         if (!status.unlocked) {
             const missingReqs = status.requirements.filter(r => !r.met);
             const msg = missingReqs.map(r => `${r.subjectName}: ${r.currentPercent}%/${r.requiredPercent}%`).join(', ');
-            toast.error(`Chưa đủ điều kiện! ${msg}`, {
+            toast.error(normalizeDisplayText(`Chưa đủ điều kiện! ${msg}`), {
                 icon: '🔒',
                 style: { borderRadius: '20px', background: '#333', color: '#fff', fontWeight: 'bold' }
             });
@@ -146,33 +165,6 @@ export default function TodayPage() {
             ignore = true;
         };
     }, [activeProfile?.id, currentGrade, lockedSubjectId]);
-    // Game State
-    const [sessionActive, setSessionActive] = useState(false);
-    const [gameMode, setGameMode] = useState<{ total: number, time: number, level: number } | null>(null); // Added level
-
-    const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
-    const [answer, setAnswer] = useState('');
-    const [feedback, setFeedback] = useState<EvaluationFeedback | null>(null);
-    const [evaluating, setEvaluating] = useState(false);
-    const [isLoadingQuestion, setIsLoadingQuestion] = useState(false);
-
-    const [count, setCount] = useState(0);
-    const [correctCount, setCorrectCount] = useState(0);
-
-    // Timer
-    const [timeLeft, setTimeLeft] = useState(0);
-    const [timeInSeconds, setTimeInSeconds] = useState(0); // Elapsed
-
-    const [isFinished, setIsFinished] = useState(false);
-    const [aiSummary, setAiSummary] = useState<string>('');
-
-    // Internal logic for question selection
-    const [, setCurrentBucket] = useState<string>('mixed');
-    const [sessionCorrect, setSessionCorrect] = useState(0);
-    const [sessionStreak, setSessionStreak] = useState(0);
-    const [sessionEarnings, setSessionEarnings] = useState(0);
-    const [currentReviewItem, setCurrentReviewItem] = useState<ReviewItem | null>(null);
-    const [curriculumContext, setCurriculumContext] = useState<CurriculumSelectionContext | null>(null);
 
     // --- ACTIONS ---
 
@@ -188,28 +180,28 @@ export default function TodayPage() {
 
         if (percent >= 90) {
             return {
-                title: 'Xuất sắc!',
-                summary: `Xuất sắc! Con đã trả lời đúng ${correct}/${total} câu trong ${formattedTime}. Thành tích tuyệt vời, cứ giữ vững phong độ này nhé!`,
+                title: normalizeDisplayText('Xuất sắc!'),
+                summary: normalizeDisplayText(`Xuất sắc! Con đã trả lời đúng ${correct}/${total} câu trong ${formattedTime}. Thành tích tuyệt vời, cứ giữ vững phong độ này nhé!`),
             };
         }
 
         if (percent >= 70) {
             return {
-                title: 'Rất giỏi!',
-                summary: `Rất giỏi! ${correct}/${total} câu đúng trong ${formattedTime}. Con đã rất cố gắng, luyện thêm chút nữa sẽ hoàn hảo!`,
+                title: normalizeDisplayText('Rất giỏi!'),
+                summary: normalizeDisplayText(`Rất giỏi! ${correct}/${total} câu đúng trong ${formattedTime}. Con đã rất cố gắng, luyện thêm chút nữa sẽ hoàn hảo!`),
             };
         }
 
         if (percent >= 50) {
             return {
-                title: 'Tốt lắm!',
-                summary: `Tốt lắm! ${correct}/${total} câu đúng. Con đang tiến bộ mỗi ngày. Hãy ôn lại những bài chưa vững nhé!`,
+                title: normalizeDisplayText('Tốt lắm!'),
+                summary: normalizeDisplayText(`Tốt lắm! ${correct}/${total} câu đúng. Con đang tiến bộ mỗi ngày. Hãy ôn lại những bài chưa vững nhé!`),
             };
         }
 
         return {
-            title: 'Cố lên nào!',
-            summary: `Cố lên nào! ${correct}/${total} câu đúng. Không sao đâu, mỗi lần luyện tập con sẽ giỏi hơn. Thử lại nhé!`,
+            title: normalizeDisplayText('Cố lên nào!'),
+            summary: normalizeDisplayText(`Cố lên nào! ${correct}/${total} câu đúng. Không sao đâu, mỗi lần luyện tập con sẽ giỏi hơn. Thử lại nhé!`),
         };
     }, [formatTime]);
 
@@ -219,19 +211,6 @@ export default function TodayPage() {
         setSessionActive(false);
         const score = correctCount * 10;
 
-        // === TEMPLATE TÄ¨NH thay vÃ¬ gá»i AI ===
-        const percent = gameMode ? Math.round((correctCount / gameMode.total) * 100) : 0;
-        let summary = '';
-        if (percent >= 90) {
-            summary = `Xuất sắc! Con đã trả lời đúng ${correctCount}/${gameMode?.total} câu trong ${formatTime(timeInSeconds)}. Thành tích tuyệt vời, cứ giữ vững phong độ này nhé!`;
-        } else if (percent >= 70) {
-            summary = `Rất giỏi! ${correctCount}/${gameMode?.total} câu đúng trong ${formatTime(timeInSeconds)}. Con đã rất cố gắng, luyện thêm chút nữa sẽ hoàn hảo!`;
-        } else if (percent >= 50) {
-            summary = `Tốt lắm! ${correctCount}/${gameMode?.total} câu đúng. Con đang tiến bộ mỗi ngày. Hãy ôn lại những bài chưa vững nhé!`;
-        } else {
-            summary = `Cố lên nào! ${correctCount}/${gameMode?.total} câu đúng. Không sao đâu, mỗi lần luyện tập con sẽ giỏi hơn. Thử lại nhé!`;
-        }
-        setAiSummary(summary);
         const review = getPerformanceReview(correctCount, gameMode?.total || 0, timeInSeconds);
         setAiSummary(review.summary);
 
@@ -241,7 +220,6 @@ export default function TodayPage() {
                 ? timeInSeconds
                 : (progress.bestTimeSeconds || 999999);
 
-            // Cá»˜ TIá»€N + STREAK + BADGES khi hoÃ n thÃ nh
             let finalProgress: typeof progress = {
                 ...progress,
                 lastSessionDate: todayStr,
@@ -252,10 +230,8 @@ export default function TodayPage() {
                 updatedAt: new Date().toISOString()
             };
 
-            // Update Daily Streak
             finalProgress = updateDailyStreak(finalProgress);
 
-            // Check Badges
             const newBadges = checkNewBadges(finalProgress);
             if (newBadges.length > 0) {
                 finalProgress = applyNewBadges(finalProgress, newBadges);
@@ -264,7 +240,7 @@ export default function TodayPage() {
 
             updateLocalProgress(finalProgress, true);
         }
-    }, [correctCount, count, formatTime, gameMode, getPerformanceReview, play, progress, sessionEarnings, timeInSeconds, updateLocalProgress]);
+    }, [correctCount, count, gameMode, getPerformanceReview, play, progress, sessionEarnings, timeInSeconds, updateLocalProgress]);
 
     const startGame = (total: number, minutes: number, level: number = 1) => {
         resetQuestionSessionTracker();
@@ -297,13 +273,13 @@ export default function TodayPage() {
             subjectId: reviewSkill.subjectId,
             skillId: reviewItem.skillId,
             type: 'input',
-            instruction: 'On lai cau con da tung lam sai:',
+            instruction: normalizeDisplayText('Ôn lại câu con đã từng làm sai:'),
             content: {
                 text: reviewItem.questionText
             },
             answer: reviewItem.correctAnswer,
-            hint: 'Con thu nhin lai cach lam that cham nhe.',
-            explanation: `Dap an dung la: ${reviewItem.correctAnswer}`
+            hint: normalizeDisplayText('Con thử nhìn lại cách làm thật chậm nhé.'),
+            explanation: normalizeDisplayText(`Đáp án đúng là: ${reviewItem.correctAnswer}`)
         };
     }, []);
 
@@ -388,7 +364,7 @@ export default function TodayPage() {
 
         let isCorrect = false;
         if (isSpeakingOrReading) {
-            isCorrect = false; // Chá» AI xÃ¡c nháº­n káº¿t quáº£ tháº­t
+            isCorrect = false;
         } else {
             isCorrect = currentQuestion ? isAnswerCorrect(currentQuestion, finalAnswer) : false;
         }
@@ -406,8 +382,6 @@ export default function TodayPage() {
             setSessionStreak(0);
         }
 
-        // === ÄÃNH GIÃ HYBRID ===
-        // BÆ°á»›c 1: Táº¡o feedback local tá»©c thÃ¬
         const localFeedback = {
             isCorrect,
             explain: isCorrect
@@ -417,7 +391,6 @@ export default function TodayPage() {
         };
 
         if (isSpeakingOrReading) {
-            // BÃ i nÃ³i/viáº¿t: Báº®T BUá»˜C gá»i AI Ä‘á»ƒ phÃ¢n tÃ­ch
             try {
                 const blobToBase64 = (blob: Blob): Promise<string> => {
                     return new Promise((resolve, reject) => {
@@ -463,11 +436,10 @@ export default function TodayPage() {
                 }
                 setFeedback(aiResponse || localFeedback);
             } catch (e) {
-                console.error('Lá»—i khi gá»i AI Ä‘Ã¡nh giÃ¡ bÃ i nÃ³i:', e);
+                console.error('Lỗi khi gọi AI đánh giá bài nói:', e);
                 setFeedback(localFeedback);
             }
         } else {
-            // BÃ i thÆ°á»ng (Tráº¯c nghiá»‡m, Äiá»n sá»‘, KÃ©o tháº£): Feedback local ngay, KHÃ”NG gá»i API
             setFeedback(localFeedback);
         }
 
@@ -485,7 +457,6 @@ export default function TodayPage() {
 
         setEvaluating(false);
 
-        // Cáº­p nháº­t Mastery
         if (progress && currentQuestion && progress.skills) {
             const currentSkillState = progress.skills[currentQuestion.skillId] || {
                 skillId: currentQuestion.skillId,
@@ -503,7 +474,6 @@ export default function TodayPage() {
             };
             const updatedSkill = updateMastery(currentSkillState, isCorrect);
 
-            // Spaced Repetition: thÃªm cÃ¢u sai vÃ o hÃ ng Ä‘á»£i Ã´n táº­p
             let updatedProgress = {
                 ...progress,
                 skills: { ...progress.skills, [currentQuestion.skillId]: updatedSkill }
@@ -529,10 +499,8 @@ export default function TodayPage() {
             setCount(prev => prev + 1);
             setCurrentReviewItem(null);
 
-            // TÃ­ch lÅ©y tiá»n thÆ°á»Ÿng (chá»‰ thÆ°á»Ÿng khi Ä‘Ãºng hoÃ n toÃ n liÃªn tiáº¿p)
             let earnedAmount = isCorrect ? 100 : 0;
             if (isCorrect) {
-                // sessionStreak Ä‘Ã£ Ä‘Æ°á»£c +1 á»Ÿ trÃªn rá»“i, dÃ¹ng giÃ¡ trá»‹ má»›i
                 const newStreak = sessionStreak + 1;
                 if (newStreak === 10) {
                     earnedAmount += 1000;
@@ -599,26 +567,25 @@ export default function TodayPage() {
     const theme = lockedSubjectId
         ? getTheme(lockedSubjectId)
         : {
-            id: 'arena',
-            label: 'Đấu trường',
+            id: 'general',
+            label: normalizeDisplayText('Đấu trường'),
             icon: Trophy,
             bgIcon: Trophy,
             colors: {
-                primary: 'bg-slate-900',
-                secondary: 'bg-slate-100',
-                accent: 'text-slate-700',
-                gradient: 'from-indigo-600 to-blue-600',
-                shadow: 'shadow-indigo-500/20',
-                border: 'border-slate-200',
+                primary: 'text-slate-900',
+                secondary: 'text-slate-500',
+                accent: 'text-blue-600',
+                gradient: 'from-slate-800 to-slate-900',
+                shadow: 'shadow-slate-500/20',
                 light: 'bg-slate-50'
             }
         };
+
     const performanceReview = getPerformanceReview(correctCount, gameMode?.total || 0, timeInSeconds);
 
     if (isFinished) {
         return (
             <div className={`min-h-screen ${theme.colors.light} flex items-center justify-center p-4 overflow-hidden relative`}>
-                {/* Background Blobs */}
                 <div className="absolute top-0 -left-20 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob" />
                 <div className="absolute bottom-0 -right-20 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000" />
 
@@ -649,37 +616,27 @@ export default function TodayPage() {
                         {performanceReview.title}
                     </h1>
 
-                    <h1 className="hidden">
-                        Xuất sắc!
-                    </h1>
-
                     <div className="bg-white/50 backdrop-blur-md rounded-3xl p-6 mb-10 border-2 border-white/50 shadow-inner">
-                        {!aiSummary ? (
-                            <div className="flex items-center justify-center gap-2 text-slate-400 font-bold italic">
-                                <motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.5 }}>Gia sư AI đang viết nhận xét...</motion.span>
-                            </div>
-                        ) : (
-                            <motion.p
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="text-slate-700 font-bold text-lg md:text-xl leading-relaxed text-center"
-                            >
-                                {aiSummary}
-                            </motion.p>
-                        )}
+                        <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="text-slate-700 font-bold text-lg md:text-xl leading-relaxed text-center"
+                        >
+                            {aiSummary}
+                        </motion.p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
                         <div className="bg-emerald-50/80 p-5 rounded-[32px] border-2 border-emerald-100/50 shadow-sm">
-                            <div className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Chính xác</div>
+                            <div className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">{normalizeDisplayText('Chính xác')}</div>
                             <div className="text-3xl font-black text-emerald-600">{correctCount}/{gameMode?.total}</div>
                         </div>
                         <div className="bg-blue-50/80 p-5 rounded-[32px] border-2 border-blue-100/50 shadow-sm">
-                            <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Điểm thưởng</div>
+                            <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">{normalizeDisplayText('Điểm thưởng')}</div>
                             <div className="text-3xl font-black text-blue-600">+{correctCount * 10}</div>
                         </div>
                         <div className="bg-purple-50/80 p-5 rounded-[32px] border-2 border-purple-100/50 shadow-sm">
-                            <div className="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1">Thời gian</div>
+                            <div className="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1">{normalizeDisplayText('Thời gian')}</div>
                             <div className="text-3xl font-black text-purple-600">{formatTime(timeInSeconds)}</div>
                         </div>
                     </div>
@@ -689,17 +646,17 @@ export default function TodayPage() {
                             whileHover={{ scale: 1.05, y: -4 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => window.location.reload()}
-                            className="flex-1 py-5 px-8 bg-slate-900 text-white rounded-[28px] font-black text-xl shadow-xl shadow-slate-900/20 flex items-center justify-center gap-3"
+                            className="flex-1 py-5 px-8 bg-slate-900 text-white rounded-[32px] font-black text-xl shadow-xl shadow-slate-900/20 flex items-center justify-center gap-3"
                         >
-                            <Zap size={24} className="fill-yellow-400 text-yellow-400" /> Chơi lại
+                            <Zap size={24} className="fill-yellow-400 text-yellow-400" /> {normalizeDisplayText('Chơi lại')}
                         </motion.button>
                         <motion.button
                             whileHover={{ scale: 1.05, y: -4 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => router.push('/subjects')}
-                            className="flex-1 py-5 px-8 bg-white text-slate-800 border-4 border-white rounded-[28px] font-black text-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-3 shadow-lg"
+                            className="flex-1 py-5 px-8 bg-white text-slate-800 border-4 border-white rounded-[32px] font-black text-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-3 shadow-lg"
                         >
-                            <ArrowLeft size={24} /> Trang chủ
+                            <ArrowLeft size={24} /> {normalizeDisplayText('Trang chủ')}
                         </motion.button>
                     </div>
                 </motion.div>
@@ -708,37 +665,34 @@ export default function TodayPage() {
     }
 
     if (!sessionActive) {
-        const rank = progress ? getOverallRank(progress) : { label: 'Tập sự', icon: '🐣', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200' };
+        const rank = progress ? getOverallRank(progress) : { label: normalizeDisplayText('Tập sự'), icon: '🐣', color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-200' };
 
         return (
             <div className={`min-h-screen transition-colors duration-700 ${theme.colors.light} p-4 md:p-8 space-y-8 relative overflow-hidden font-sans selection:${theme.colors.primary}/30`}>
-                {/* Decorative Background Elements */}
                 <div className={`absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b ${theme.colors.light.replace('bg-', 'from-').replace('50', '50/50')} to-transparent -z-10`} />
                 <div className="absolute top-20 -left-20 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob" />
                 <div className="absolute top-20 -right-20 w-72 h-72 bg-yellow-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000" />
                 <div className="absolute -bottom-32 left-20 w-72 h-72 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000" />
 
-                {/* Top Bar / Breadcrumbs */}
                 <div className="max-w-7xl mx-auto">
-                    <div className="flex items-center justify-between bg-white/40 backdrop-blur-md p-4 rounded-3xl border border-white/50 shadow-sm relative z-20">
+                    <div className="flex items-center justify-between bg-white/40 backdrop-blur-md p-4 rounded-[32px] border border-white/50 shadow-sm relative z-20">
                         <div className="flex items-center gap-4">
                             <BackButton />
                             <div className="h-8 w-[2px] bg-slate-200/50 hidden md:block" />
                             <div className="hidden md:flex flex-col">
-                                <h1 className="text-xl font-black text-slate-800 leading-none">Chế độ Thách đấu</h1>
-                                <span className="text-xs font-bold text-slate-400">Rèn luyện tư duy mỗi ngày</span>
+                                <h1 className="text-xl font-black text-slate-800 leading-none">{normalizeDisplayText('Chế độ Thách đấu')}</h1>
+                                <span className="text-xs font-bold text-slate-400">{normalizeDisplayText('Rèn luyện tư duy mỗi ngày')}</span>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-3">
-                            {/* Streak */}
-                            <div className="bg-white px-4 py-2 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-2">
+                            <div className="bg-white px-4 py-2 rounded-[32px] border border-slate-200 shadow-sm flex items-center gap-2">
                                 <div className="bg-orange-100 p-1.5 rounded-full">
                                     <Zap className="text-orange-500 fill-orange-500" size={16} />
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-sm font-black text-slate-800 leading-none">{progress?.overallStreak || 0}</span>
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none">NGÀY</span>
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none">{normalizeDisplayText('NGÀY')}</span>
                                 </div>
                             </div>
                             <WalletButton />
@@ -750,24 +704,21 @@ export default function TodayPage() {
                 </div>
 
                 <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 h-full min-h-[600px] relative z-10 pt-4">
-                    {/* HERO CARD - Mode Selection */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         className={`lg:col-span-8 relative overflow-hidden rounded-[48px] bg-slate-900 shadow-2xl ${theme.colors.shadow} group flex flex-col justify-between border-[6px] border-white/20`}
                     >
-                        {/* Dynamic Gradient Background */}
                         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 mix-blend-overlay"></div>
                         <div className={`absolute inset-0 bg-gradient-to-br ${theme.colors.gradient} opacity-90`} />
 
-                        {/* Header Content */}
                         <div className="relative z-10 p-8 md:p-12 pb-0">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                                 <div>
                                     <div className="flex items-center gap-2 bg-white/20 w-fit px-4 py-1.5 rounded-full mb-4 backdrop-blur-md border border-white/20 shadow-lg">
                                         <Star size={16} className="text-yellow-300 fill-yellow-300" />
                                         <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white">
-                                            ĐẤU TRƯỜNG TRÍ TUỆ
+                                            {normalizeDisplayText('ĐẤU TRƯỜNG TRÍ TUỆ')}
                                         </span>
                                     </div>
 
@@ -778,18 +729,17 @@ export default function TodayPage() {
                             </div>
 
                             <p className="text-blue-50 text-lg font-medium max-w-lg leading-relaxed opacity-90 text-left">
-                                Hãy chọn mức độ phù hợp để bắt đầu hành trình chinh phục kiến thức ngay bây giờ!
+                                {normalizeDisplayText('Hãy chọn mức độ phù hợp để bắt đầu hành trình chinh phục kiến thức ngay bây giờ!')}
                             </p>
                         </div>
 
-                        {/* Mode Selection Grid - Pushed to bottom */}
                         <div className="relative z-10 p-8 md:p-12 pt-8 mt-auto">
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 {(() => {
                                     return [
-                                        { q: 10, t: 10, lvl: 1, label: 'Học viên', color: 'from-emerald-400 to-green-500', shadow: 'shadow-emerald-900/20', border: 'border-emerald-400/30', icon: '📝', hidden: false },
-                                        { q: 20, t: 15, lvl: 2, label: 'Chuyên gia', color: 'from-blue-400 to-indigo-500', shadow: 'shadow-blue-900/20', border: 'border-blue-400/30', icon: '🎖️', hidden: false },
-                                        { q: 30, t: 20, lvl: 3, label: 'Giáo sư', color: 'from-orange-400 to-red-500', shadow: 'shadow-orange-900/20', border: 'border-orange-400/30', icon: '🧠', hidden: false },
+                                        { q: 10, t: 10, lvl: 1, label: normalizeDisplayText('Học viên'), color: 'from-emerald-400 to-green-500', shadow: 'shadow-emerald-900/20', border: 'border-emerald-400/30', icon: '📝', hidden: false },
+                                        { q: 20, t: 15, lvl: 2, label: normalizeDisplayText('Chuyên gia'), color: 'from-blue-400 to-indigo-500', shadow: 'shadow-blue-900/20', border: 'border-blue-400/30', icon: '🎖️', hidden: false },
+                                        { q: 30, t: 20, lvl: 3, label: normalizeDisplayText('Giáo sư'), color: 'from-orange-400 to-red-500', shadow: 'shadow-orange-900/20', border: 'border-orange-400/30', icon: '🧠', hidden: false },
                                     ].map((mode) => (
                                         !mode.hidden ? (
                                             <button
@@ -799,7 +749,7 @@ export default function TodayPage() {
                                             >
                                                 <div className={`absolute inset-0 bg-gradient-to-br ${mode.color} opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300`} />
 
-                                                <div className="relative bg-slate-900/40 group-hover/btn:bg-transparent rounded-[28px] p-5 h-full flex flex-col justify-between min-h-[140px] border border-white/5">
+                                                <div className="relative bg-slate-900/40 group-hover/btn:bg-transparent rounded-[32px] p-5 h-full flex flex-col justify-between min-h-[140px] border border-white/5">
                                                     <div className="flex justify-between items-start text-left">
                                                         <div className="bg-black/20 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white/90 border border-white/10">
                                                             {mode.label}
@@ -810,18 +760,18 @@ export default function TodayPage() {
                                                     <div className="text-left">
                                                         <div className="flex items-baseline gap-1">
                                                             <span className="text-5xl font-black text-white tracking-tighter">{mode.q}</span>
-                                                            <span className="text-sm font-bold text-white/60">câu</span>
+                                                            <span className="text-sm font-bold text-white/60">{normalizeDisplayText('câu')}</span>
                                                         </div>
                                                         <div className="flex items-center gap-1 text-[11px] font-bold text-white/80 uppercase tracking-wide mt-1">
-                                                            <Clock size={12} /> {mode.t} phút
+                                                            <Clock size={12} /> {mode.t} {normalizeDisplayText('phút')}
                                                         </div>
                                                     </div>
                                                 </div>
                                             </button>
                                         ) : (
                                             <div key={mode.q} className="rounded-[32px] bg-white/10 border border-white/20 p-6 flex flex-col items-center justify-center opacity-80 grayscale">
-                                                <div className="text-3xl mb-2 opacity-80">â­</div>
-                                                <span className="text-[11px] font-black text-white/90 uppercase tracking-widest text-center shadow-black/50 drop-shadow-md">Bé đã quá giỏi mức này!</span>
+                                                <div className="text-3xl mb-2 opacity-80">⭐</div>
+                                                <span className="text-[11px] font-black text-white/90 uppercase tracking-widest text-center shadow-black/50 drop-shadow-md">{normalizeDisplayText('Bé đã quá giỏi mức này!')}</span>
                                             </div>
                                         )
                                     ));
@@ -830,7 +780,6 @@ export default function TodayPage() {
                         </div>
                     </motion.div>
 
-                    {/* RANK WIDGET */}
                     <div className="lg:col-span-4 flex flex-col group items-center justify-center text-center p-8 rounded-[48px] border-[6px] shadow-2xl relative overflow-hidden h-full bg-white border-white ring-1 ring-slate-200">
                         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-40 brightness-100 mix-blend-overlay"></div>
                         <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-slate-50 to-transparent opacity-80 pointer-events-none" />
@@ -848,15 +797,14 @@ export default function TodayPage() {
                         </motion.div>
 
                         <div className={`relative z-10 inline-block px-6 py-2 rounded-full ${rank.bg} ${rank.color} font-black text-xs uppercase tracking-[0.2em] mb-6 shadow-sm border border-current/10 transform hover:scale-105 transition-transform`}>
-                            Cấp độ hiện tại
+                            {normalizeDisplayText('Cấp độ hiện tại')}
                         </div>
 
                         <h3 className={`relative z-10 text-4xl md:text-5xl font-black ${rank.color} uppercase tracking-tighter mb-8 max-w-[200px] leading-tight`}>{rank.label}</h3>
 
-                        {/* Progress Bar */}
                         <div className="relative z-10 w-full bg-slate-50 rounded-3xl p-6 border border-slate-200 shadow-inner group-hover:border-slate-300 transition-colors">
                             <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-3 text-slate-400">
-                                <span>Tiến độ thăng hạng</span>
+                                <span>{normalizeDisplayText('Tiến độ thăng hạng')}</span>
                                 <span>{Math.round((Object.values(progress?.skills || {}).reduce((sum, skill) => sum + Number(skill.mastery), 0) / (Object.keys(progress?.skills || {}).length || 1)) * 100)}%</span>
                             </div>
                             <div className="h-5 w-full bg-slate-200 rounded-full overflow-hidden shadow-inner border border-slate-200/50">
@@ -874,16 +822,14 @@ export default function TodayPage() {
         );
     }
 
-    // GAME ACTIVE RENDER (Keep broadly similar but wrapped)
     return (
         <div className="mx-auto max-w-7xl px-4 py-6 md:py-10 min-h-screen bg-slate-50">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-                {/* Main Question Area (8) */}
                 <div className="lg:col-span-8 flex flex-col">
                     <div className="mb-6 flex justify-between items-end">
                         <h1 className="text-2xl md:text-3xl font-black text-slate-800">{pageTitle}</h1>
                         <div className="px-4 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-black uppercase tracking-widest">
-                            {gameMode?.total} câu hỏi
+                            {gameMode?.total} {normalizeDisplayText('câu hỏi')}
                         </div>
                     </div>
 
@@ -902,7 +848,6 @@ export default function TodayPage() {
                     </AnimatePresence>
                 </div>
 
-                {/* Sidebar (4) */}
                 <div className="lg:col-span-4 flex flex-col gap-6">
                     <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm px-5 py-2 rounded-2xl border border-white shadow-sm">
                         <div className="flex items-center gap-1.5">
@@ -918,11 +863,11 @@ export default function TodayPage() {
                     <div className="bg-white rounded-3xl p-6 border-4 border-slate-100 shadow-xl">
                         <div className="flex items-center justify-between mb-4">
                             <div>
-                                <span className="text-xs font-black text-slate-400 uppercase tracking-wider block">Tiến độ</span>
+                                <span className="text-xs font-black text-slate-400 uppercase tracking-wider block">{normalizeDisplayText('Tiến độ')}</span>
                                 <span className="text-3xl font-black text-slate-800">{count}/{gameMode?.total}</span>
                             </div>
                             <div className="text-right">
-                                <span className="text-xs font-black text-slate-400 uppercase tracking-wider block">Thời gian</span>
+                                <span className="text-xs font-black text-slate-400 uppercase tracking-wider block">{normalizeDisplayText('Thời gian')}</span>
                                 <div className={`text-3xl font-black ${timeLeft < 60 ? 'text-rose-600 animate-pulse' : 'text-blue-600'}`}>
                                     {formatTime(timeLeft)}
                                 </div>
@@ -939,11 +884,10 @@ export default function TodayPage() {
                             onClick={finishSession}
                             className="w-full py-4 rounded-2xl border-2 border-rose-100 bg-rose-50 text-rose-600 font-black hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center gap-2"
                         >
-                            <XCircle size={24} /> KẾT THÚC SỚM
+                            <XCircle size={24} /> {normalizeDisplayText('KẾT THÚC SỚM')}
                         </button>
                     </div>
 
-                    {/* Feedback Area Reuse */}
                     <div className="flex-1 min-h-[200px] relative">
                         <AnimatePresence mode="wait">
                             {feedback ? (
@@ -951,22 +895,39 @@ export default function TodayPage() {
                                     key="feedback"
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
                                     className={`h-full rounded-3xl p-6 border-4 shadow-xl flex flex-col ${feedback.isCorrect ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}`}
                                 >
                                     <div className="flex items-center gap-3 mb-4">
                                         {feedback.isCorrect ? <CheckCircle2 className="text-emerald-500" size={32} /> : <XCircle className="text-rose-500" size={32} />}
                                         <span className={`text-xl font-black ${feedback.isCorrect ? 'text-emerald-700' : 'text-rose-700'}`}>
-                                            {feedback.isCorrect ? 'CHÍNH XÁC!' : 'CỐ GẮNG LÊN!'}
+                                            {feedback.isCorrect ? normalizeDisplayText('CHÍNH XÁC!') : normalizeDisplayText('CỐ GẮNG LÊN!')}
                                         </span>
                                     </div>
-                                    <p className="text-slate-700 font-bold mb-6">{normalizeDisplayText(feedback.explain)}</p>
-                                    <button onClick={nextQuestion} className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold">Tiếp tục</button>
+                                    <p className="text-slate-700 font-bold mb-6 leading-relaxed">
+                                        {feedback.explain}
+                                    </p>
+                                    <button
+                                        onClick={nextQuestion}
+                                        className={`mt-auto w-full py-4 rounded-2xl font-black text-white shadow-lg active:scale-95 transition-all ${feedback.isCorrect ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'}`}
+                                    >
+                                        {normalizeDisplayText('TIẾP TỤC')}
+                                    </button>
                                 </motion.div>
+                            ) : isLoadingQuestion ? (
+                                <div className="h-full rounded-3xl border-4 border-dashed border-slate-200 bg-slate-50/50 p-6 flex items-center justify-center text-center">
+                                    <motion.div
+                                        animate={{ rotate: 360 }}
+                                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                    >
+                                        <Zap size={40} className="text-slate-300" />
+                                    </motion.div>
+                                </div>
                             ) : (
-                                <div className="h-full rounded-3xl border-4 border-dashed border-slate-200 bg-slate-50/50 p-6 flex items-center justify-center text-center opacity-50">
-                                    <div>
-                                        <div className="text-4xl mb-2">🤔</div>
-                                        <div className="font-bold text-slate-400">Đang suy nghĩ...</div>
+                                <div className="h-full rounded-3xl border-4 border-dashed border-slate-200 bg-slate-50/50 p-6 flex flex-col items-center justify-center text-center opacity-50">
+                                    <div className="text-4xl mb-2">🤔</div>
+                                    <div className="font-bold text-slate-400 leading-tight">
+                                        {normalizeDisplayText('Trả lời câu hỏi bên trái để xem kết quả nhé!')}
                                     </div>
                                 </div>
                             )}
@@ -977,6 +938,3 @@ export default function TodayPage() {
         </div>
     );
 }
-
-
-

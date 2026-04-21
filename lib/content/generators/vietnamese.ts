@@ -1,4 +1,5 @@
 import { Question } from '../types';
+import { QuestionFactory } from '../factory';
 
 // Helper for random selection
 const getRandom = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
@@ -355,19 +356,16 @@ export const generateReadingQuestion = (skillId: string, level: number = 1): Que
     const passage = getRandom(pool);
     const qData = getRandom(passage.questions);
 
-    return {
-        id: `vn-read-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
+    return QuestionFactory.create({
         subjectId: 'vietnamese',
         skillId,
         type: 'mcq',
         instruction: 'Đọc đoạn văn và trả lời câu hỏi:',
-        content: {
-            text: `${passage.text}\n\nCâu hỏi: ${qData.q}`,
-            options: qData.options
-        },
+        text: `${passage.text}\n\nCâu hỏi: ${qData.q}`,
+        options: qData.options,
         answer: qData.a,
         hint: 'Bé hãy đọc kỹ lại đoạn văn nhé!'
-    };
+    });
 };
 
 export const generateVocabQuestion = (skillId: string, level: number = 1): Question => {
@@ -383,18 +381,15 @@ export const generateVocabQuestion = (skillId: string, level: number = 1): Quest
             { text: "Trong câu 'Con mèo trắng nằm ngủ', từ nào chỉ đặc điểm?", options: ["trắng", "mèo", "ngủ"], answer: "trắng" }
         ]);
 
-        return {
-            id: `vn-wordclass-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
+        return QuestionFactory.create({
             subjectId: 'vietnamese',
             skillId,
             type: 'mcq',
             instruction: 'Chọn đáp án đúng:',
-            content: {
-                text: item.text,
-                options: item.options
-            },
+            text: item.text,
+            options: item.options,
             answer: item.answer
-        };
+        });
     }
 
     if (skillId === 'tv2-cau') {
@@ -409,18 +404,15 @@ export const generateVocabQuestion = (skillId: string, level: number = 1): Quest
             { text: "Câu nào dùng để nói về hoạt động của chim?", options: ["Chim đang hót trên cành.", "Đây là chú chim sẻ.", "Chú chim rất nhỏ."], answer: "Chim đang hót trên cành." }
         ]);
 
-        return {
-            id: `vn-sentence-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
+        return QuestionFactory.create({
             subjectId: 'vietnamese',
             skillId,
             type: 'mcq',
             instruction: 'Nhận biết kiểu câu:',
-            content: {
-                text: item.text,
-                options: item.options
-            },
+            text: item.text,
+            options: item.options,
             answer: item.answer
-        };
+        });
     }
 
     const pool = level <= 1 ? VOCAB_L1 :
@@ -432,18 +424,15 @@ export const generateVocabQuestion = (skillId: string, level: number = 1): Quest
         ? "Tìm từ CÙNG nghĩa với từ sau:"
         : "Tìm từ TRÁI nghĩa với từ sau:";
 
-    return {
-        id: `vn-vocab-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
+    return QuestionFactory.create({
         subjectId: 'vietnamese',
         skillId,
         type: 'mcq',
         instruction,
-        content: {
-            text: item.word,
-            options: item.options
-        },
+        text: item.word,
+        options: item.options,
         answer: item.a
-    };
+    });
 };
 
 export const generatePunctuationQuestion = (skillId: string, level: number = 1): Question => {
@@ -459,19 +448,16 @@ export const generatePunctuationQuestion = (skillId: string, level: number = 1):
             [...PUNCTUATION_L1, ...PUNCTUATION_L2, ...PUNCTUATION_L3];
     const item = getRandom(pool);
 
-    return {
-        id: `vn-punct-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
+    return QuestionFactory.create({
         subjectId: 'vietnamese',
         skillId,
         type: 'mcq',
         instruction: 'Bài tập dấu câu:',
-        content: {
-            text: item.text,
-            options: item.options
-        },
+        text: item.text,
+        options: item.options,
         answer: item.answer,
         explanation: item.explain
-    };
+    });
 };
 
 export const generateWritingQuestion = (skillId: string, level: number = 1): Question => {
@@ -495,18 +481,15 @@ export const generateWritingQuestion = (skillId: string, level: number = 1): Que
             [...WRITING_L1, ...WRITING_L2, ...WRITING_L3];
     const item = getRandom(pool);
 
-    return {
-        id: `vn-write-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
+    return QuestionFactory.create({
         subjectId: 'vietnamese',
         skillId,
         type: item.type,
         instruction: 'Bài tập Tiếng Việt:',
-        content: {
-            text: item.text,
-            options: 'options' in item ? item.options : undefined
-        },
+        text: item.text,
+        options: 'options' in item ? item.options : undefined,
         answer: item.answer
-    };
+    });
 };
 
 // --- Skill-specific writing sub-generators ---
@@ -546,13 +529,16 @@ function generateSpellingQuestion(level: number): Question {
     );
     const safeLevel = Math.min(Math.max(level, 1), 3);
     const item = getRandom(pools[safeLevel]);
-    return {
-        id: `vn-spell-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
-        subjectId: 'vietnamese', skillId: 'tv2-chinh-ta', type: 'mcq',
+    return QuestionFactory.create({
+        subjectId: 'vietnamese',
+        skillId: 'tv2-chinh-ta',
+        type: 'mcq',
         instruction: 'Bài tập chính tả - Phân biệt phụ âm:',
-        content: { text: item.text, options: item.options },
-        answer: item.answer, explanation: item.explain
-    };
+        text: item.text,
+        options: item.options,
+        answer: item.answer,
+        explanation: item.explain
+    });
 }
 
 function generateCreativeWritingQuestion(skillId: string, level: number): Question {
@@ -590,13 +576,15 @@ function generateCreativeWritingQuestion(skillId: string, level: number): Questi
     };
     const pool = prompts[skillId] || prompts['tv2-ke-chuyen'];
     const item = getRandom(pool);
-    return {
-        id: `vn-creative-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
-        subjectId: 'vietnamese', skillId, type: 'speaking',
+    return QuestionFactory.create({
+        subjectId: 'vietnamese',
+        skillId,
+        type: 'speaking',
         instruction: skillId === 'tv2-ta-nguoi' ? 'Bài tập tả người:' : skillId === 'tv3-sang-tao' ? 'Viết sáng tạo:' : 'Kể chuyện:',
-        content: { text: item.text },
-        answer: 'Bài viết tự do', hint: item.hint
-    };
+        text: item.text,
+        answer: 'Bài viết tự do',
+        hint: item.hint
+    });
 }
 
 function generateLetterWritingQuestion(level: number): Question {
@@ -606,13 +594,15 @@ function generateLetterWritingQuestion(level: number): Question {
         { text: "Viết đơn xin phép nghỉ học 1 ngày vì bị ốm.", hint: "Gợi ý: Kính gửi cô giáo -> Em tên... lớp... -> Lý do -> Kính mong cô cho phép." },
     ];
     const item = getRandom(prompts);
-    return {
-        id: `vn-letter-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
-        subjectId: 'vietnamese', skillId: 'tv3-viet-thu', type: 'speaking',
+    return QuestionFactory.create({
+        subjectId: 'vietnamese',
+        skillId: 'tv3-viet-thu',
+        type: 'speaking',
         instruction: 'Viết thư & Viết đơn:',
-        content: { text: item.text },
-        answer: 'Bài viết tự do', hint: item.hint
-    };
+        text: item.text,
+        answer: 'Bài viết tự do',
+        hint: item.hint
+    });
 }
 
 function generateReportWritingQuestion(level: number): Question {
@@ -622,13 +612,15 @@ function generateReportWritingQuestion(level: number): Question {
         { text: "Viết báo cáo kết quả học tập của bé trong tháng.", hint: "Gợi ý: Tên bé -> Môn nào giỏi -> Môn nào cần cố gắng -> Kế hoạch tháng sau." },
     ];
     const item = getRandom(prompts);
-    return {
-        id: `vn-report-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
-        subjectId: 'vietnamese', skillId: 'tv3-bao-cao', type: 'speaking',
+    return QuestionFactory.create({
+        subjectId: 'vietnamese',
+        skillId: 'tv3-bao-cao',
+        type: 'speaking',
         instruction: 'Viết báo cáo ngắn:',
-        content: { text: item.text },
-        answer: 'Bài viết tự do', hint: item.hint
-    };
+        text: item.text,
+        answer: 'Bài viết tự do',
+        hint: item.hint
+    });
 }
 
 // === SPEAKING TOPICS (level-tiered) ===
@@ -775,35 +767,29 @@ export const generateSpeakingQuestion = (skillId: string, level: number = 1): Qu
     if (skillId.includes('doc-dien-cam')) {
         const readingPool = [...EXPRESSIVE_READING_PASSAGES, ...EXTRA_EXPRESSIVE_READING_PASSAGES];
         const passage = getRandom(readingPool);
-        return {
-            id: `vn-ddc-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
+        return QuestionFactory.create({
             subjectId: 'vietnamese',
             skillId,
             type: 'reading',
             instruction: passage.instruction,
-            content: {
-                text: passage.text,
-            },
+            text: passage.text,
             answer: "Đã đọc"
-        };
+        });
     }
 
     const skillPromptConfig = SPEAKING_PROMPTS_BY_SKILL[skillId];
 
     if (skillPromptConfig) {
         const selectedPrompt = getRandom(skillPromptConfig.prompts);
-        return {
-            id: `vn-speak-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
+        return QuestionFactory.create({
             subjectId: 'vietnamese',
             skillId,
             type: 'speaking',
             instruction: skillPromptConfig.instruction,
-            content: {
-                text: selectedPrompt.topic
-            },
+            text: selectedPrompt.topic,
             hint: selectedPrompt.hint,
             answer: "Đã nói"
-        };
+        });
     }
 
     // Hùng biện / Nói: đề tài theo level
@@ -821,16 +807,13 @@ export const generateSpeakingQuestion = (skillId: string, level: number = 1): Qu
             ];
     const selectedTopic = getRandom(pool);
 
-    return {
-        id: `vn-speak-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
+    return QuestionFactory.create({
         subjectId: 'vietnamese',
         skillId,
         type: 'speaking',
         instruction: 'Bé hãy suy nghĩ dàn ý và hùng biện về chủ đề sau:',
-        content: {
-            text: selectedTopic.topic
-        },
+        text: selectedTopic.topic,
         hint: selectedTopic.hint,
         answer: "Đã nói"
-    };
+    });
 }

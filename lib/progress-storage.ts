@@ -1,4 +1,4 @@
-﻿import { normalizeContentLibrary } from '@/lib/content/library';
+import { normalizeContentLibrary } from '@/lib/content/library';
 import { AdminAccount, AppStorage, ParentAccount, ParentChildLink, UserProfile } from '@/lib/mastery';
 
 export const EMPTY_STORAGE: AppStorage = {
@@ -48,14 +48,27 @@ export function buildParentMatchKey(parent: Pick<ParentAccount, 'name' | 'pin'>)
 export function buildParentSummaries(storage: AppStorage, sourceSyncId: string): ParentDirectoryEntry[] {
     const links = storage.parentChildLinks || [];
 
-    return (storage.parentAccounts || []).map((parent) => ({
-        parent,
-        childRefs: links
-            .filter((link) => link.parentId === parent.id)
-            .map((link) => ({ childId: link.childId, childSyncId: link.childSyncId || sourceSyncId })),
-        sourceSyncIds: [sourceSyncId],
-        matchKey: buildParentMatchKey(parent),
-    }));
+    return (storage.parentAccounts || []).map((parent) => {
+        const parentLinks = links.filter((link) => link.parentId === parent.id);
+        
+        // Deduplicate by childId to ensure we don't count the same student twice
+        const uniqueChildRefsMap = new Map<string, { childId: string; childSyncId: string }>();
+        parentLinks.forEach((link) => {
+            if (!uniqueChildRefsMap.has(link.childId)) {
+                uniqueChildRefsMap.set(link.childId, {
+                    childId: link.childId,
+                    childSyncId: link.childSyncId || sourceSyncId
+                });
+            }
+        });
+
+        return {
+            parent,
+            childRefs: Array.from(uniqueChildRefsMap.values()),
+            sourceSyncIds: [sourceSyncId],
+            matchKey: buildParentMatchKey(parent),
+        };
+    });
 }
 
 export function normalizeStorage(input: unknown): AppStorage {

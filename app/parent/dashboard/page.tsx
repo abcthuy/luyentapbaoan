@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
@@ -75,7 +75,10 @@ export default function ParentDashboardPage() {
         if (!parentEntry) return [];
 
         return parentEntry.childRefs
-            .map((childRef) => allProfiles.find((item) => item.sourceSyncId === childRef.childSyncId && item.profile.id === childRef.childId)?.profile || null)
+            .map((childRef) => {
+                // Find by childId across all available profiles, as profiles are already deduplicated
+                return allProfiles.find((item) => item.profile.id === childRef.childId)?.profile || null;
+            })
             .filter((child): child is NonNullable<typeof child> => Boolean(child));
     }, [allProfiles, parentEntry]);
 

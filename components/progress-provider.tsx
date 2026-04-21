@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ProgressData, UserProfile, AppStorage, InventoryItem } from '@/lib/mastery';
@@ -141,12 +141,11 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
                     return;
                 }
 
-                const seenChildRefs = new Set(existing.childRefs.map((child) => `${child.childSyncId}:${child.childId}`));
+                const seenChildIds = new Set(existing.childRefs.map((child) => child.childId));
                 entry.childRefs.forEach((child) => {
-                    const refKey = `${child.childSyncId}:${child.childId}`;
-                    if (!seenChildRefs.has(refKey)) {
+                    if (!seenChildIds.has(child.childId)) {
                         existing.childRefs.push(child);
-                        seenChildRefs.add(refKey);
+                        seenChildIds.add(child.childId);
                     }
                 });
 
@@ -165,8 +164,16 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
             }
         }
 
-        setAllProfiles(Array.from(byName.values()));
-        setAllParents(Array.from(parentMap.values()));
+        const finalProfiles = Array.from(byName.values());
+        
+        const validChildIds = new Set(finalProfiles.map(p => p.profile.id));
+        const finalParents = Array.from(parentMap.values()).map(parent => ({
+            ...parent,
+            childRefs: parent.childRefs.filter(ref => validChildIds.has(ref.childId))
+        }));
+
+        setAllProfiles(finalProfiles);
+        setAllParents(finalParents);
     };
     const refreshData = async () => {
         await Promise.all([syncProgress(), fetchAllProfiles()]);

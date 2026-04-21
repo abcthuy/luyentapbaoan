@@ -1,4 +1,4 @@
-import { Question } from './types';
+import { Question, Skill } from './types';
 import { validateMathGrade2Question } from './math-grade2-rules';
 import { validateFinanceGrade2Question } from './finance-grade2-rules';
 import { validateVietnameseQuestion } from './vietnamese-rules';
@@ -64,10 +64,9 @@ export function sanitizeQuestion(question: Question): Question {
     return sanitized;
 }
 
-export function validateQuestion(question: Question, expectedSkillId?: string): ValidationIssue[] {
+export function validateQuestion(question: Question, options: { expectedSkillId?: string; skill?: Skill } = {}): ValidationIssue[] {
     const issues: ValidationIssue[] = [];
-    const { SKILL_MAP } = require('../skills') as typeof import('../skills');
-    const skill = SKILL_MAP[question.skillId];
+    const { expectedSkillId, skill } = options;
 
     if (!question.id?.trim()) {
         issues.push({ severity: 'error', message: 'Missing question id.' });

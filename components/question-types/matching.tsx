@@ -60,7 +60,7 @@ export function MatchingQuestion({ pairs, onMatch, disabled }: MatchingQuestionP
                         onClick={() => handleLeftClick(p.left)}
                         disabled={disabled || isMatchedLeft(p.left)}
                         className={`
-                            p-4 rounded-xl border-4 font-bold text-lg transition-all shadow-sm
+                            p-4 rounded-[32px] border-4 font-bold text-lg transition-all shadow-sm
                             ${isMatchedLeft(p.left)
                                 ? 'bg-emerald-100 border-emerald-400 text-emerald-800 opacity-80'
                                 : selectedLeft === p.left
@@ -82,7 +82,7 @@ export function MatchingQuestion({ pairs, onMatch, disabled }: MatchingQuestionP
                         onClick={() => handleRightClick(r)}
                         disabled={disabled || isMatchedRight(r)}
                         className={`
-                            p-4 rounded-xl border-4 font-bold text-lg transition-all shadow-sm
+                            p-4 rounded-[32px] border-4 font-bold text-lg transition-all shadow-sm
                             ${isMatchedRight(r)
                                 ? 'bg-emerald-100 border-emerald-400 text-emerald-800 opacity-80'
                                 : selectedLeft && !isMatchedRight(r)

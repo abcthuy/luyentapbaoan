@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useProgress } from '@/components/progress-provider';
-import { generateQuestion } from '@/lib/content/registry';
+import { generateQuestion, resetQuestionSessionTracker } from '@/lib/content/registry';
 import { BackButton } from '@/components/ui/back-button';
 import { Question } from '@/lib/content/types';
 import { updateMastery, updateDailyStreak } from '@/lib/mastery';
@@ -28,15 +28,6 @@ export default function PracticeClient() {
     const router = useRouter();
     const skillId = params.skillId as SkillId;
 
-    // Reset load state when skill changes
-    useEffect(() => {
-        hasLoadedRef.current = false;
-        setIsFinished(false);
-        setSessionTotal(0);
-        setSessionCorrect(0);
-        setStreak(0);
-    }, [skillId]);
-
     const { progress, updateLocalProgress, activeProfile } = useProgress();
     const { play } = useSound();
     const currentGrade = activeProfile?.grade || 2;
@@ -52,7 +43,7 @@ export default function PracticeClient() {
     const [sessionTotal, setSessionTotal] = useState(0);
     const [streak, setStreak] = useState(0);
     const [showHint, setShowHint] = useState(false);
-    const [sessionEarnings, setSessionEarnings] = useState(0); // TÃ­ch lÅ©y tiá»n trong phiÃªn
+    const [sessionEarnings, setSessionEarnings] = useState(0);
 
     // Track initial mastery
     const [startMastery, setStartMastery] = useState(0);
@@ -62,6 +53,22 @@ export default function PracticeClient() {
     const [newBadgeIds, setNewBadgeIds] = useState<string[]>([]);
 
     const hasLoadedRef = React.useRef(false);
+    const isMountedRef = React.useRef(true);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
+
+    // Play complete sound exactly once when finished
+    useEffect(() => {
+        if (isFinished && sessionCorrect > 0) {
+            play('complete');
+        }
+    }, [isFinished, sessionCorrect, play]);
 
     const getRequestedLevelCap = useCallback((questionSkillId: SkillId) => {
         const info = SKILL_MAP[questionSkillId];
@@ -74,18 +81,16 @@ export default function PracticeClient() {
         if (!progress || isLoadingQuestion) return;
 
         if (sessionTotal >= 10) {
-            play('complete');
             setIsFinished(true);
             return;
         }
 
         setIsLoadingQuestion(true);
 
-        // === ADAPTIVE DIFFICULTY: TÄƒng Ä‘á»™ khÃ³ theo tiáº¿n Ä‘á»™ phiÃªn há»c ===
+        // === ADAPTIVE DIFFICULTY ===
         let skillLevel = progress.skills?.[skillId]?.level || 1;
-        // TÄƒng 1 level sau má»—i 3 cÃ¢u há»i Ä‘á»ƒ khuyáº¿n khÃ­ch váº­n dá»¥ng
         const sessionLevelBonus = Math.floor(sessionTotal / 3);
-        skillLevel = Math.min(skillLevel + sessionLevelBonus, 5); // Tá»‘i Ä‘a Level 5
+        skillLevel = Math.min(skillLevel + sessionLevelBonus, 5);
 
         const skillInfo = SKILL_MAP[skillId];
         if (!skillInfo || !isSkillAvailableForGrade(skillInfo, currentGrade)) {
@@ -103,6 +108,8 @@ export default function PracticeClient() {
 
         try {
             const newQ = await generateQuestion(skillInfo.subjectId, skillId, skillLevel);
+            if (!isMountedRef.current) return;
+
             if (newQ && newQ.content?.text && !newQ.id.startsWith('err-')) {
                 setCurrentQuestion(newQ);
                 setSeenPrompts(prev => {
@@ -127,9 +134,23 @@ export default function PracticeClient() {
         } catch (e) {
             console.error('Question loading failed:', e);
         } finally {
-            setIsLoadingQuestion(false);
+            if (isMountedRef.current) setIsLoadingQuestion(false);
         }
     }, [currentGrade, getRequestedLevelCap, isLoadingQuestion, play, progress, router, sessionCorrect, sessionTotal, skillId]);
+
+    // Skill reset effect
+    useEffect(() => {
+        resetQuestionSessionTracker();
+
+        hasLoadedRef.current = false;
+        setIsFinished(false);
+        setSessionTotal(0);
+        setSessionCorrect(0);
+        setStreak(0);
+        setSessionEarnings(0);
+        setFeedback(null);
+        setEvaluating(false);
+    }, [skillId]);
 
     useEffect(() => {
         if (!progress || !skillId) return;
@@ -163,7 +184,7 @@ export default function PracticeClient() {
         let isCorrect = false;
 
         if (isSpeakingOrReading) {
-            isCorrect = false; // Wait for AI to decide
+            isCorrect = false; // Wait for AI
         } else {
             isCorrect = currentQuestion ? isAnswerCorrect(currentQuestion, finalAnswer) : false;
         }
@@ -183,8 +204,6 @@ export default function PracticeClient() {
         }
         setSessionTotal(prev => prev + 1);
 
-        // === HYBRID EVALUATION ===
-        // Bước 1: Feedback local tức thì
         const localFeedback = {
             isCorrect,
             explain: isCorrect
@@ -193,30 +212,20 @@ export default function PracticeClient() {
             microLesson: !isCorrect ? normalizeDisplayText(currentQuestion?.hint || '') : ''
         };
 
-        let quality = ''; // Store quality for reward
+        let quality = '';
 
         if (isSpeakingOrReading) {
-            // BÃ i nÃ³i/viáº¿t: Báº®T BUá»˜C gá»i AI (cáº§n phÃ¢n tÃ­ch audio/ná»™i dung)
             try {
-                const body: {
-                    prompt?: string;
-                    studentAnswer: string;
-                    correctAnswer?: string;
-                    skillId?: string;
-                    audioData?: string;
-                    mimeType?: string;
-                } = {
+                const body: any = {
                     prompt: currentQuestion?.content.text,
                     studentAnswer: finalAnswer,
                     correctAnswer: currentQuestion?.answer,
                     skillId: currentQuestion?.skillId,
                 };
 
-                const finalAudio = audioBlob;
-                if (finalAudio) {
-                    const audioBase64 = await blobToBase64(finalAudio);
-                    body.audioData = audioBase64;
-                    body.mimeType = finalAudio.type || 'audio/webm';
+                if (audioBlob) {
+                    body.audioData = await blobToBase64(audioBlob);
+                    body.mimeType = audioBlob.type || 'audio/webm';
                 }
 
                 const res = await fetch('/api/evaluate', {
@@ -224,30 +233,26 @@ export default function PracticeClient() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body),
                 });
-                if (!res.ok) {
-                    throw new Error(`Evaluate failed with status ${res.status}`);
-                }
+                
                 const aiResponse = await res.json();
+                
+                if (!isMountedRef.current || isFinished) return;
+
                 if (typeof aiResponse?.isCorrect === 'boolean') {
                     isCorrect = aiResponse.isCorrect;
                 }
-
-                // Update local quality variable
-                if (aiResponse && aiResponse.quality) {
-                    quality = aiResponse.quality;
-                }
+                if (aiResponse?.quality) quality = aiResponse.quality;
 
                 setFeedback(aiResponse ? { ...aiResponse, explain: normalizeDisplayText(aiResponse.explain || localFeedback.explain), microLesson: normalizeDisplayText(aiResponse.microLesson || '') } : localFeedback);
             } catch (e) {
-                console.error('AI evaluate failed for speaking:', e);
-                setFeedback(localFeedback);
+                console.error('AI evaluate failed:', e);
+                if (isMountedRef.current && !isFinished) setFeedback(localFeedback);
             }
         } else {
-            // BÃ i thÆ°á»ng (MCQ, Input, Drag-drop): Feedback local ngay
             setFeedback(localFeedback);
         }
 
-        if (isSpeakingOrReading) {
+        if (isSpeakingOrReading && isMountedRef.current && !isFinished) {
             if (isCorrect) {
                 play('correct');
                 setSessionCorrect(prev => prev + 1);
@@ -258,9 +263,9 @@ export default function PracticeClient() {
             }
         }
 
-        setEvaluating(false);
+        if (isMountedRef.current) setEvaluating(false);
 
-        // Update Mastery Real-time
+        // Update Mastery
         if (progress && currentQuestion) {
             const currentSkillState = (progress.skills && progress.skills[currentQuestion.skillId]) || {
                 skillId: currentQuestion.skillId,
@@ -276,71 +281,48 @@ export default function PracticeClient() {
             };
 
             const updatedSkill = updateMastery(currentSkillState, isCorrect);
-
-            // Spaced Repetition: thÃªm cÃ¢u sai vÃ o hÃ ng Ä‘á»£i Ã´n táº­p
             let updatedProgress = {
                 ...progress,
                 skills: { ...(progress.skills || {}), [currentQuestion.skillId]: updatedSkill }
             };
 
             if (!isCorrect && currentQuestion.content?.text) {
-                updatedProgress = addToReviewQueue(
-                    updatedProgress,
-                    currentQuestion.skillId,
-                    currentQuestion.content.text,
-                    currentQuestion.answer
-                );
+                updatedProgress = addToReviewQueue(updatedProgress, currentQuestion.skillId, currentQuestion.content.text, currentQuestion.answer);
             }
 
-            // TÃ­ch lÅ©y tiá»n thÆ°á»Ÿng (chÆ°a cá»™ng vÃ o vÃ­)
             let earnedAmount = 0;
             if (isCorrect) {
                 const currentSkillLevel = progress.skills?.[skillId]?.level || 1;
                 const reward = calculateReward(currentQuestion.skillId, quality, currentSkillLevel);
                 earnedAmount = reward.amount;
-            }
 
-            // Streak Bonuses (dÃ¹ng session streak)
-            if (isCorrect) {
-                if (streak + 1 === 10) {
-                    earnedAmount += 1000;
+                // Streak Bonuses
+                if (streak + 1 === 10) earnedAmount += 1000;
+                else if (streak + 1 === 20) earnedAmount += 2000;
+                else if (streak + 1 === 30) earnedAmount += 5000;
+                
+                if (streak + 1 >= 10 && (streak + 1) % 10 === 0) {
                     play('win');
                     confetti({ particleCount: 150, spread: 100, colors: ['#FFD700'] });
-                } else if (streak + 1 === 20) {
-                    earnedAmount += 2000;
-                    play('win');
-                    confetti({ particleCount: 200, spread: 120 });
-                } else if (streak + 1 === 30) {
-                    earnedAmount += 5000;
-                    play('win');
-                    confetti({ particleCount: 300, spread: 150 });
                 }
             }
 
             setSessionEarnings(prev => prev + earnedAmount);
-
-            // Chá»‰ cáº­p nháº­t mastery + SR queue (chÆ°a cá»™ng tiá»n)
             updateLocalProgress(updatedProgress);
 
-            // Náº¿u hoÃ n thÃ nh vÃ²ng 10 â†’ Cá»˜ TIá»€N + STREAK + BADGES
             if (sessionTotal + 1 === 10) {
                 const finalEarnings = sessionEarnings + earnedAmount;
                 let finalProgress = {
                     ...updatedProgress,
                     balance: (updatedProgress.balance || 0) + finalEarnings
                 };
-
-                // Update Daily Streak
                 finalProgress = updateDailyStreak(finalProgress);
-
-                // Check Badges
                 const newBadges = checkNewBadges(finalProgress);
                 if (newBadges.length > 0) {
                     finalProgress = applyNewBadges(finalProgress, newBadges);
                     setNewBadgeIds(newBadges);
                     play('win');
                 }
-
                 updateLocalProgress(finalProgress);
             }
         }
@@ -348,6 +330,8 @@ export default function PracticeClient() {
 
     const handleExit = () => {
         play('click');
+        setEvaluating(false);
+        setFeedback(null);
         setIsFinished(true);
     };
 
@@ -366,19 +350,12 @@ export default function PracticeClient() {
     }
 
     const skillInfo = SKILL_MAP[skillId];
-    if (!skillInfo) {
-        router.push('/subjects');
-        return null;
-    }
     const skillLevel = progress.skills?.[skillId]?.level || 1;
-    // Current adaptive level for the next question
     const activeLevel = Math.min(skillLevel + Math.floor(sessionTotal / 3), getRequestedLevelCap(skillId));
     const currentMastery = progress.skills?.[skillId]?.mastery || 0;
     const masteryGain = Math.round((currentMastery - startMastery) * 100);
 
-    // Summary View
     if (isFinished) {
-        if (sessionCorrect > 0) play('complete');
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
                 <motion.div
@@ -408,7 +385,6 @@ export default function PracticeClient() {
                         </div>
                     </div>
 
-                    {/* New Badges Display */}
                     {newBadgeIds.length > 0 && (
                         <div className="mb-8">
                             <div className="text-sm font-black text-orange-400 uppercase tracking-widest mb-4">Huy hiệu mới nhận!</div>
@@ -424,7 +400,15 @@ export default function PracticeClient() {
                             Về trang môn học
                         </button>
                         <button
-                            onClick={() => setIsFinished(false)}
+                            onClick={() => {
+                                setSessionTotal(0);
+                                setSessionCorrect(0);
+                                setStreak(0);
+                                setSessionEarnings(0);
+                                setFeedback(null);
+                                setIsFinished(false);
+                                hasLoadedRef.current = false;
+                            }}
                             className="w-full py-4 rounded-2xl bg-white border-2 border-slate-200 text-slate-600 font-black text-lg hover:bg-slate-50 transition-all active:scale-95"
                         >
                             Luyện tiếp
@@ -438,10 +422,7 @@ export default function PracticeClient() {
     return (
         <div className="mx-auto max-w-7xl px-4 py-6 md:py-10 min-h-screen bg-slate-50">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-
-                {/* LEFT MAIN COLUMN - QUESTION AREA */}
                 <div className="lg:col-span-8 flex flex-col gap-6">
-                    {/* Header */}
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <BackButton onClick={handleExit} />
@@ -455,7 +436,6 @@ export default function PracticeClient() {
                                 </div>
                             </div>
                         </div>
-
                     </div>
 
                     {isLoadingQuestion ? (
@@ -478,10 +458,7 @@ export default function PracticeClient() {
                     )}
                 </div>
 
-                {/* RIGHT SIDEBAR - CONTROLS & FEEDBACK */}
                 <div className="lg:col-span-4 flex flex-col gap-6">
-
-                    {/* 1. Control Panel */}
                     <div className="bg-white rounded-3xl p-6 border-4 border-slate-100 shadow-xl">
                         <div className="flex items-center justify-between mb-6">
                             <div className="text-left w-full">
@@ -505,7 +482,6 @@ export default function PracticeClient() {
                         </button>
                     </div>
 
-                    {/* 2. Feedback Panel */}
                     <div className="flex-1 min-h-[200px] relative">
                         <AnimatePresence mode="wait">
                             {feedback ? (
@@ -563,12 +539,12 @@ export default function PracticeClient() {
                                     ) : (
                                         <div className="opacity-50">
                                             <div className="text-6xl mb-4">...</div>
-                                            <p className="font-bold text-slate-400">Dang cho cau tra loi...</p>
+                                            <p className="font-bold text-slate-400">Đang chờ câu trả lời...</p>
                                             <button
                                                 onClick={() => setShowHint(true)}
                                                 className="mt-6 text-blue-500 font-black hover:text-blue-700 underline decoration-2 underline-offset-4"
                                             >
-                                                Can goi y?
+                                                Cần gợi ý?
                                             </button>
                                         </div>
                                     )}
@@ -576,7 +552,6 @@ export default function PracticeClient() {
                             )}
                         </AnimatePresence>
                     </div>
-
                 </div>
             </div>
         </div>

@@ -1,4 +1,5 @@
 import { Question } from '../types';
+import { QuestionFactory } from '../factory';
 
 type McqSeed = {
     text: string;
@@ -64,16 +65,16 @@ function generateMoneyIdQuestion(level: number, skillId: string): Question {
     };
 
     const item = pickRandom(pools[level]);
-    return {
-        id: `fin-id-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
+    return QuestionFactory.create({
         subjectId: 'finance',
         skillId,
         type: 'mcq',
         instruction: 'Chọn đáp án đúng:',
-        content: { text: item.text, options: uniqueOptions(item.options) },
+        text: item.text,
+        options: uniqueOptions(item.options),
         answer: item.answer,
-        explanation: item.explanation,
-    };
+        explanation: item.explanation
+    });
 }
 
 function generateMoneyCompareQuestion(level: number, skillId: string): Question {
@@ -96,16 +97,16 @@ function generateMoneyCompareQuestion(level: number, skillId: string): Question 
     };
 
     const item = pickRandom(pools[level]);
-    return {
-        id: `fin-compare-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
+    return QuestionFactory.create({
         subjectId: 'finance',
         skillId,
         type: 'mcq',
         instruction: 'So sánh giá trị tiền:',
-        content: { text: item.text, options: item.options },
+        text: item.text,
+        options: item.options,
         answer: item.answer,
-        explanation: item.explanation,
-    };
+        explanation: item.explanation
+    });
 }
 
 function generateMoneySumQuestion(level: number, skillId: string): Question {
@@ -128,17 +129,16 @@ function generateMoneySumQuestion(level: number, skillId: string): Question {
     };
 
     const item = pickRandom(pools[level]);
-    return {
-        id: `fin-sum-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
+    return QuestionFactory.create({
         subjectId: 'finance',
         skillId,
         type: 'input',
         instruction: 'Nhập số tiền đúng:',
-        content: { text: item.text },
+        text: item.text,
         answer: item.answer,
         hint: 'Chỉ nhập số, ví dụ: 7000',
-        explanation: item.explanation,
-    };
+        explanation: item.explanation
+    });
 }
 
 function generateNeedWantQuestion(level: number, skillId: string): Question {
@@ -161,16 +161,16 @@ function generateNeedWantQuestion(level: number, skillId: string): Question {
     };
 
     const item = pickRandom(pools[level]);
-    return {
-        id: `fin-need-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
+    return QuestionFactory.create({
         subjectId: 'finance',
         skillId,
         type: 'mcq',
         instruction: 'Chọn đáp án hợp lý:',
-        content: { text: item.text, options: item.options },
+        text: item.text,
+        options: item.options,
         answer: item.answer,
-        explanation: item.explanation,
-    };
+        explanation: item.explanation
+    });
 }
 
 function generateShoppingQuestion(level: number, skillId: string): Question {
@@ -233,16 +233,16 @@ function generateShoppingQuestion(level: number, skillId: string): Question {
     }
 
     const item = pickRandom(pools[level]);
-    return {
-        id: `fin-shop-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
+    return QuestionFactory.create({
         subjectId: 'finance',
         skillId,
         type: 'mcq',
         instruction: 'Tính tiền khi mua sắm:',
-        content: { text: item.text, options: uniqueOptions(item.options) },
+        text: item.text,
+        options: uniqueOptions(item.options),
         answer: item.answer,
-        explanation: item.explanation,
-    };
+        explanation: item.explanation
+    });
 }
 
 function generateSavingQuestion(level: number, skillId: string): Question {
@@ -305,16 +305,16 @@ function generateSavingQuestion(level: number, skillId: string): Question {
     }
 
     const item = pickRandom(pools[level]);
-    return {
-        id: `fin-save-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
+    return QuestionFactory.create({
         subjectId: 'finance',
         skillId,
         type: 'mcq',
         instruction: 'Chọn đáp án đúng:',
-        content: { text: item.text, options: uniqueOptions(item.options) },
+        text: item.text,
+        options: uniqueOptions(item.options),
         answer: item.answer,
-        explanation: item.explanation,
-    };
+        explanation: item.explanation
+    });
 }
 function generateBudgetQuestion(level: number, skillId: string): Question {
     const budgets = level === 1
@@ -347,19 +347,16 @@ function generateBudgetQuestion(level: number, skillId: string): Question {
         attempts++;
     }
 
-    return {
-        id: `fin-budget-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
+    return QuestionFactory.create({
         subjectId: 'finance',
         skillId,
         type: 'mcq',
         instruction: 'Tính phần tiền còn lại:',
-        content: {
-            text: `Bé có ${formatMoney(item.total)}. Bé đã chi ${item.spent.map(formatMoney).join(', ')}. Bé còn lại bao nhiêu?`,
-            options: uniqueOptions.slice(0, 4),
-        },
+        text: `Bé có ${formatMoney(item.total)}. Bé đã chi ${item.spent.map(formatMoney).join(', ')}. Bé còn lại bao nhiêu?`,
+        options: uniqueOptions.slice(0, 4),
         answer: formatMoney(left),
-        explanation: `${formatMoney(item.total)} - ${item.spent.map(formatMoney).join(' - ')} = ${formatMoney(left)}.`,
-    };
+        explanation: `${formatMoney(item.total)} - ${item.spent.map(formatMoney).join(' - ')} = ${formatMoney(left)}.`
+    });
 }
 
 function generateJobValueQuestion(level: number, skillId: string): Question {
@@ -382,16 +379,16 @@ function generateJobValueQuestion(level: number, skillId: string): Question {
     };
 
     const item = pickRandom(pools[level]);
-    return {
-        id: `fin-job-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
+    return QuestionFactory.create({
         subjectId: 'finance',
         skillId,
         type: 'mcq',
         instruction: 'Hiểu về công việc và thu nhập:',
-        content: { text: item.text, options: uniqueOptions(item.options) },
+        text: item.text,
+        options: uniqueOptions(item.options),
         answer: item.answer,
-        explanation: item.explanation,
-    };
+        explanation: item.explanation
+    });
 }
 
 export function generateFinanceQuestion(skillId: string, level: number = 1): Question {

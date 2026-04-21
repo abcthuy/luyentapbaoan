@@ -169,17 +169,45 @@ export async function POST(req: NextRequest) {
                     parts = [buildTextInstruction(prompt, studentAnswer, correctAnswer, skillId)];
                 }
 
-                const result = await model.generateContent(parts);
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Gemini API timeout')), 10000)
+                );
+                
+                const result = await Promise.race([
+                    model.generateContent(parts),
+                    timeoutPromise
+                ]) as any;
+                
                 const responseText = result.response.text();
 
+                // Robust JSON extraction
                 const jsonMatch = responseText.match(/\{[\s\S]*\}/);
                 if (!jsonMatch) {
-                    throw new Error('Failed to parse Gemini response');
+                    console.error('LLM output does not contain JSON:', responseText);
+                    throw new Error('Failed to parse Gemini response: No JSON found');
                 }
 
-                const data = JSON.parse(jsonMatch[0]);
-                if (!data.quality && typeof data.isCorrect === 'boolean') {
+                let data;
+                try {
+                    data = JSON.parse(jsonMatch[0]);
+                } catch (e) {
+                    console.error('JSON parse failed for:', jsonMatch[0]);
+                    throw new Error('Failed to parse Gemini response: Invalid JSON');
+                }
+
+                // Ensure schema consistency
+                if (typeof data.isCorrect !== 'boolean') {
+                    data.isCorrect = String(data.isCorrect).toLowerCase().includes('true') 
+                        || String(data.quality).toLowerCase().includes('xuất sắc')
+                        || String(data.quality).toLowerCase().includes('giỏi');
+                }
+
+                if (!data.quality) {
                     data.quality = data.isCorrect ? 'Giỏi' : 'Yếu';
+                }
+
+                if (!data.explain) {
+                    data.explain = data.isCorrect ? 'Chính xác! Giỏi lắm!' : 'Chưa đúng rồi, bé thử lại nhé!';
                 }
 
                 return NextResponse.json(data);

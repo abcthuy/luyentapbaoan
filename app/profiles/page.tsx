@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { hasActiveAdminSession } from "@/lib/admin-session";
 import { verifyPin } from "@/lib/pin-hash";
+import { normalizeDisplayText } from "@/lib/text";
 
 const PROFILE_AVATARS = Array.from(
     new Set([
@@ -120,12 +121,12 @@ export default function ProfilesPage() {
 
         const isDuplicate = allProfiles.some((item) => item.profile.name.toLowerCase() === trimmedName.toLowerCase());
         if (isDuplicate) {
-            alert("Tên này đã tồn tại, vui lòng chọn tên khác!");
+            alert(normalizeDisplayText("Tên này đã tồn tại, vui lòng chọn tên khác!"));
             return;
         }
 
         if (createPin && createPin.length < 4) {
-            alert("PIN của hồ sơ phải có ít nhất 4 số!");
+            alert(normalizeDisplayText("PIN của hồ sơ phải có ít nhất 4 số!"));
             return;
         }
 
@@ -166,7 +167,7 @@ export default function ProfilesPage() {
 
         const pinMatch = await verifyPin(inputPin, profilePin);
         if (!pinMatch) {
-            setUnlockError("PIN của hồ sơ không đúng, thử lại nhé!");
+            setUnlockError(normalizeDisplayText("PIN của hồ sơ không đúng, thử lại nhé!"));
             setUnlockPin("");
             return;
         }
@@ -193,7 +194,7 @@ export default function ProfilesPage() {
     if (!isInitialized) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-blue-50">
-                <div className="animate-spin text-blue-600">Đang tải dữ liệu...</div>
+                <div className="animate-spin text-blue-600">{normalizeDisplayText("Đang tải dữ liệu...")}</div>
             </div>
         );
     }
@@ -206,7 +207,7 @@ export default function ProfilesPage() {
                 <Link href="/admin">
                     <button className="group flex items-center gap-2 rounded-2xl border border-white/50 bg-white/80 px-4 py-2 text-slate-500 shadow-sm backdrop-blur-md transition-all hover:scale-105 hover:bg-white hover:text-blue-600">
                         <Settings size={20} />
-                        <span className="text-sm font-bold">{storage?.adminAccount?.pin ? "Admin" : "Thiết lập admin"}</span>
+                        <span className="text-sm font-bold">{storage?.adminAccount?.pin ? normalizeDisplayText("Admin") : normalizeDisplayText("Thiết lập admin")}</span>
                     </button>
                 </Link>
             </div>
@@ -219,7 +220,7 @@ export default function ProfilesPage() {
                     <div className="rounded-lg bg-emerald-50 p-1 text-emerald-600 transition-colors group-hover:bg-emerald-100">
                         <User size={16} />
                     </div>
-                    <span className="text-sm font-bold">Phụ huynh</span>
+                    <span className="text-sm font-bold">{normalizeDisplayText("Phụ huynh")}</span>
                 </button>
                 <button
                     onClick={handleOpenAddModal}
@@ -228,7 +229,7 @@ export default function ProfilesPage() {
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
                         <Plus size={20} strokeWidth={3} />
                     </div>
-                    <span className="text-sm font-black text-slate-700 group-hover:text-slate-900">Thêm hồ sơ</span>
+                    <span className="text-sm font-black text-slate-700 group-hover:text-slate-900">{normalizeDisplayText("Thêm hồ sơ")}</span>
                 </button>
             </div>
 
@@ -238,8 +239,8 @@ export default function ProfilesPage() {
                         <div className="mb-2 inline-block rounded-full bg-white p-4 shadow-xl">
                             <User size={40} className="text-blue-600" />
                         </div>
-                        <h1 className="text-3xl font-black tracking-tight text-slate-900 md:text-5xl">Ai đang học vậy?</h1>
-                        <p className="font-medium text-slate-500">Chọn hồ sơ để bắt đầu nhé!</p>
+                        <h1 className="text-3xl font-black tracking-tight text-slate-900 md:text-5xl">{normalizeDisplayText("Ai đang học vậy?")}</h1>
+                        <p className="font-medium text-slate-500">{normalizeDisplayText("Chọn hồ sơ để bắt đầu nhé!")}</p>
                     </motion.div>
 
                     <div className="grid w-full grid-cols-2 justify-items-center gap-6 md:grid-cols-3 lg:grid-cols-4">
@@ -304,8 +305,8 @@ export default function ProfilesPage() {
                                 <Trophy size={20} fill="currentColor" />
                             </div>
                             <div>
-                            <h2 className="leading-tight text-slate-900 text-lg font-black">Bảng vàng</h2>
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Top 5 xuất sắc</p>
+                            <h2 className="leading-tight text-slate-900 text-lg font-black">{normalizeDisplayText("Bảng vàng")}</h2>
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{normalizeDisplayText("Top 5 xuất sắc")}</p>
                             </div>
                         </div>
 
@@ -336,7 +337,7 @@ export default function ProfilesPage() {
                                         <div className="min-w-0 flex-1">
                                             <h4 className="truncate text-xs font-bold text-slate-900">{user.name}</h4>
                                             <p className="truncate text-[9px] font-bold uppercase tracking-wider text-slate-500">
-                                                {user.tier || "Tập sự"}
+                                                {user.tier || normalizeDisplayText("Tập sự")}
                                             </p>
                                         </div>
                                         <div className="text-right leading-tight">
@@ -366,15 +367,15 @@ export default function ProfilesPage() {
                             exit={{ scale: 0.9, opacity: 0, y: 20 }}
                             className="relative w-full max-w-md space-y-4 rounded-[32px] bg-white p-8 shadow-2xl"
                         >
-                            <h2 className="text-center text-2xl font-black text-slate-900">Tạo hồ sơ mới</h2>
-                            <p className="-mt-2 mb-4 text-center text-sm text-slate-500">Bạn đang quản lý với vai trò admin.</p>
+                             <h2 className="text-center text-2xl font-black text-slate-900">{normalizeDisplayText("Tạo hồ sơ mới")}</h2>
+                            <p className="-mt-2 mb-4 text-center text-sm text-slate-500">{normalizeDisplayText("Bạn đang quản lý với vai trò admin.")}</p>
 
                             <form onSubmit={handleAddProfile} className="space-y-4">
                                 <div>
-                                    <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-400">Tên học sinh</label>
+                                    <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-400">{normalizeDisplayText("Tên học sinh")}</label>
                                     <input
                                         type="text"
-                                        placeholder="Tên của bé..."
+                                        placeholder={normalizeDisplayText("Tên của bé...")}
                                         value={newProfileName}
                                         onChange={(e) => setNewProfileName(e.target.value)}
                                         className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-900 transition-all focus:border-blue-500 focus:outline-none"
@@ -382,18 +383,18 @@ export default function ProfilesPage() {
                                 </div>
 
                                 <div>
-                                    <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-400">Chọn avatar</label>
+                                    <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-400">{normalizeDisplayText("Chọn avatar")}</label>
                                     <AvatarGrid selected={createAvatar} onSelect={setCreateAvatar} />
                                 </div>
 
                                 <div>
-                                    <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-400">PIN hồ sơ (tùy chọn)</label>
+                                    <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-400">{normalizeDisplayText("PIN hồ sơ (tùy chọn)")}</label>
                                     <input
                                         type="text"
                                         inputMode="numeric"
                                         pattern="[0-9]*"
                                         maxLength={4}
-                                        placeholder="Nhập 4 số để bảo vệ hồ sơ..."
+                                        placeholder={normalizeDisplayText("Nhập 4 số để bảo vệ hồ sơ...")}
                                         value={createPin}
                                         onChange={(e) => setCreatePin(e.target.value.replace(/\D/g, "").slice(0, 4))}
                                         className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 px-4 py-3 text-center font-bold tracking-widest text-slate-900 transition-all focus:border-blue-500 focus:outline-none"
@@ -406,14 +407,14 @@ export default function ProfilesPage() {
                                         onClick={() => setShowAddModal(false)}
                                         className="flex-1 rounded-xl py-3 font-bold text-slate-500 transition-colors hover:bg-slate-100"
                                     >
-                                        Hủy
+                                        {normalizeDisplayText("Hủy")}
                                     </button>
                                     <button
                                         type="submit"
                                         disabled={!newProfileName.trim()}
                                         className="flex-1 rounded-xl bg-blue-600 py-3 font-black text-white shadow-lg shadow-blue-200 transition-all hover:bg-blue-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                                     >
-                                        Tạo ngay
+                                        {normalizeDisplayText("Tạo ngay")}
                                     </button>
                                 </div>
                             </form>
@@ -441,8 +442,8 @@ export default function ProfilesPage() {
                             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-blue-600">
                                 <Lock size={32} />
                             </div>
-                            <h2 className="mb-2 text-center text-xl font-black text-slate-900">Nhập PIN hồ sơ</h2>
-                            <p className="mb-6 text-center text-sm text-slate-500">Hồ sơ này được bảo vệ.</p>
+                             <h2 className="mb-2 text-center text-xl font-black text-slate-900">{normalizeDisplayText("Nhập PIN hồ sơ")}</h2>
+                            <p className="mb-6 text-center text-sm text-slate-500">{normalizeDisplayText("Hồ sơ này được bảo vệ.")}</p>
 
                             <form onSubmit={handleUnlock} className="space-y-4">
                                 <input
@@ -466,10 +467,10 @@ export default function ProfilesPage() {
                                 {unlockError && <p className="animate-pulse text-center text-xs font-bold text-rose-500">{unlockError}</p>}
                                 <button
                                     type="submit"
-                                    className="mt-2 w-full rounded-2xl bg-slate-900 py-4 font-black text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95"
-                                >
-                                    Mở khóa
-                                </button>
+                                     className="mt-2 w-full rounded-2xl bg-slate-900 py-4 font-black text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95"
+                                 >
+                                     {normalizeDisplayText("Mở khóa")}
+                                 </button>
                             </form>
                         </motion.div>
                     </div>
@@ -489,18 +490,18 @@ export default function ProfilesPage() {
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+                            className="relative w-full max-w-sm rounded-[32px] bg-white p-6 shadow-xl"
                         >
-                            <h3 className="mb-4 text-lg font-bold text-slate-900">Xóa hồ sơ này?</h3>
+                            <h3 className="mb-4 text-lg font-bold text-slate-900">{normalizeDisplayText("Xóa hồ sơ này?")}</h3>
                             <p className="mb-4 text-sm text-slate-500">
-                                Bạn đang đăng nhập với vai trò admin. Hành động này không thể hoàn tác.
+                                {normalizeDisplayText("Bạn đang đăng nhập với vai trò admin. Hành động này không thể hoàn tác.")}
                             </p>
                             <div className="flex gap-2">
-                                <button onClick={() => setDeletingProfile(null)} className="flex-1 rounded-lg bg-slate-100 py-2 font-bold">
-                                    Hủy
+                                <button onClick={() => setDeletingProfile(null)} className="flex-1 rounded-[32px] bg-slate-100 py-2 font-bold">
+                                    {normalizeDisplayText("Hủy")}
                                 </button>
-                                <button onClick={() => void confirmDelete()} className="flex-1 rounded-lg bg-rose-600 py-2 font-bold text-white">
-                                    Xóa vĩnh viễn
+                                <button onClick={() => void confirmDelete()} className="flex-1 rounded-[32px] bg-rose-600 py-2 font-bold text-white">
+                                    {normalizeDisplayText("Xóa vĩnh viễn")}
                                 </button>
                             </div>
                         </motion.div>

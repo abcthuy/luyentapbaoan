@@ -1,4 +1,6 @@
 import { Question } from '../types';
+import { QuestionFactory } from '../factory';
+import { getLocalizedString } from '../i18n';
 
 type McqSeed = {
     text: string;
@@ -173,6 +175,50 @@ const EXTRA_WRITING_SEEDS: Record<string, WritingSeed[]> = {
 };
 
 const ENGLISH_CORE_SEEDS: Record<string, CoreSeed[]> = {
+    'eng-colors': [
+        { instruction: 'Choose the correct color:', text: 'What color is the sky?', options: ['Blue', 'Red', 'Green', 'Yellow'], answer: 'Blue' },
+        { instruction: 'Choose the correct color:', text: 'What color is an apple?', options: ['Red', 'Blue', 'Black', 'Purple'], answer: 'Red' },
+        { instruction: 'Choose the correct color:', text: 'What color is grass?', options: ['Green', 'Orange', 'Pink', 'White'], answer: 'Green' },
+    ],
+    'eng-animals': [
+        { instruction: 'Choose the correct animal:', text: 'Which animal says "Meow"?', options: ['Cat', 'Dog', 'Pig', 'Duck'], answer: 'Cat' },
+        { instruction: 'Choose the correct animal:', text: 'Which animal is very big and has a trunk?', options: ['Elephant', 'Mouse', 'Bird', 'Fish'], answer: 'Elephant' },
+        { instruction: 'Choose the correct animal:', text: 'Which animal can swim?', options: ['Fish', 'Lion', 'Tiger', 'Rabbit'], answer: 'Fish' },
+    ],
+    'eng-family': [
+        { instruction: 'Choose the correct word:', text: 'Your father\'s wife is your ...', options: ['Mother', 'Sister', 'Brother', 'Grandpa'], answer: 'Mother' },
+        { instruction: 'Choose the correct word:', text: 'Your mother\'s son is your ...', options: ['Brother', 'Sister', 'Dad', 'Aunt'], answer: 'Brother' },
+        { instruction: 'Choose the correct word:', text: 'Your dad\'s dad is your ...', options: ['Grandpa', 'Grandma', 'Uncle', 'Cousin'], answer: 'Grandpa' },
+    ],
+    'eng-school': [
+        { instruction: 'Choose the correct item:', text: 'You use this to write:', options: ['Pencil', 'Ruler', 'Bag', 'Chair'], answer: 'Pencil' },
+        { instruction: 'Choose the correct item:', text: 'You put your books in a ...', options: ['Bag', 'Desk', 'Pencil case', 'Window'], answer: 'Bag' },
+        { instruction: 'Choose the correct item:', text: 'The teacher writes on the ...', options: ['Board', 'Floor', 'Door', 'Wall'], answer: 'Board' },
+    ],
+    'eng-phonics-a': [
+        { instruction: 'Which word starts with the sound /a/?', text: 'Choose the word:', options: ['Apple', 'Ball', 'Cat', 'Dog'], answer: 'Apple' },
+        { instruction: 'Which word has the sound /a/?', text: 'Choose the word:', options: ['Ant', 'Bed', 'Cup', 'Desk'], answer: 'Ant' },
+    ],
+    'eng-phonics-b': [
+        { instruction: 'Which word starts with the sound /b/?', text: 'Choose the word:', options: ['Ball', 'Apple', 'Cat', 'Egg'], answer: 'Ball' },
+        { instruction: 'Which word has the sound /b/?', text: 'Choose the word:', options: ['Boy', 'Ant', 'Car', 'Dog'], answer: 'Boy' },
+    ],
+    'eng-phonics-c': [
+        { instruction: 'Which word starts with the sound /c/?', text: 'Choose the word:', options: ['Cat', 'Apple', 'Boy', 'Dog'], answer: 'Cat' },
+        { instruction: 'Which word has the sound /c/?', text: 'Choose the word:', options: ['Cup', 'Ball', 'Ant', 'Egg'], answer: 'Cup' },
+    ],
+    'eng-hello': [
+        { instruction: 'Choose the correct greeting:', text: 'When you meet someone in the morning, you say:', options: ['Good morning', 'Good night', 'Goodbye', 'Thank you'], answer: 'Good morning' },
+        { instruction: 'Choose the correct answer:', text: 'How are you?', options: ['I am fine, thank you', 'I am eight', 'My name is Nam', 'I like red'], answer: 'I am fine, thank you' },
+    ],
+    'eng-qa-name': [
+        { instruction: 'Choose the correct answer:', text: 'What is your name?', options: ['My name is Ben', 'I am happy', 'I am seven', 'This is a pen'], answer: 'My name is Ben' },
+        { instruction: 'Choose the correct question:', text: '... - My name is Mai.', options: ['What is your name?', 'How are you?', 'How old are you?', 'What is this?'], answer: 'What is your name?' },
+    ],
+    'eng-qa-this-that': [
+        { instruction: 'Choose the correct answer:', text: 'What is this? (It is a pen)', options: ['It is a pen', 'It is a cat', 'I am a pen', 'Yes, it is'], answer: 'It is a pen' },
+        { instruction: 'Choose the correct word:', text: '... is a big tree over there.', options: ['That', 'This', 'These', 'I'], answer: 'That' },
+    ],
     'eng-clothes': [
         { instruction: 'Choose the correct answer:', text: 'What do you wear on your feet?', options: ['Hat', 'Shoes', 'Shirt', 'Cap'], answer: 'Shoes' },
         { instruction: 'Choose the correct answer:', text: 'A dress, a skirt, and a T-shirt are all ...', options: ['food', 'clothes', 'rooms', 'animals'], answer: 'clothes' },
@@ -519,86 +565,71 @@ function getWritingSeeds(skillId: string, level: number): WritingSeed[] {
 
 export function generateEnglishListeningQuestion(skillId: string, level: number = 1): Question {
     const item = pickRandom(getListeningSeeds(skillId, getBalancedEnglishLevel(skillId, level)));
-    return {
-        id: `eng-list-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
+    return QuestionFactory.create({
         subjectId: 'english',
         skillId,
         type: 'listening',
         instruction: 'Nghe kỹ và chọn đáp án đúng nhất:',
-        content: {
-            text: item.text,
-            options: item.options,
-            audio: item.text,
-        },
-        answer: item.answer,
-    };
+        text: item.text,
+        options: item.options,
+        audio: item.text,
+        answer: item.answer
+    });
 }
 
 export function generateEnglishSpeakingQuestion(skillId: string, level: number = 1): Question {
     const item = pickRandom(getReadAloudSeeds(skillId, getBalancedEnglishLevel(skillId, level)));
-    return {
-        id: `eng-speak-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
+    return QuestionFactory.create({
         subjectId: 'english',
         skillId,
-        type: 'reading',
+        type: 'reading', // Note: Speaking is sometimes handled as reading type in this codebase
         instruction: item.instruction,
-        content: {
-            text: item.text,
-        },
-        answer: 'Đã đọc',
-    };
+        text: item.text,
+        answer: 'Đã đọc'
+    });
 }
 
 export function generateEnglishReadingQuestion(skillId: string, level: number = 1): Question {
     const item = pickRandom(getReadingSeeds(skillId, getBalancedEnglishLevel(skillId, level)));
-    return {
-        id: `eng-read-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
+    return QuestionFactory.create({
         subjectId: 'english',
         skillId,
         type: 'mcq',
         instruction: 'Đọc và trả lời câu hỏi:',
-        content: {
-            text: item.text,
-            options: item.options,
-        },
+        text: item.text,
+        options: item.options,
         answer: item.answer,
-        explanation: 'Đáp án nằm trong đoạn đọc.',
-    };
+        explanation: 'Đáp án nằm trong đoạn đọc.'
+    });
 }
 
 export function generateEnglishWritingQuestion(skillId: string, level: number = 1): Question {
     const item = pickRandom(getWritingSeeds(skillId, getBalancedEnglishLevel(skillId, level)));
-    return {
-        id: `eng-write-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
+    return QuestionFactory.create({
         subjectId: 'english',
         skillId,
         type: 'input',
         instruction: 'Viết câu trả lời ngắn:',
-        content: {
-            text: item.text,
-        },
+        text: item.text,
         answer: item.answer,
-        hint: item.hint,
-    };
+        hint: item.hint
+    });
 }
 
 export function generateEnglishCoreQuestion(skillId: string, level: number = 1): Question {
     const seeds = ENGLISH_CORE_SEEDS[skillId] || ENGLISH_CORE_SEEDS['eng-clothes'];
     const item = pickRandom(seeds);
 
-    return {
-        id: `eng-core-${Date.now() + '-' + Math.random().toString(36).substring(2, 6)}`,
+    return QuestionFactory.create({
         subjectId: 'english',
         skillId,
         type: 'mcq',
         instruction: item.instruction,
-        content: {
-            text: item.text,
-            options: item.options,
-        },
+        text: item.text,
+        options: item.options,
         answer: item.answer,
         hint: item.hint,
-        explanation: 'Choose the word or sentence that matches the grammar point or topic.',
-    };
+        explanation: 'Choose the word or sentence that matches the grammar point or topic.'
+    });
 }
 

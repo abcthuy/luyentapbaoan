@@ -48,7 +48,7 @@ export function validateImportedQuestionBySubject(params: {
 
     if (subjectId === 'english') {
         if (VIETNAMESE_DIACRITICS_REGEX.test(normalizedText) || VIETNAMESE_DIACRITICS_REGEX.test(normalizedAnswer) || VIETNAMESE_DIACRITICS_REGEX.test(joinedOptions)) {
-            issues.push({ severity: 'error', message: `Skill ${skillCode || 'english'}: noi dung tieng Anh khong nen chua dau tieng Viet trong text/dap an/lua chon.` });
+            issues.push({ severity: 'warning', message: `Skill ${skillCode || 'english'}: noi dung tieng Anh khong nen chua dau tieng Viet trong text/dap an/lua chon.` });
         }
         if ((questionType === 'reading' || questionType === 'listening') && normalizedText.length < 8) {
             issues.push({ severity: 'warning', message: `Skill ${skillCode || 'english'}: noi dung doc/nghe qua ngan.` });
@@ -63,7 +63,7 @@ export function validateImportedQuestionBySubject(params: {
             issues.push({ severity: 'warning', message: `Skill ${skillCode || 'vietnamese'}: noi dung tieng Viet qua ngan.` });
         }
         if ((questionType === 'mcq' || questionType === 'reading') && isMostlyNumericChoices(options)) {
-            issues.push({ severity: 'error', message: `Skill ${skillCode || 'vietnamese'}: lua chon hien tai giong bai so hoc hon bai tieng Viet.` });
+            issues.push({ severity: 'warning', message: `Skill ${skillCode || 'vietnamese'}: lua chon hien tai giong bai so hoc hon bai tieng Viet.` });
         }
     }
 

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -101,22 +101,22 @@ export default function SubjectsPage() {
         if (!activeProfile) return;
 
         if (!newPin.trim()) {
-            setPinMessage({ type: 'error', text: 'Vui lòng nhập mã PIN mới' });
+            setPinMessage({ type: 'error', text: normalizeDisplayText('Vui lòng nhập mã PIN mới') });
             return;
         }
 
         if (newPin.length < 4) {
-            setPinMessage({ type: 'error', text: 'Mã PIN phải có ít nhất 4 số' });
+            setPinMessage({ type: 'error', text: normalizeDisplayText('Mã PIN phải có ít nhất 4 số') });
             return;
         }
 
         if (newPin !== confirmPin) {
-            setPinMessage({ type: 'error', text: 'Mã PIN nhập lại không khớp' });
+            setPinMessage({ type: 'error', text: normalizeDisplayText('Mã PIN nhập lại không khớp') });
             return;
         }
 
         updateProfilePin(activeProfile.id, newPin);
-        setPinMessage({ type: 'success', text: 'Đổi mã PIN thành công!' });
+        setPinMessage({ type: 'success', text: normalizeDisplayText('Đổi mã PIN thành công!') });
         setNewPin('');
         setConfirmPin('');
 
@@ -127,9 +127,9 @@ export default function SubjectsPage() {
 
     const handleRemovePin = () => {
         if (!activeProfile) return;
-        if (confirm('Bạn có chắc muốn xóa mã PIN không? Hồ sơ sẽ không còn được bảo vệ.')) {
+        if (confirm(normalizeDisplayText('Bạn có chắc muốn xóa mã PIN không? Hồ sơ sẽ không còn được bảo vệ.'))) {
             updateProfilePin(activeProfile.id, undefined);
-            setPinMessage({ type: 'success', text: 'Đã xóa mã PIN!' });
+            setPinMessage({ type: 'success', text: normalizeDisplayText('Đã xóa mã PIN!') });
             setTimeout(() => setPinMessage(null), 1500);
         }
     };
@@ -186,7 +186,7 @@ export default function SubjectsPage() {
                             <span className="font-black text-slate-800 text-lg leading-tight tracking-tight">{activeProfile?.name}</span>
                             <span className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">
                                 <GraduationCap size={12} />
-                                Học sinh lớp {currentGrade}
+                                {normalizeDisplayText('Học sinh lớp')} {currentGrade}
                             </span>
                         </div>
                     </div>
@@ -198,7 +198,7 @@ export default function SubjectsPage() {
                         type="button"
                         onClick={() => setShowSettings(true)}
                         className="p-3 rounded-2xl bg-white/70 backdrop-blur-xl border border-white/50 text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-lg active:scale-95"
-                        title="Cài đặt cá nhân"
+                        title={normalizeDisplayText('Cài đặt cá nhân')}
                     >
                         <Settings size={22} />
                     </button>
@@ -211,10 +211,10 @@ export default function SubjectsPage() {
                     <div className="flex-1">
                         <div className="text-left mb-8 space-y-2 relative z-10">
                             <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter drop-shadow-sm">
-                                Chọn môn học
+                                {normalizeDisplayText('Chọn môn học')}
                             </h1>
                             <p className="text-lg text-slate-500 font-medium leading-relaxed">
-                                Hôm nay <span className="text-blue-600 font-bold">{activeProfile?.name}</span> muốn khám phá điều gì?
+                                {normalizeDisplayText('Hôm nay')} <span className="text-blue-600 font-bold">{activeProfile?.name}</span> {normalizeDisplayText('muốn khám phá điều gì?')}
                             </p>
                         </div>
 
@@ -262,7 +262,7 @@ export default function SubjectsPage() {
                                                     )}
                                                 </div>
                                                 <div className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/10 text-xs font-bold uppercase tracking-wider shadow-sm">
-                                                    Lớp {currentGrade}
+                                                    {normalizeDisplayText('Học sinh lớp')} {currentGrade}
                                                 </div>
                                             </div>
 
@@ -281,7 +281,7 @@ export default function SubjectsPage() {
                                             {!isLocked && (
                                                 <div className="mt-8 pt-6 border-t border-white/10 space-y-4">
                                                     <div className="flex justify-between items-end text-sm font-bold text-white/90">
-                                                        <span>Tiến độ</span>
+                                                        <span>{normalizeDisplayText('Tiến độ')}</span>
                                                         <span>{Math.round(stats.percent)}%</span>
                                                     </div>
                                                     <div className="w-full h-3 bg-black/20 rounded-full overflow-hidden p-[2px]">
@@ -296,7 +296,7 @@ export default function SubjectsPage() {
                                                     </div>
 
                                                     <div className="flex items-center justify-between gap-2 pt-2 group-hover:translate-x-1 transition-transform">
-                                                        <span className="text-xs font-bold uppercase tracking-widest opacity-80">Bắt đầu học</span>
+                                                        <span className="text-xs font-bold uppercase tracking-widest opacity-80">{normalizeDisplayText('Bắt đầu học')}</span>
                                                         <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center group-hover:bg-white group-hover:text-current transition-colors">
                                                             <ArrowRight size={20} className="transform -rotate-45 group-hover:rotate-0 transition-transform duration-300" />
                                                         </div>
@@ -309,7 +309,7 @@ export default function SubjectsPage() {
                                                     {/* Unlock Progress Bar */}
                                                     <div>
                                                         <div className="flex justify-between text-xs font-bold text-white/80 mb-2">
-                                                            <span>Tiến độ mở khóa</span>
+                                                            <span>{normalizeDisplayText('Tiến độ mở khóa')}</span>
                                                             <span>{unlockInfo.overallPercent}%</span>
                                                         </div>
                                                         <div className="h-3 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm">
@@ -347,7 +347,7 @@ export default function SubjectsPage() {
                             <>
                                 <div className="bg-white/60 backdrop-blur-xl rounded-[32px] p-6 border border-white/50 shadow-lg sticky top-24">
                                     <h3 className="text-xl font-black text-slate-800 mb-4 flex items-center gap-2">
-                                        🔥 Thành tích
+                                                        {normalizeDisplayText('🔥 Thành tích')}
                                     </h3>
                                     <div className="space-y-6">
                                         <StreakBanner progress={progress} />
@@ -383,20 +383,20 @@ export default function SubjectsPage() {
                                 <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 mb-6 shadow-lg shadow-blue-100 ring-4 ring-blue-50">
                                     <Settings size={40} />
                                 </div>
-                                <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Cài đặt cá nhân</h2>
+                                <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">{normalizeDisplayText('Cài đặt cá nhân')}</h2>
                                 <p className="text-slate-500 mb-8 text-center text-base font-medium max-w-xs mx-auto">
-                                    Điều chỉnh trải nghiệm học tập cho <b>{activeProfile?.name}</b>.
+                                    {normalizeDisplayText('Điều chỉnh trải nghiệm học tập cho')} <b>{activeProfile?.name}</b>.
                                 </p>
 
                                 <div className="space-y-4 w-full">
                                     {/* Grade Selection */}
-                                    <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100 flex items-center justify-between group hover:border-blue-200 transition-colors">
+                                    <div className="bg-slate-50 p-5 rounded-[32px] border border-slate-100 flex items-center justify-between group hover:border-blue-200 transition-colors">
                                         <div>
                                             <h4 className="font-bold text-slate-900 flex items-center gap-2">
                                                 <GraduationCap size={18} className="text-blue-500" />
-                                                Lớp học
+                                                {normalizeDisplayText('Lớp học')}
                                             </h4>
-                                            <p className="text-xs font-medium text-slate-400 mt-1">Chương trình học</p>
+                                            <p className="text-xs font-medium text-slate-400 mt-1">{normalizeDisplayText('Chương trình học')}</p>
                                         </div>
                                         <div className="flex gap-2">
                                             {SUPPORTED_GRADES.map(g => (
@@ -417,13 +417,13 @@ export default function SubjectsPage() {
                                     </div>
 
                                     {/* Visibility Toggle */}
-                                    <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100 flex items-center justify-between group hover:border-blue-200 transition-colors">
+                                    <div className="bg-slate-50 p-5 rounded-[32px] border border-slate-100 flex items-center justify-between group hover:border-blue-200 transition-colors">
                                         <div>
                                             <h4 className="font-bold text-slate-900 flex items-center gap-2">
                                                 <Globe2 size={18} className="text-emerald-500" />
-                                                Công khai
+                                                {normalizeDisplayText('Công khai')}
                                             </h4>
-                                            <p className="text-xs font-medium text-slate-400 mt-1">Hiện trên BXH</p>
+                                            <p className="text-xs font-medium text-slate-400 mt-1">{normalizeDisplayText('Hiện trên BXH')}</p>
                                         </div>
                                         <button
                                             onClick={() => {
@@ -438,14 +438,14 @@ export default function SubjectsPage() {
                                     </div>
 
                                     {/* Collapsible PIN Section */}
-                                    <div className="bg-slate-50 rounded-3xl border border-slate-100 overflow-hidden transition-all duration-300">
+                                    <div className="bg-slate-50 rounded-[32px] border border-slate-100 overflow-hidden transition-all duration-300">
                                         <button
                                             onClick={() => setShowPinChange(!showPinChange)}
                                             className={`w-full flex items-center justify-between p-5 text-slate-900 font-bold hover:bg-slate-100 transition-colors ${showPinChange ? 'bg-slate-100' : ''}`}
                                         >
                                             <div className="flex items-center gap-2">
                                                 <KeyRound size={18} className="text-slate-500" />
-                                                <span>Bảo mật (PIN)</span>
+                                                <span>{normalizeDisplayText('Bảo mật (PIN)')}</span>
                                             </div>
                                             {showPinChange ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
                                         </button>
@@ -462,7 +462,7 @@ export default function SubjectsPage() {
                                                         <form onSubmit={handleChangePin} className="space-y-4">
                                                             <div className="grid grid-cols-2 gap-4">
                                                                 <div>
-                                                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1 mb-1 block">Mã mới</label>
+                                                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1 mb-1 block">{normalizeDisplayText('Mã mới')}</label>
                                                                     <input
                                                                         type="password"
                                                                         inputMode="numeric"
@@ -475,7 +475,7 @@ export default function SubjectsPage() {
                                                                     />
                                                                 </div>
                                                                 <div>
-                                                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1 mb-1 block">Xác nhận</label>
+                                                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-1 mb-1 block">{normalizeDisplayText('Xác nhận')}</label>
                                                                     <input
                                                                         type="password"
                                                                         inputMode="numeric"
@@ -500,7 +500,7 @@ export default function SubjectsPage() {
                                                                 type="submit"
                                                                 className="w-full bg-slate-900 text-white py-3 rounded-xl font-black shadow-lg hover:bg-blue-600 transition-all active:scale-95 text-sm"
                                                             >
-                                                                Cập nhật PIN
+                                                                {normalizeDisplayText('Cập nhật PIN')}
                                                             </button>
                                                             {activeProfile?.pin && (
                                                                 <button
@@ -508,7 +508,7 @@ export default function SubjectsPage() {
                                                                     onClick={handleRemovePin}
                                                                     className="w-full bg-white text-rose-600 py-3 rounded-xl font-black border-2 border-rose-100 hover:bg-rose-50 transition-all active:scale-95 text-sm"
                                                                 >
-                                                                    Xóa PIN hiện tại
+                                                                    {normalizeDisplayText('Xóa PIN hiện tại')}
                                                                 </button>
                                                             )}
 
@@ -526,7 +526,7 @@ export default function SubjectsPage() {
                                     onClick={() => setShowSettings(false)}
                                     className="w-full text-slate-400 font-bold py-4 hover:text-slate-600 transition-colors mt-4 text-sm uppercase tracking-widest"
                                 >
-                                    Đóng cài đặt
+                                    {normalizeDisplayText('Đóng cài đặt')}
                                 </button>
                             </div>
                         </motion.div>
@@ -536,4 +536,3 @@ export default function SubjectsPage() {
         </div >
     );
 }
-

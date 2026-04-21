@@ -39,7 +39,7 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
 
     return (
         <div className="w-full max-w-4xl mx-auto flex flex-col gap-8">
-            <div className="bg-white rounded-[40px] shadow-xl border-4 border-slate-100 overflow-hidden relative">
+            <div className="bg-white rounded-[32px] shadow-xl border-4 border-slate-100 overflow-hidden relative">
                 <div className="p-6 md:p-8 pb-8">
                     {mode === 'reading' && (
                         <div className="space-y-6">
@@ -51,7 +51,7 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
 
                     {mode === 'speaking' && (
                         <div className="space-y-6">
-                            <div className="p-8 bg-amber-50 rounded-3xl border-2 border-amber-100 text-center">
+                            <div className="p-8 bg-amber-50 rounded-[32px] border-2 border-amber-100 text-center">
                                 <p className="text-2xl md:text-3xl font-black text-amber-800 leading-tight whitespace-pre-line">
                                     {safeTopic}
                                 </p>
@@ -63,7 +63,7 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
                                     className="flex items-center gap-2 text-amber-600 font-bold hover:text-amber-700 transition-colors"
                                 >
                                     <Lightbulb size={20} />
-                                    {showHint ? 'Ẩn gợi ý' : 'Xem gợi ý dàn ý'}
+                                    {showHint ? normalizeDisplayText('Ẩn gợi ý') : normalizeDisplayText('Xem gợi ý dàn ý')}
                                 </button>
 
                                 <AnimatePresence>
@@ -74,7 +74,7 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
                                             exit={{ height: 0, opacity: 0 }}
                                             className="overflow-hidden w-full max-w-lg"
                                         >
-                                            <div className="mt-4 p-6 bg-white rounded-2xl border-2 border-slate-100 text-slate-600 space-y-2 whitespace-pre-line text-left leading-relaxed">
+                                            <div className="mt-4 p-6 bg-white rounded-[32px] border-2 border-slate-100 text-slate-600 space-y-2 whitespace-pre-line text-left leading-relaxed">
                                                 {safeHint ? (
                                                     <p>{safeHint}</p>
                                                 ) : (
@@ -106,7 +106,7 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
 
                 <div className="bg-slate-50 p-8 border-t-2 border-slate-100 flex flex-col items-center gap-6">
                     {recorder.startError && (
-                        <div className="w-full max-w-2xl rounded-2xl border-2 border-rose-200 bg-rose-50 px-5 py-4 text-sm font-bold text-rose-700 text-center">
+                        <div className="w-full max-w-2xl rounded-[32px] border-2 border-rose-200 bg-rose-50 px-5 py-4 text-sm font-bold text-rose-700 text-center">
                             {safeStartError}
                         </div>
                     )}
@@ -130,12 +130,12 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
                                 {recorder.isRecording ? <Square size={32} fill="currentColor" /> : <Mic size={40} />}
                             </motion.button>
                             <span className={`font-black uppercase tracking-widest text-sm ${recorder.isRecording ? 'text-rose-600 animate-pulse' : 'text-slate-400'}`}>
-                                {recorder.isRecording ? `Đang ghi âm (${recorder.duration}s)...` : 'Nhấn để bắt đầu nói'}
+                                {recorder.isRecording ? `${normalizeDisplayText('Đang ghi âm')} (${recorder.duration}s)...` : normalizeDisplayText('Nhấn để bắt đầu nói')}
                             </span>
                         </div>
                     ) : (
                         <div className="flex flex-col items-center gap-6 w-full max-w-md">
-                            <div className="w-full bg-white rounded-2xl p-4 border-2 border-slate-100 flex items-center justify-between">
+                            <div className="w-full bg-white rounded-[32px] p-4 border-2 border-slate-100 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
                                     <button
                                         onClick={recorder.playRecording}
@@ -144,7 +144,7 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
                                         {recorder.isPlayingBack ? <Volume2 className="animate-pulse" size={20} /> : <Play fill="currentColor" size={20} />}
                                     </button>
                                     <div>
-                                        <div className="font-black text-slate-800 text-sm">Bản ghi âm của bé</div>
+                                        <div className="font-black text-slate-800 text-sm">{normalizeDisplayText('Bản ghi âm của bé')}</div>
                                         <div className="text-xs text-slate-400 font-bold">{recorder.duration} giây</div>
                                     </div>
                                 </div>
@@ -166,17 +166,17 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
                                 whileTap={{ scale: 0.97 }}
                                 onClick={handleSubmit}
                                 disabled={disabled}
-                                className="w-full py-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-black text-lg rounded-2xl shadow-xl flex items-center justify-center gap-3 hover:from-emerald-600 hover:to-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed border-b-4 border-emerald-700"
+                                className="w-full py-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-black text-lg rounded-[32px] shadow-xl flex items-center justify-center gap-3 hover:from-emerald-600 hover:to-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed border-b-4 border-emerald-700"
                             >
                                 <Send size={20} />
-                                Gửi Bài Chấm
+                                {normalizeDisplayText('Gửi Bài Chấm')}
                             </motion.button>
                         </div>
                     )}
 
-                    <div className="w-full max-w-2xl rounded-[28px] border-2 border-slate-200 bg-white p-5">
+                    <div className="w-full max-w-2xl rounded-[32px] border-2 border-slate-200 bg-white p-5">
                         <div className="mb-3 text-center text-xs font-black uppercase tracking-widest text-slate-400">
-                            Không dùng mic? Nhập phần con muốn nói
+                            {normalizeDisplayText('Không dùng mic? Nhập phần con muốn nói')}
                         </div>
                         <textarea
                             value={textFallback}
@@ -187,15 +187,15 @@ export const SpeakingQuestion: React.FC<SpeakingQuestionProps> = ({
                                     ? 'Con có thể gõ lại phần con đã đọc hoặc ghi chú nội dung chính...'
                                     : 'Con gõ nhanh ý chính hoặc bài nói của con vào đây...'
                             }
-                            className="min-h-[120px] w-full resize-y rounded-2xl border-2 border-slate-200 bg-slate-50 px-4 py-3 text-base font-medium text-slate-700 outline-none transition-all focus:border-indigo-400 focus:bg-white"
+                            className="min-h-[120px] w-full resize-y rounded-[32px] border-2 border-slate-200 bg-slate-50 px-4 py-3 text-base font-medium text-slate-700 outline-none transition-all focus:border-indigo-400 focus:bg-white"
                         />
                         <button
                             type="button"
                             onClick={() => onSubmitResponse?.({ textAnswer: textFallback.trim() })}
                             disabled={disabled || !textFallback.trim()}
-                            className="mt-4 w-full rounded-2xl bg-slate-900 px-5 py-3 text-base font-black text-white transition-all hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="mt-4 w-full rounded-[32px] bg-slate-900 px-5 py-3 text-base font-black text-white transition-all hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            Gửi Bài Bằng Chữ
+                            {normalizeDisplayText('Gửi Bài Bằng Chữ')}
                         </button>
                     </div>
                 </div>

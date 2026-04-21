@@ -1,6 +1,7 @@
 "use client";
 
 import React, { Suspense } from 'react';
+import { normalizeDisplayText } from '@/lib/text';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProgress } from '@/components/progress-provider';
 import { BackButton } from '@/components/ui/back-button';
@@ -21,10 +22,10 @@ import {
 type TabId = 'wallet' | 'shop' | 'savings' | 'history';
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode; color: string }[] = [
-    { id: 'wallet', label: 'Ví', icon: <Wallet size={20} />, color: 'text-amber-600' },
-    { id: 'shop', label: 'Cửa hàng', icon: <ShoppingBag size={20} />, color: 'text-indigo-600' },
-    { id: 'savings', label: 'Tiết kiệm', icon: <Landmark size={20} />, color: 'text-emerald-600' },
-    { id: 'history', label: 'Lịch sử', icon: <ScrollText size={20} />, color: 'text-slate-600' },
+    { id: 'wallet', label: normalizeDisplayText('Ví'), icon: <Wallet size={20} />, color: 'text-amber-600' },
+    { id: 'shop', label: normalizeDisplayText('Cửa hàng'), icon: <ShoppingBag size={20} />, color: 'text-indigo-600' },
+    { id: 'savings', label: normalizeDisplayText('Tiết kiệm'), icon: <Landmark size={20} />, color: 'text-emerald-600' },
+    { id: 'history', label: normalizeDisplayText('Lịch sử'), icon: <ScrollText size={20} />, color: 'text-slate-600' },
 ];
 
 function WalletContent() {
@@ -73,7 +74,7 @@ function WalletContent() {
             id: Math.random().toString(36).substr(2, 9),
             amount: reward,
             type: 'earn' as const,
-            description: `Điểm danh ngày ${newStreak}`,
+            description: `${normalizeDisplayText('Điểm danh ngày')} ${newStreak}`,
             date: now.toISOString()
         };
 
@@ -285,7 +286,7 @@ function WalletContent() {
                         ) : (
                             <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-2 rounded-2xl text-slate-400">
                                 <Gift size={16} />
-                                <span className="text-xs font-bold">Đã nhận</span>
+                                <span className="text-xs font-bold">{normalizeDisplayText('Đã nhận')}</span>
                             </div>
                         )}
                     </div>
@@ -297,7 +298,7 @@ function WalletContent() {
                 <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-gradient-to-br from-amber-400 via-yellow-400 to-orange-400 rounded-[28px] p-6 text-amber-950 shadow-xl shadow-orange-200/40 relative overflow-hidden"
+                    className="bg-gradient-to-br from-amber-400 via-yellow-400 to-orange-400 rounded-[32px] p-6 text-amber-950 shadow-xl shadow-orange-200/40 relative overflow-hidden"
                 >
                     {/* Background decoration */}
                     <div className="absolute top-0 right-0 p-4 opacity-10">
@@ -307,7 +308,7 @@ function WalletContent() {
 
                     <div className="relative z-10">
                         <p className="text-amber-800 font-bold text-sm mb-1 flex items-center gap-1.5">
-                            <Sparkles size={14} /> Tổng tài sản
+                            <Sparkles size={14} /> {normalizeDisplayText('Tổng tài sản')}
                         </p>
                         <motion.div
                             key={totalWealth}
@@ -321,14 +322,14 @@ function WalletContent() {
 
                         <div className="flex flex-wrap gap-2 mt-4">
                             <span className="bg-white/30 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-bold border border-white/20">
-                                💰 Ví: {formatVND(balance)}
+                                💰 {normalizeDisplayText('Ví:')} {formatVND(balance)}
                             </span>
                             <span className="bg-white/30 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-bold border border-white/20">
-                                🐷 Heo: {formatVND(savings)}
+                                🐷 {normalizeDisplayText('Heo:')} {formatVND(savings)}
                             </span>
                             {(progress?.bankDeposits?.filter(d => !d.isSettled).length || 0) > 0 && (
                                 <span className="bg-white/30 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-bold border border-white/20">
-                                    🏦 Tiết kiệm: {progress?.bankDeposits?.filter(d => !d.isSettled).length} sổ
+                                    🏦 {normalizeDisplayText('Tiết kiệm:')} {progress?.bankDeposits?.filter(d => !d.isSettled).length} {normalizeDisplayText('sổ')}
                                 </span>
                             )}
                         </div>
@@ -428,12 +429,12 @@ function WalletContent() {
                             />
 
                             {/* Tips */}
-                            <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white p-6 rounded-[28px] shadow-lg shadow-emerald-200/30">
+                            <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white p-6 rounded-[32px] shadow-lg shadow-emerald-200/30">
                                 <h4 className="font-black text-base mb-2 flex items-center gap-2">
-                                    <Sparkles size={18} /> Mẹo nhỏ
+                                    <Sparkles size={18} /> {normalizeDisplayText('Mẹo nhỏ')}
                                 </h4>
                                 <p className="font-medium text-sm leading-relaxed opacity-90">
-                                    Gửi càng lâu, lãi suất càng cao. Bé hãy học thật tốt để tích lũy thêm nhiều nhé! 🚀
+                                    {normalizeDisplayText('Gửi càng lâu, lãi suất càng cao. Bé hãy học thật tốt để tích lũy thêm nhiều nhé! 🚀')}
                                 </p>
                             </div>
                         </motion.div>

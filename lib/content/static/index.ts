@@ -4,6 +4,7 @@ import { mathStaticQuestions } from './math';
 import { vietnameseStaticQuestions } from './vietnamese';
 import { englishStaticQuestions } from './english';
 import { getRuntimeContentLibrary, mergeCustomLibraryIntoQuestionBank, QuestionBank } from '../library';
+import { sessionTracker } from '../session-tracker';
 
 // Static files remain in repo as seed/history during migration.
 // Runtime fallback should gradually shrink once a subject/skill set is migrated to DB.
@@ -35,19 +36,7 @@ export function getRuntimeStaticQuestionBankSnapshot(): QuestionBank {
 }
 
 // ============================================================
-// SESSION DEDUP TRACKER
-// Tracks recently served question IDs to avoid duplicates
-// within a learning session. Auto-resets after MAX capacity.
-// ============================================================
-const _recentStaticIds = new Set<string>();
-const MAX_RECENT_STATIC = 100;
-const _recentGlobalStaticIds = new Set<string>();
-const MAX_RECENT_GLOBAL_STATIC = 240;
-
-/** Call this to reset the tracker (e.g., new session) */
-export function resetStaticQuestionTracker() {
-    _recentStaticIds.clear();
-}
+// SESSION DEDUP TRACKER (Migrated to session-tracker.ts)
 
 /**
  * Fisher-Yates shuffle — returns a new shuffled array
@@ -73,37 +62,26 @@ export function getStaticQuestion(skillId: string, level: number): Question | nu
     const levelQuestions = skillQuestions[level];
     if (!levelQuestions || levelQuestions.length === 0) return null;
 
-    // Auto-reset if tracker is full (prevents memory leak over long sessions)
-    if (_recentStaticIds.size >= MAX_RECENT_STATIC) {
-        _recentStaticIds.clear();
-    }
-    if (_recentGlobalStaticIds.size >= MAX_RECENT_GLOBAL_STATIC) {
-        _recentGlobalStaticIds.clear();
-    }
-
     // Shuffle and prefer a question not seen in this session or the immediately previous sessions.
     const shuffled = shuffleArray(levelQuestions);
-    const fresh = shuffled.find(q => !_recentStaticIds.has(q.id) && !_recentGlobalStaticIds.has(q.id));
+    const fresh = shuffled.find(q => !sessionTracker.hasStatic(q.id, true));
 
     if (fresh) {
-        _recentStaticIds.add(fresh.id);
-        _recentGlobalStaticIds.add(fresh.id);
+        sessionTracker.addStatic(fresh.id);
         return { ...fresh };
     }
 
-    const sessionFresh = shuffled.find(q => !_recentStaticIds.has(q.id));
+    const sessionFresh = shuffled.find(q => !sessionTracker.hasStatic(q.id, false));
     if (sessionFresh) {
-        _recentStaticIds.add(sessionFresh.id);
-        _recentGlobalStaticIds.add(sessionFresh.id);
+        sessionTracker.addStatic(sessionFresh.id);
         return { ...sessionFresh };
     }
 
     // All questions in this pool have been used — reset this skill's IDs and pick any
     for (const q of levelQuestions) {
-        _recentStaticIds.delete(q.id);
+        sessionTracker.deleteStatic(q.id);
     }
     const fallback = shuffled[0];
-    _recentStaticIds.add(fallback.id);
-    _recentGlobalStaticIds.add(fallback.id);
+    sessionTracker.addStatic(fallback.id);
     return { ...fallback };
 }

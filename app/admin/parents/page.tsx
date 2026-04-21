@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -7,6 +7,7 @@ import { ArrowLeft, CheckCircle2, Search, Trash2, UserCircle, UserPlus, X } from
 import { AnimatePresence, motion } from "framer-motion";
 import { clearAdminSession, hasActiveAdminSession, touchAdminSession } from "@/lib/admin-session";
 import type { ParentAccount } from "@/lib/mastery";
+import { normalizeDisplayText } from "@/lib/text";
 
 type AdminRequestBase = {
     syncId: string;
@@ -84,11 +85,11 @@ export default function AdminParentsPage() {
 
     const getAdminPayload = (): AdminRequestBase | null => {
         if (!adminUsername || !adminSyncId) {
-            alert("Khong tim thay thong tin admin hien tai.");
+            alert(normalizeDisplayText("Không tìm thấy thông tin admin hiện tại."));
             return null;
         }
 
-        const pin = window.prompt("Nhap PIN admin de xac nhan thao tac:")?.trim() || "";
+        const pin = window.prompt(normalizeDisplayText("Nhập PIN admin để xác nhận thao tác:"))?.trim() || "";
         if (!pin) return null;
 
         return {
@@ -100,11 +101,11 @@ export default function AdminParentsPage() {
 
     const handleAddParent = async () => {
         if (!newName.trim()) {
-            alert("Vui long nhap ten phu huynh.");
+            alert(normalizeDisplayText("Vui lòng nhập tên phụ huynh."));
             return;
         }
         if (newPin.length < 4) {
-            alert("Ma PIN phai co it nhat 4 so.");
+            alert(normalizeDisplayText("Mã PIN phải có ít nhất 4 số."));
             return;
         }
 
@@ -123,14 +124,14 @@ export default function AdminParentsPage() {
             setNewPin("");
             setIsAdding(false);
         } catch (error) {
-            alert(error instanceof Error ? error.message : "Khong the tao phu huynh.");
+            alert(error instanceof Error ? error.message : normalizeDisplayText("Không thể tạo phụ huynh."));
         } finally {
             setIsSubmitting(false);
         }
     };
 
     const handleDeleteParent = async (entry: ParentDirectoryEntry) => {
-        if (!confirm(`Ban co chac muon xoa tai khoan phu huynh "${entry.parent.name}" tren tat ca account?`)) return;
+        if (!confirm(normalizeDisplayText(`Bạn có chắc muốn xóa tài khoản phụ huynh "${entry.parent.name}" trên tất cả account?`))) return;
 
         const adminPayload = getAdminPayload();
         if (!adminPayload) return;
@@ -145,7 +146,7 @@ export default function AdminParentsPage() {
             });
             await refreshData();
         } catch (error) {
-            alert(error instanceof Error ? error.message : "Khong the xoa phu huynh.");
+            alert(error instanceof Error ? error.message : normalizeDisplayText("Không thể xóa phụ huynh."));
         } finally {
             setIsSubmitting(false);
         }
@@ -168,14 +169,14 @@ export default function AdminParentsPage() {
             await refreshData();
             setAssigningParentKey(null);
         } catch (error) {
-            alert(error instanceof Error ? error.message : "Khong the gan hoc sinh.");
+            alert(error instanceof Error ? error.message : normalizeDisplayText("Không thể gắn học sinh."));
         } finally {
             setIsSubmitting(false);
         }
     };
 
     const handleUnassignChild = async (entry: ParentDirectoryEntry, childId: string, childSyncId: string) => {
-        if (!confirm("Ban co chac muon go hoc sinh nay khoi phu huynh?")) return;
+        if (!confirm(normalizeDisplayText("Bạn có chắc muốn gỡ học sinh này khỏi phụ huynh?"))) return;
 
         const adminPayload = getAdminPayload();
         if (!adminPayload) return;
@@ -192,7 +193,7 @@ export default function AdminParentsPage() {
             });
             await refreshData();
         } catch (error) {
-            alert(error instanceof Error ? error.message : "Khong the go hoc sinh.");
+            alert(error instanceof Error ? error.message : normalizeDisplayText("Không thể gỡ học sinh."));
         } finally {
             setIsSubmitting(false);
         }
@@ -201,7 +202,7 @@ export default function AdminParentsPage() {
     if (!isInitialized) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-50">
-                <div className="animate-spin text-indigo-600">Dang tai du lieu...</div>
+                <div className="animate-spin text-indigo-600">{normalizeDisplayText('Đang tải dữ liệu...')}</div>
             </div>
         );
     }
@@ -213,56 +214,56 @@ export default function AdminParentsPage() {
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => router.push("/admin/dashboard")}
-                            className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-md transition-colors hover:bg-slate-100"
+                            className="flex h-10 w-10 items-center justify-center rounded-[32px] bg-white shadow-md transition-colors hover:bg-slate-100"
                         >
                             <ArrowLeft size={20} className="text-slate-600" />
                         </button>
                         <div>
-                            <h1 className="text-2xl font-black text-slate-900">Quan ly phu huynh</h1>
-                            <p className="text-sm font-medium text-slate-500">Quan ly phu huynh va hoc sinh tren tat ca account</p>
+                            <h1 className="text-2xl font-black text-slate-900">{normalizeDisplayText('Quản lý phụ huynh')}</h1>
+                            <p className="text-sm font-medium text-slate-500">{normalizeDisplayText('Quản lý phụ huynh và học sinh trên tất cả account')}</p>
                         </div>
                     </div>
                     <button
                         onClick={() => setIsAdding(true)}
-                        className="flex items-center gap-2 rounded-2xl bg-indigo-600 px-6 py-3 font-bold text-white shadow-lg shadow-indigo-200 transition-all hover:scale-105 hover:bg-indigo-700"
+                        className="flex items-center gap-2 rounded-[32px] bg-indigo-600 px-6 py-3 font-bold text-white shadow-lg shadow-indigo-200 transition-all hover:scale-105 hover:bg-indigo-700"
                     >
                         <UserPlus size={20} />
-                        <span>Them phu huynh</span>
+                        <span>{normalizeDisplayText('Thêm phụ huynh')}</span>
                     </button>
                 </div>
 
-                <div className="flex flex-col items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm md:flex-row">
+                <div className="flex flex-col items-center justify-between gap-4 rounded-[32px] border border-slate-100 bg-white p-4 shadow-sm md:flex-row">
                     <div className="relative w-full md:w-96">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                         <input
                             type="text"
-                            placeholder="Tim kiem theo ten..."
+                            placeholder={normalizeDisplayText('Tìm kiếm theo tên...')}
                             value={searchTerm}
                             onChange={(event) => setSearchTerm(event.target.value)}
-                            className="w-full rounded-xl border-2 border-slate-100 bg-slate-50 py-2 pl-10 pr-4 font-medium transition-all focus:border-indigo-500 focus:outline-none"
+                            className="w-full rounded-[32px] border-2 border-slate-100 bg-slate-50 py-2 pl-10 pr-4 font-medium transition-all focus:border-indigo-500 focus:outline-none"
                         />
                     </div>
-                    <div className="rounded-xl bg-indigo-50 px-4 py-2 text-sm font-bold text-indigo-700">
-                        Tong so: {parentEntries.length}
+                    <div className="rounded-[32px] bg-indigo-50 px-4 py-2 text-sm font-bold text-indigo-700">
+                        {normalizeDisplayText('Tổng số')}: {parentEntries.length}
                     </div>
                 </div>
 
-                <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-xl">
+                <div className="overflow-hidden rounded-[32px] border border-slate-100 bg-white shadow-xl">
                     <div className="overflow-x-auto">
                         <table className="w-full border-collapse text-left">
                             <thead>
                                 <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
-                                    <th className="p-4 font-black">Ten phu huynh</th>
+                                    <th className="p-4 font-black">{normalizeDisplayText('Tên phụ huynh')}</th>
                                     <th className="p-4 text-center font-black">PIN</th>
-                                    <th className="p-4 font-black">Hoc sinh quan ly</th>
-                                    <th className="p-4 text-right font-black">Thao tac</th>
+                                    <th className="p-4 font-black">{normalizeDisplayText('Học sinh quản lý')}</th>
+                                    <th className="p-4 text-right font-black">{normalizeDisplayText('Thao tác')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {filteredParents.length === 0 ? (
                                     <tr>
                                         <td colSpan={4} className="p-8 text-center font-medium text-slate-400">
-                                            Khong co tai khoan phu huynh nao.
+                                            {normalizeDisplayText('Không có tài khoản phụ huynh nào.')}
                                         </td>
                                     </tr>
                                 ) : (
@@ -270,7 +271,7 @@ export default function AdminParentsPage() {
                                         <tr key={entry.matchKey} className="transition-colors hover:bg-slate-50/50">
                                             <td className="p-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                                                    <div className="flex h-10 w-10 items-center justify-center rounded-[32px] bg-emerald-100 text-emerald-600">
                                                         <UserCircle size={24} />
                                                     </div>
                                                     <div>
@@ -285,7 +286,7 @@ export default function AdminParentsPage() {
                                                     {entry.children.map(({ childId, childSyncId, profile }) => (
                                                         <span
                                                             key={`${childSyncId}:${childId}`}
-                                                            className="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-100 px-2 py-1 text-xs font-bold text-amber-800"
+                                                            className="inline-flex items-center gap-2 rounded-[32px] border border-amber-200 bg-amber-100 px-2 py-1 text-xs font-bold text-amber-800"
                                                         >
                                                             <span>{profile.avatar || "*"} {profile.name}</span>
                                                             <span className="text-[10px] text-amber-700/80">{childSyncId}</span>
@@ -293,8 +294,8 @@ export default function AdminParentsPage() {
                                                                 type="button"
                                                                 onClick={() => void handleUnassignChild(entry, childId, childSyncId)}
                                                                 disabled={isSubmitting}
-                                                                className="rounded-full p-0.5 text-amber-700 hover:bg-amber-200 disabled:opacity-50"
-                                                                title="Go hoc sinh"
+                                                                className="rounded-[32px] p-0.5 text-amber-700 hover:bg-amber-200 disabled:opacity-50"
+                                                                title={normalizeDisplayText("Gỡ học sinh")}
                                                             >
                                                                 <X size={12} />
                                                             </button>
@@ -302,9 +303,9 @@ export default function AdminParentsPage() {
                                                     ))}
                                                     <button
                                                         onClick={() => setAssigningParentKey(entry.matchKey)}
-                                                        className="rounded-lg bg-slate-100 px-2 py-1 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-200 hover:text-indigo-600"
+                                                        className="rounded-[32px] bg-slate-100 px-2 py-1 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-200 hover:text-indigo-600"
                                                     >
-                                                        + Them be
+                                                        + {normalizeDisplayText('Thêm bé')}
                                                     </button>
                                                 </div>
                                             </td>
@@ -312,8 +313,8 @@ export default function AdminParentsPage() {
                                                 <button
                                                     onClick={() => void handleDeleteParent(entry)}
                                                     disabled={isSubmitting}
-                                                    className="rounded-xl p-2 text-slate-300 transition-all hover:bg-rose-50 hover:text-rose-500 disabled:opacity-50"
-                                                    title="Xoa phu huynh"
+                                                    className="rounded-[32px] p-2 text-slate-300 transition-all hover:bg-rose-50 hover:text-rose-500 disabled:opacity-50"
+                                                    title={normalizeDisplayText("Xóa phụ huynh")}
                                                 >
                                                     <Trash2 size={18} />
                                                 </button>
@@ -338,13 +339,13 @@ export default function AdminParentsPage() {
                                 initial={{ scale: 0.9, y: 20 }}
                                 animate={{ scale: 1, y: 0 }}
                                 exit={{ scale: 0.9, y: 20 }}
-                                className="w-full max-w-md overflow-hidden rounded-3xl bg-white p-8 shadow-2xl"
+                                className="w-full max-w-md overflow-hidden rounded-[32px] bg-white p-8 shadow-2xl"
                             >
                                 <div className="mb-6 flex items-center justify-between">
-                                    <h2 className="text-2xl font-black text-slate-900">Them phu huynh</h2>
+                                    <h2 className="text-2xl font-black text-slate-900">{normalizeDisplayText('Thêm phụ huynh')}</h2>
                                     <button
                                         onClick={() => setIsAdding(false)}
-                                        className="rounded-full bg-slate-100 p-2 transition-colors hover:bg-slate-200"
+                                        className="rounded-[32px] bg-slate-100 p-2 transition-colors hover:bg-slate-200"
                                     >
                                         <X size={20} className="text-slate-500" />
                                     </button>
@@ -352,18 +353,18 @@ export default function AdminParentsPage() {
 
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="mb-2 block text-sm font-bold text-slate-700">Ten phu huynh / ten goi</label>
+                                        <label className="mb-2 block text-sm font-bold text-slate-700">{normalizeDisplayText('Tên phụ huynh / tên gọi')}</label>
                                         <input
                                             type="text"
                                             value={newName}
                                             onChange={(event) => setNewName(event.target.value)}
-                                            className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-900 focus:border-indigo-500 focus:outline-none"
-                                            placeholder="Vi du: Me Ti, Bo Teo..."
+                                            className="w-full rounded-[32px] border-2 border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-900 focus:border-indigo-500 focus:outline-none"
+                                            placeholder={normalizeDisplayText('Ví dụ: Mẹ Tí, Bố Tèo...')}
                                             autoFocus
                                         />
                                     </div>
                                     <div>
-                                        <label className="mb-2 block text-sm font-bold text-slate-700">Ma PIN (it nhat 4 so)</label>
+                                        <label className="mb-2 block text-sm font-bold text-slate-700">{normalizeDisplayText('Mã PIN (ít nhất 4 số)')}</label>
                                         <input
                                             type="text"
                                             inputMode="numeric"
@@ -371,17 +372,17 @@ export default function AdminParentsPage() {
                                             maxLength={4}
                                             value={newPin}
                                             onChange={(event) => setNewPin(event.target.value.replace(/\D/g, "").slice(0, 4))}
-                                            className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-900 focus:border-indigo-500 focus:outline-none"
-                                            placeholder="Nhap 4 so..."
+                                            className="w-full rounded-[32px] border-2 border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-900 focus:border-indigo-500 focus:outline-none"
+                                            placeholder={normalizeDisplayText('Nhập 4 số...')}
                                         />
                                     </div>
 
                                     <button
                                         onClick={() => void handleAddParent()}
                                         disabled={isSubmitting}
-                                        className="mt-4 w-full rounded-2xl bg-indigo-600 py-4 text-lg font-bold text-white shadow-lg shadow-indigo-200 transition-all hover:scale-[1.02] hover:bg-indigo-700 disabled:opacity-50"
+                                        className="mt-4 w-full rounded-[32px] bg-indigo-600 py-4 text-lg font-bold text-white shadow-lg shadow-indigo-200 transition-all hover:scale-[1.02] hover:bg-indigo-700 disabled:opacity-50"
                                     >
-                                        Tao tai khoan
+                                        {normalizeDisplayText('Tạo tài khoản')}
                                     </button>
                                 </div>
                             </motion.div>
@@ -405,12 +406,12 @@ export default function AdminParentsPage() {
                             >
                                 <div className="mb-6 flex items-center justify-between">
                                     <div>
-                                        <h3 className="text-xl font-black text-slate-900">Chon be quan ly</h3>
-                                        <p className="text-sm text-slate-500">Gan hoc sinh tu tat ca account cho {assigningParent.parent.name}</p>
+                                        <h3 className="text-xl font-black text-slate-900">{normalizeDisplayText('Chọn bé quản lý')}</h3>
+                                        <p className="text-sm text-slate-500">{normalizeDisplayText('Gắn học sinh từ tất cả account cho')} {assigningParent.parent.name}</p>
                                     </div>
                                     <button
                                         onClick={() => setAssigningParentKey(null)}
-                                        className="rounded-full bg-slate-100 p-2 hover:bg-slate-200"
+                                        className="rounded-[32px] bg-slate-100 p-2 hover:bg-slate-200"
                                     >
                                         <X size={20} className="text-slate-500" />
                                     </button>
@@ -418,7 +419,7 @@ export default function AdminParentsPage() {
                                 <div className="max-h-[60vh] space-y-2 overflow-y-auto">
                                     {allProfiles.length === 0 ? (
                                         <div className="space-y-2 p-4 text-center text-sm text-slate-400">
-                                            <div>Chua co hoc sinh nao trong he thong.</div>
+                                            <div>{normalizeDisplayText('Chưa có học sinh nào trong hệ thống.')}</div>
                                         </div>
                                     ) : (
                                         allProfiles.map(({ profile, sourceSyncId }) => {
@@ -431,16 +432,16 @@ export default function AdminParentsPage() {
                                                     key={refKey}
                                                     disabled={isAssignedToCurrent || isSubmitting}
                                                     onClick={() => void handleAssignChild(assigningParent, profile.id, sourceSyncId)}
-                                                    className={`w-full rounded-xl border-2 p-4 text-left transition-all ${isAssignedToCurrent ? "cursor-not-allowed border-indigo-500 bg-indigo-50 opacity-50" : "border-slate-100 hover:border-indigo-300 hover:bg-slate-50"}`}
+                                                    className={`w-full rounded-[32px] border-2 p-4 text-left transition-all ${isAssignedToCurrent ? "cursor-not-allowed border-indigo-500 bg-indigo-50 opacity-50" : "border-slate-100 hover:border-indigo-300 hover:bg-slate-50"}`}
                                                 >
                                                     <div className="flex items-center justify-between gap-3">
                                                         <div className="flex items-center gap-3">
                                                             <span className="text-2xl">{profile.avatar || "*"}</span>
                                                             <div>
                                                                 <div className="font-bold text-slate-900">{profile.name}</div>
-                                                                <div className="text-xs text-slate-500">Lop {profile.grade || 2} · {sourceSyncId}</div>
+                                                                <div className="text-xs text-slate-500">{normalizeDisplayText('Lớp')} {profile.grade || 2} · {sourceSyncId}</div>
                                                                 {currentOwner && !isAssignedToCurrent ? (
-                                                                    <div className="text-[11px] font-medium text-amber-600">Dang duoc gan cho {currentOwner.parent.name}. Bam de chuyen.</div>
+                                                                    <div className="text-[11px] font-medium text-amber-600">{normalizeDisplayText('Đang được gắn cho')} {currentOwner.parent.name}. {normalizeDisplayText('Bấm để chuyển.')}</div>
                                                                 ) : null}
                                                             </div>
                                                         </div>

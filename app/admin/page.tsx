@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -7,6 +7,7 @@ import { Lock, ShieldCheck, ArrowRight, User, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { clearAdminSession, hasActiveAdminSession, startAdminSession } from '@/lib/admin-session';
 import { verifyPin } from '@/lib/pin-hash';
+import { normalizeDisplayText } from '@/lib/text';
 
 function getSafeNextPath(rawNext: string | null) {
     if (!rawNext || !rawNext.startsWith('/')) return '/admin/dashboard';
@@ -100,7 +101,7 @@ export default function AdminLoginPage() {
     if (!isInitialized) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 gap-4">
-                <div className="animate-spin text-white">Đang tải dữ liệu...</div>
+                <div className="animate-spin text-white">{normalizeDisplayText('Đang tải dữ liệu...')}</div>
                 {showReset && (
                     <button
                         onClick={() => {
@@ -115,7 +116,7 @@ export default function AdminLoginPage() {
                         }}
                         className="mt-4 px-4 py-2 bg-rose-500 text-white rounded-lg text-sm font-bold shadow-lg hover:bg-rose-600 transition-all"
                     >
-                        Reset ứng dụng (cần Master Keyword)
+                        {normalizeDisplayText('Reset ứng dụng (cần Master Keyword)')}
                     </button>
                 )}
             </div>
@@ -134,9 +135,9 @@ export default function AdminLoginPage() {
                         <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mb-4">
                             <ShieldCheck size={32} />
                         </div>
-                        <h1 className="text-2xl font-black text-slate-900">Phiên admin đang hoạt động</h1>
+                        <h1 className="text-2xl font-black text-slate-900">{normalizeDisplayText('Phiên admin đang hoạt động')}</h1>
                         <p className="text-slate-500 text-sm font-medium">
-                            Tài khoản <span className="font-black text-slate-700">{adminAccount?.username}</span> vẫn còn đăng nhập trên thiết bị này.
+                            {normalizeDisplayText('Tài khoản')} <span className="font-black text-slate-700">{adminAccount?.username}</span> {normalizeDisplayText('vẫn còn đăng nhập trên thiết bị này.')}
                         </p>
                     </div>
 
@@ -144,27 +145,27 @@ export default function AdminLoginPage() {
                         <button
                             type="button"
                             onClick={() => router.replace(redirectPath)}
-                            className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-500 active:scale-95 transition-all flex items-center justify-center gap-2"
+                            className="w-full bg-indigo-600 text-white py-4 rounded-[32px] font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-500 active:scale-95 transition-all flex items-center justify-center gap-2"
                         >
-                            <span>Tiếp tục vào quản trị</span>
+                            <span>{normalizeDisplayText('Tiếp tục vào quản trị')}</span>
                             <ArrowRight size={18} />
                         </button>
 
                         <button
                             type="button"
                             onClick={handleLogoutSession}
-                            className="w-full py-4 rounded-xl font-bold text-rose-600 bg-rose-50 border-2 border-rose-100 hover:bg-rose-100 transition-all flex items-center justify-center gap-2"
+                            className="w-full py-4 rounded-[32px] font-bold text-rose-600 bg-rose-50 border-2 border-rose-100 hover:bg-rose-100 transition-all flex items-center justify-center gap-2"
                         >
                             <LogOut size={18} />
-                            <span>Đăng xuất admin</span>
+                            <span>{normalizeDisplayText('Đăng xuất admin')}</span>
                         </button>
 
                         <button
                             type="button"
                             onClick={() => { clearAdminSession(); logout(); router.push('/profiles'); }}
-                            className="w-full py-3 rounded-xl font-bold text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all text-sm"
+                            className="w-full py-3 rounded-[32px] font-bold text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all text-sm"
                         >
-                            Quay lại màn hình chọn người dùng
+                            {normalizeDisplayText('Quay lại màn hình chọn người dùng')}
                         </button>
                     </div>
                 </motion.div>
@@ -184,10 +185,10 @@ export default function AdminLoginPage() {
                         <ShieldCheck size={32} />
                     </div>
                     <h1 className="text-2xl font-black text-slate-900">
-                        {isSetupMode ? 'Thiết lập tài khoản admin' : 'Đăng nhập admin'}
+                        {isSetupMode ? normalizeDisplayText('Thiết lập tài khoản admin') : normalizeDisplayText('Đăng nhập admin')}
                     </h1>
                     <p className="text-slate-500 text-sm font-medium">
-                        {isSetupMode ? 'Tạo tài khoản quản trị riêng cho hệ thống.' : 'Chỉ tài khoản admin mới được quản lý học sinh.'}
+                        {isSetupMode ? normalizeDisplayText('Tạo tài khoản quản trị riêng cho hệ thống.') : normalizeDisplayText('Chỉ tài khoản admin mới được quản lý học sinh.')}
                     </p>
                 </div>
 
@@ -203,8 +204,8 @@ export default function AdminLoginPage() {
                                     setError('');
                                 }}
                                 disabled={!isSetupMode}
-                                className="w-full pl-12 pr-4 py-4 rounded-xl bg-slate-50 border-2 border-slate-200 text-slate-900 font-bold focus:border-indigo-500 focus:outline-none transition-all disabled:opacity-70"
-                                placeholder="Tài khoản admin"
+                                className="w-full pl-12 pr-4 py-4 rounded-[32px] bg-slate-50 border-2 border-slate-200 text-slate-900 font-bold focus:border-indigo-500 focus:outline-none transition-all disabled:opacity-70"
+                                placeholder={normalizeDisplayText('Tài khoản admin')}
                                 autoFocus
                             />
                         </div>
@@ -222,7 +223,7 @@ export default function AdminLoginPage() {
                                     setError('');
                                 }}
                                 disabled={isSubmitting}
-                                className="w-full pl-12 pr-4 py-4 rounded-xl bg-slate-50 border-2 border-slate-200 text-slate-900 font-bold focus:border-indigo-500 focus:outline-none transition-all text-center tracking-[0.5em] text-2xl disabled:opacity-50"
+                                className="w-full pl-12 pr-4 py-4 rounded-[32px] bg-slate-50 border-2 border-slate-200 text-slate-900 font-bold focus:border-indigo-500 focus:outline-none transition-all text-center tracking-[0.5em] text-2xl disabled:opacity-50"
                                 placeholder="...."
                             />
                         </div>
@@ -230,20 +231,20 @@ export default function AdminLoginPage() {
 
                     {error && (
                         <p className="text-rose-500 text-xs font-bold mt-2 text-center animate-pulse">
-                            {error}
+                            {normalizeDisplayText(error)}
                         </p>
                     )}
 
                     <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-500 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                        className="w-full bg-indigo-600 text-white py-4 rounded-[32px] font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-500 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                         {isSubmitting ? (
-                            <span>Đang xử lý...</span>
+                            <span>{normalizeDisplayText('Đang xử lý...')}</span>
                         ) : (
                             <>
-                                <span>{isSetupMode ? 'Tạo admin và tiếp tục' : 'Đăng nhập'}</span>
+                                <span>{isSetupMode ? normalizeDisplayText('Tạo admin và tiếp tục') : normalizeDisplayText('Đăng nhập')}</span>
                                 <ArrowRight size={18} />
                             </>
                         )}
@@ -252,9 +253,9 @@ export default function AdminLoginPage() {
                     <button
                         type="button"
                         onClick={() => { clearAdminSession(); logout(); router.push('/profiles'); }}
-                        className="w-full py-3 rounded-xl font-bold text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all text-sm"
+                        className="w-full py-3 rounded-[32px] font-bold text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all text-sm"
                     >
-                        Quay lại màn hình chọn người dùng
+                        {normalizeDisplayText('Quay lại màn hình chọn người dùng')}
                     </button>
                 </form>
 
@@ -267,9 +268,9 @@ export default function AdminLoginPage() {
                         }}
                         className="font-bold hover:text-blue-500 transition-colors"
                     >
-                        Làm mới
+                        {normalizeDisplayText('Làm mới')}
                     </button>
-                    <span>{isSetupMode ? 'Chưa có admin' : `Tài khoản: ${adminAccount?.username}`}</span>
+                    <span>{isSetupMode ? normalizeDisplayText('Chưa có admin') : `${normalizeDisplayText('Tài khoản')}: ${adminAccount?.username}`}</span>
                 </div>
             </motion.div>
         </div>

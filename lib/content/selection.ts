@@ -1,6 +1,6 @@
 import { Question, SubjectId } from './types';
 import { generatorRegistry } from './generator-registry';
-import { getStaticQuestion, resetStaticQuestionTracker } from './static/index';
+import { getStaticQuestion } from './static/index';
 import { tryQuestionApi } from './api';
 import { sanitizeQuestion, validateQuestion } from './validation';
 import { COURSES } from './courses/index';

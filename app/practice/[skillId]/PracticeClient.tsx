@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useProgress } from '@/components/progress-provider';
 import { generateQuestion, resetQuestionSessionTracker } from '@/lib/content/registry';
@@ -56,6 +56,19 @@ export default function PracticeClient() {
     const hasLoadedRef = React.useRef(false);
     const isMountedRef = React.useRef(true);
 
+    // Refs cho nextQuestion để tránh re-create callback
+    const progressRef = useRef(progress);
+    const sessionTotalRef = useRef(sessionTotal);
+    const sessionCorrectRef = useRef(sessionCorrect);
+    const isLoadingRef = useRef(isLoadingQuestion);
+    const sessionEarningsRef = useRef(sessionEarnings);
+
+    useEffect(() => { progressRef.current = progress; }, [progress]);
+    useEffect(() => { sessionTotalRef.current = sessionTotal; }, [sessionTotal]);
+    useEffect(() => { sessionCorrectRef.current = sessionCorrect; }, [sessionCorrect]);
+    useEffect(() => { isLoadingRef.current = isLoadingQuestion; }, [isLoadingQuestion]);
+    useEffect(() => { sessionEarningsRef.current = sessionEarnings; }, [sessionEarnings]);
+
     // Cleanup on unmount
     useEffect(() => {
         isMountedRef.current = true;
@@ -79,9 +92,9 @@ export default function PracticeClient() {
     }, []);
 
     const nextQuestion = useCallback(async () => {
-        if (!progress || isLoadingQuestion) return;
+        if (!progressRef.current || isLoadingRef.current) return;
 
-        if (sessionTotal >= 10) {
+        if (sessionTotalRef.current >= 10) {
             setIsFinished(true);
             return;
         }
@@ -89,8 +102,8 @@ export default function PracticeClient() {
         setIsLoadingQuestion(true);
 
         // === ADAPTIVE DIFFICULTY ===
-        let skillLevel = progress.skills?.[skillId]?.level || 1;
-        const sessionLevelBonus = Math.floor(sessionTotal / 3);
+        let skillLevel = progressRef.current.skills?.[skillId]?.level || 1;
+        const sessionLevelBonus = Math.floor(sessionTotalRef.current / 3);
         skillLevel = Math.min(skillLevel + sessionLevelBonus, 5);
 
         const skillInfo = SKILL_MAP[skillId];
@@ -100,10 +113,10 @@ export default function PracticeClient() {
             return;
         }
 
-        const currentAccuracy = sessionTotal > 0 ? (sessionCorrect / sessionTotal) : 1;
+        const currentAccuracy = sessionTotalRef.current > 0 ? (sessionCorrectRef.current / sessionTotalRef.current) : 1;
         const adaptiveLevelBonus =
-            sessionTotal >= 8 && currentAccuracy >= 0.9 ? 2 :
-                sessionTotal >= 5 && currentAccuracy >= 0.8 ? 1 : 0;
+            sessionTotalRef.current >= 8 && currentAccuracy >= 0.9 ? 2 :
+                sessionTotalRef.current >= 5 && currentAccuracy >= 0.8 ? 1 : 0;
         skillLevel = Math.min(skillLevel + adaptiveLevelBonus, 5);
         skillLevel = Math.min(skillLevel, getRequestedLevelCap(skillId));
 
@@ -137,7 +150,7 @@ export default function PracticeClient() {
         } finally {
             if (isMountedRef.current) setIsLoadingQuestion(false);
         }
-    }, [currentGrade, getRequestedLevelCap, isLoadingQuestion, play, progress, router, sessionCorrect, sessionTotal, skillId]);
+    }, [currentGrade, getRequestedLevelCap, router, skillId]);
 
     // Skill reset effect
     useEffect(() => {

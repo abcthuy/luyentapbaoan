@@ -1,4 +1,4 @@
-﻿import type {
+import type {
     AppStorage,
     BankDeposit,
     InventoryItem,
@@ -127,8 +127,10 @@ function mergeProgress(primary: ProgressData, secondary: ProgressData): Progress
         bestTimeSeconds: minPositive(primary.bestTimeSeconds, secondary.bestTimeSeconds),
         totalTimeMinutes: Math.max(primary.totalTimeMinutes || 0, secondary.totalTimeMinutes || 0),
         updatedAt: maxIsoDate(primary.updatedAt, secondary.updatedAt) || new Date().toISOString(),
-        balance: Math.max(primary.balance || 0, secondary.balance || 0),
-        savings: Math.max(primary.savings || 0, secondary.savings || 0),
+        // Dùng giá trị từ bản data mới hơn, không dùng Math.max
+        // (Math.max khiến chi tiêu bị hoàn lại khi sync)
+        balance: preferred.balance ?? fallback.balance ?? 0,
+        savings: preferred.savings ?? fallback.savings ?? 0,
         savingsGoal: mergeSavingsGoal(primary.savingsGoal, secondary.savingsGoal),
         bankDeposits: mergeById(primary.bankDeposits || [], secondary.bankDeposits || []),
         transactions: mergeTransactions(primary.transactions || [], secondary.transactions || []),

@@ -58,7 +58,8 @@ export const Bank: React.FC<BankProps> = ({ balance, deposits, onDeposit, onSett
             return Math.floor(deposit.amount * (0.005 * monthsRatio));
         } else {
             // Full Term Rate * Amount * Months
-            return Math.floor(deposit.amount * deposit.interestRate * deposit.termMonths);
+            // interestRate đã = termMonths * 0.01 → không nhân termMonths lần nữa
+            return Math.floor(deposit.amount * deposit.interestRate);
         }
     };
 

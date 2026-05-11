@@ -200,9 +200,13 @@ function WalletContent() {
             const start = new Date(deposit.startDate).getTime();
             const now = new Date().getTime();
             const daysPassed = (now - start) / (1000 * 60 * 60 * 24);
-            profit = Math.floor(deposit.amount * (0.005 * Math.max(0, daysPassed)));
+            // 1 tuần thực = 1 tháng game → chia cho 7
+            const monthsPassed = daysPassed / 7;
+            profit = Math.floor(deposit.amount * 0.005 * Math.max(0, monthsPassed));
         } else {
-            profit = Math.floor(deposit.amount * deposit.interestRate * deposit.termMonths);
+            // interestRate đã = termMonths * 0.01 (tổng lãi suất cả kỳ)
+            // KHÔNG nhân thêm termMonths nữa
+            profit = Math.floor(deposit.amount * deposit.interestRate);
         }
 
         const totalReturn = deposit.amount + profit;

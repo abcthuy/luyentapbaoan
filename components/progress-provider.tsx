@@ -212,9 +212,18 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
             }
 
             if (payload.storage) {
-                const merged = normalizeStorage(payload.storage);
-                setStorage(merged);
-                save(merged);
+                // Re-merge server response với local data HIỆN TẠI
+                // (local có thể đã thay đổi trong lúc request đang chạy)
+                const currentLocalStr = localStorage.getItem('math_progress_multi');
+                const currentLocal = currentLocalStr
+                    ? normalizeStorage(JSON.parse(currentLocalStr) as AppStorage)
+                    : null;
+                const serverData = normalizeStorage(payload.storage);
+                const finalData = currentLocal
+                    ? normalizeStorage(mergeAppStorage(serverData, currentLocal))
+                    : serverData;
+                setStorage(finalData);
+                save(finalData);
             }
         } catch (e) {
             console.error('Cloud sync failed:', e);
